@@ -119,6 +119,14 @@
   .adj input[type=range] { width:100%; height:4px; background:linear-gradient(to right, rgba(255,255,255,.2) var(--a,50%), #fff var(--a,50%), #fff var(--b,50%), rgba(255,255,255,.2) var(--b,50%)); }
   @media (max-width:900px) { .adjpanel.on { grid-template-columns:repeat(2,minmax(0,1fr)); } .adjpanel .btn { grid-column:1 / -1; } }
 
+  /* remove-photo confirmation */
+  .sheet.small { width:min(420px,100%); padding:30px 26px 24px; text-align:center; }
+  .sheet.small h2 { font-size:24px; }
+  .cthumb { display:block; width:76px; height:76px; margin:0 auto 16px; border-radius:18px; object-fit:cover; box-shadow:0 10px 30px rgba(0,0,20,.5), 0 0 0 1px rgba(255,255,255,.18); }
+  .ctext { color:var(--muted); margin:10px auto 0; max-width:320px; line-height:1.45; } .ctext b { color:#fff; font-weight:600; word-break:break-all; }
+  .cact { display:flex; gap:10px; margin-top:24px; } .cact .btn { flex:1; }
+  .btn.danger { background:#ff4d5e; color:#fff; } .btn.danger:hover:not(:disabled) { filter:brightness(1.1); }
+
   /* multiple photos */
   .photos { display:none; align-items:center; gap:16px; padding:0 32px 10px; }
   body.has .photos { display:flex; }
@@ -349,6 +357,7 @@
 
   <div class="shelf"><div class="strip" id="strip"></div></div>
   <div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Plans"><div class="sheet" id="sheet"></div></div>
+  <div class="modal" id="confirm" role="alertdialog" aria-modal="true" aria-labelledby="ctitle" style="z-index:70"><div class="sheet small" id="csheet"></div></div>
   <div class="busy" id="busy"><div class="busybox"><span class="spin"></span><b id="busytxt"></b><div class="bar"><i id="busybar"></i></div></div></div>
   <div class="toast" id="toast" role="status"></div>
   <div class="hidden"><span id="filmname"></span><span id="filmmeta"></span><span id="fname"></span><span id="docname"></span></div>
@@ -948,6 +957,27 @@ async function removePhoto(i) {
   if (was) { cur = -1; await activate(Math.min(i, photos.length - 1)); }
   else { if (i < cur) cur--; renderPhotos(); }
 }
+// ---------- Confirm before removing a photo ----------
+let confirmIdx = -1;
+function askRemove(i) {
+  const p = photos[i]; if (!p || busy) return;
+  confirmIdx = i;
+  const cs = $('csheet'); cs.textContent = '';
+  const im = document.createElement('img'); im.className = 'cthumb'; im.alt = ''; im.src = p.thumb;
+  const h = document.createElement('h2'); h.id = 'ctitle'; h.textContent = 'Remove this photo?';
+  const t = document.createElement('p'); t.className = 'ctext';
+  const nm = document.createElement('b'); nm.textContent = p.name;
+  t.append(nm, document.createTextNode(photos.length > 1 ? ' and its edits will be removed from this session.' : ' and its edits will be removed. You\'ll be back at the start.'));
+  const act = document.createElement('div'); act.className = 'cact';
+  const no = document.createElement('button'); no.className = 'btn glass'; no.id = 'cno'; no.textContent = 'Cancel'; no.onclick = closeConfirm;
+  const yes = document.createElement('button'); yes.className = 'btn danger'; yes.id = 'cyes'; yes.textContent = 'Remove';
+  yes.onclick = () => { const k = confirmIdx; closeConfirm(); removePhoto(k); };
+  act.append(no, yes); cs.append(im, h, t, act);
+  $('confirm').classList.add('open'); document.body.classList.add('modal-open'); no.focus({ preventScroll:true });
+}
+function closeConfirm() { $('confirm').classList.remove('open'); document.body.classList.remove('modal-open'); confirmIdx = -1; }
+$('confirm').addEventListener('click', e => { if (e.target === $('confirm')) closeConfirm(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('confirm').classList.contains('open')) { e.stopPropagation(); closeConfirm(); } }, true);
 function resetEmpty() {
   hasImage = false; cur = -1; clearTimeout(thumbT);
   if (imgTex) { gl.deleteTexture(imgTex); imgTex = null; } if (srcBmp && srcBmp.close) srcBmp.close(); srcBmp = null;
@@ -977,14 +1007,14 @@ async function applyLookToAll() {
   toast(`Applied ${current.label} look to all ${photos.length} photos`, 2600);
 }
 $('thumbs').addEventListener('click', e => {
-  const rm = e.target.closest('[data-rm]'); if (rm) { e.stopPropagation(); removePhoto(+rm.dataset.rm); return; }
+  const rm = e.target.closest('[data-rm]'); if (rm) { e.stopPropagation(); askRemove(+rm.dataset.rm); return; }
   const pt = e.target.closest('.pt'); if (pt && +pt.dataset.i !== cur) activate(+pt.dataset.i);
 });
 $('thumbs').addEventListener('keydown', e => { const pt = e.target.closest && e.target.closest('.pt'); if (pt && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); activate(+pt.dataset.i); } });
 $('addphotos').onclick = () => file.click();
 $('applyall').onclick = applyLookToAll;
 document.addEventListener('keydown', e => {              // left / right arrows move between photos
-  if (busy || editing || !photos.length || $('modal').classList.contains('open') || (e.target.closest && e.target.closest('input,textarea,select'))) return;
+  if (busy || editing || !photos.length || $('modal').classList.contains('open') || $('confirm').classList.contains('open') || (e.target.closest && e.target.closest('input,textarea,select'))) return;
   if (e.key === 'ArrowRight' && cur < photos.length - 1) activate(cur + 1); else if (e.key === 'ArrowLeft' && cur > 0) activate(cur - 1);
 });
 
