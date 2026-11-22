@@ -28,7 +28,7 @@ Pricing is built into the UI, but **no payments are processed**. Plan state is k
 | Film looks to download | Original + 5 (all 14 can be previewed) | All 14 | All 14 | All 14 |
 | Photos open at once | 5 | 25 | 50 | 100 |
 | Largest file / resolution | 20 MB / 24 MP | 60 MB / 60 MP | 100 MB / 100 MP | 150 MB / 120 MP |
-| Uploads / downloads per day | 10 / 5 | 100 / 100 | 250 / 250 | 500 / 500 |
+| Downloads per day | 10 | unlimited | unlimited | unlimited |
 | Export size and formats | 2048 px, JPEG and PNG | Original size, all formats | Same | Same |
 | "Download all" ZIP | not included | up to 25 photos | up to 50 | up to 100 |
 

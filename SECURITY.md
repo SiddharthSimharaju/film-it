@@ -36,7 +36,7 @@ I attacked the app the way a hostile user would (console, edited storage, malici
 
 **Verification (built right):** `tests/run.html` drives the real app through its UI. **42 tests, all passing**:
 
-- `BR-*` (23): every business rule in `docs/BUSINESS_RULES.md`, per plan: photo, size, resolution, upload and download limits, export cap, formats, looks, ZIP, expiry, cancellation, counters.
+- `BR-*` (23): every business rule in `docs/BUSINESS_RULES.md`, per plan: photo, size, resolution, photo, size and resolution limits, the Free download limit, export cap, formats, looks, ZIP, expiry, cancellation.
 - `ACC-*` (5): the account dialog and account removal.
 - `SEC-*` (14): each attack above, as a regression test, plus the CSP, pinned libraries, network allow-list and the HEIC sandbox. (Clickjacking needs a second origin, so it was verified by hand with a hostile page.)
 
@@ -44,7 +44,7 @@ Run it: `python3 -m http.server 8731`, open `http://localhost:8731/tests/run.htm
 
 Two bugs in my own work were caught this way (the usage-clock check and a stale class name) and fixed.
 
-**Validation (right thing built):** the rules map to how the product is sold. Free is generous enough to try every look and finish a few photos, but cannot be used as a free bulk exporter (no ZIP, 2048 px cap, 5 downloads a day). Paid plans are different in a way people can see, and each limit is shown in the pricing cards, the download menu and the account Usage tab.
+**Validation (right thing built):** the rules map to how the product is sold. Free is generous enough to try every look and finish a few photos, but cannot be used as a free bulk exporter (no ZIP, 2048 px cap, 10 downloads a day). Paid plans are different in a way people can see, and each limit is shown in the pricing cards, the download menu and the account Usage tab.
 
 ## 3. What cannot be fixed in the browser, and what to build
 
@@ -52,7 +52,7 @@ Not fixable client-side: V-01 and V-02. People who "misuse" the app this way onl
 
 1. **Identity:** verify the Google ID token on the server (signature, `aud`, `iss`, `exp`), then use an `HttpOnly; Secure; SameSite=Lax` session cookie. Never trust the browser's claim of who someone is.
 2. **Plans:** store entitlements server-side, written *only* by a verified Razorpay webhook (check `X-Razorpay-Signature` as HMAC-SHA256 over the raw body, constant-time compare, idempotent per event id, and match the order's amount, currency and plan to one *you* created). Never accept "payment succeeded" from the browser. Handle refunds and chargebacks by revoking access.
-3. **Quotas:** count uploads and downloads per account on the server (atomic increments). Because editing happens in the browser, a patched client could still save a file locally. If strict enforcement of full-resolution export matters, render Pro exports on the server.
+3. **Quotas:** count the Free plan's daily downloads per account on the server (atomic increments). Because editing happens in the browser, a patched client could still save a file locally. If strict enforcement of full-resolution export matters, render Pro exports on the server.
 4. **Pro files:** serve paid looks only to entitled sessions (signed, short-lived URLs). Use looks you own: the current ones are CC BY-SA.
 5. **Hardening:** rate-limit sign-in, webhook and download-ticket routes; strict CORS; request size limits; response headers (`Content-Security-Policy` with `frame-ancestors 'none'`, `X-Content-Type-Options`, `Referrer-Policy`); secrets in environment variables; dependency scanning; logging and alerts.
 6. **Data protection:** keep only Google's id, name and email; provide account removal (the UI exists, the server must honour it); set a retention rule. Check India's DPDP Act requirements before launch.

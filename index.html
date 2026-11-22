@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-O2SFyUGiZnglg33jFMkamm5HSGwTMrYHrSx4xDGHphw=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://accounts.google.com/gsi/; frame-src 'self' https://accounts.google.com/gsi/; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-PZqpvfGNr6ZrM0WHxmkETQvUsCZ+roYacVzRdKy9/IE=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://accounts.google.com/gsi/; frame-src 'self' https://accounts.google.com/gsi/; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin">
 <!-- Clickjacking guard: the page stays hidden unless it is the top window or framed by our own origin. -->
 <style id="antiframe">html{display:none!important}</style>
@@ -372,7 +372,7 @@
     <div class="drop" id="drop">
       <div class="ph">
         <svg width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="9" width="34" height="26" rx="7"/><circle cx="15" cy="19" r="3"/><path d="M6 31l9-8 7 6 6-5 10 8"/></svg>
-        <b>Drop images here</b>or paste with Ctrl/Cmd + V
+        <b>Drop images here</b>
         <div><button class="btn white" id="upbtn"><svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 11V2.5M4.5 6L8 2.5 11.5 6M2.5 13.5h11"/></svg>Upload images</button></div>
       </div>
       <canvas id="cv"></canvas>
@@ -457,11 +457,11 @@ const isPro = () => plan !== 'free';
 // ---------- Business rules: what every plan allows (the single source of truth; docs/BUSINESS_RULES.md explains each rule) ----------
 const MB = 1048576, ALL_FORMATS = ['png', 'jpeg', 'webp', 'avif', 'tiff', 'bmp'];
 const LIMITS = {
-  //            photos open at once | max size of one file | max megapixels | uploads/day | downloads/day | photos per "Download all" ZIP | export size cap (px, 0 = original size)
-  free:     { photos:5,   fileMB:20,  megapixels:24,  uploadsPerDay:10,  downloadsPerDay:5,   zipMax:0,   exportPx:2048, formats:['png', 'jpeg'], allLooks:false },
-  monthly:  { photos:25,  fileMB:60,  megapixels:60,  uploadsPerDay:100, downloadsPerDay:100, zipMax:25,  exportPx:0,    formats:ALL_FORMATS,     allLooks:true },
-  yearly:   { photos:50,  fileMB:100, megapixels:100, uploadsPerDay:250, downloadsPerDay:250, zipMax:50,  exportPx:0,    formats:ALL_FORMATS,     allLooks:true },
-  lifetime: { photos:100, fileMB:150, megapixels:120, uploadsPerDay:500, downloadsPerDay:500, zipMax:100, exportPx:0,    formats:ALL_FORMATS,     allLooks:true },
+  //            photos open at once | max size of one file | max megapixels | downloads/day (0 = unlimited) | photos per "Download all" ZIP | export size cap (px, 0 = original size)
+  free:     { photos:5,   fileMB:20,  megapixels:24,  downloadsPerDay:10,  zipMax:0,     exportPx:2048, formats:['png', 'jpeg'], allLooks:false },
+  monthly:  { photos:25,  fileMB:60,  megapixels:60,  downloadsPerDay:0,   zipMax:25,   exportPx:0,    formats:ALL_FORMATS,     allLooks:true },
+  yearly:   { photos:50,  fileMB:100, megapixels:100, downloadsPerDay:0,   zipMax:50,   exportPx:0,    formats:ALL_FORMATS,     allLooks:true },
+  lifetime: { photos:100, fileMB:150, megapixels:120, downloadsPerDay:0,   zipMax:100, exportPx:0,    formats:ALL_FORMATS,     allLooks:true },
 };
 // Safety ceilings no plan can exceed, whatever the table above says (they protect the browser tab, they are not pricing rules).
 const HARD = { fileMB:150, megapixels:120, photos:100, zipBytes:1.5e9, decodeMs:45000 };
@@ -475,12 +475,13 @@ const readUsage = () => { try { const o = JSON.parse(localStorage.getItem(USAGE_
 const cleanInt = v => (Number.isFinite(+v) && +v >= 0 && +v < 1e7 ? Math.floor(+v) : 0);
 function usageNow() {                                     // the "day" never moves backwards, so winding the clock back can't reset the counters
   const all = readUsage(), prev = Number(all.seen), now = Date.now(), seen = Math.max(now, Number.isFinite(prev) && prev > 0 && prev < now + 2 * 86400000 ? prev : 0); all.seen = seen;   // a timestamp, so not cleanInt()
-  const day = new Date(seen).toLocaleDateString('en-CA'), r = all.device && all.device.day === day ? all.device : { day, up:0, down:0 };
-  r.up = cleanInt(r.up); r.down = cleanInt(r.down); all.device = r; return { all, r };
+  const day = new Date(seen).toLocaleDateString('en-CA'), r = all.device && all.device.day === day ? all.device : { day, down:0 };
+  r.down = cleanInt(r.down); delete r.up; all.device = r; return { all, r };
 }
-function remaining(kind) { const { r } = usageNow(); return Math.max(0, (kind === 'up' ? limits().uploadsPerDay : limits().downloadsPerDay) - r[kind]); }
+function remaining() { const cap = limits().downloadsPerDay; if (!cap) return Infinity; const { r } = usageNow(); return Math.max(0, cap - r.down); }   // downloads left today (Infinity on plans without a daily cap)
 function addUsage(kind, n = 1) {
-  const { all, r } = usageNow(); r[kind] += n;
+  if (kind !== 'down' || !limits().downloadsPerDay) return;          // only Free has a daily cap; nothing else is counted
+  const { all, r } = usageNow(); r.down += n;
   try { localStorage.setItem(USAGE_KEY, JSON.stringify(all)); } catch (e) {}
   refreshUsageUI();
 }
@@ -491,8 +492,7 @@ function refreshUsageUI() {
 // Hitting a limit: Free (and signed-out) users get the upgrade nudge, paid users a plain message.
 function blocked(why) { if (!isPro()) openPlans({ reason:why }); else toast(why, 5000); }
 const whyPhotos = () => isPro() ? `Your ${PLANS[plan].name} plan allows ${limits().photos} photos at once. Remove one to add more.` : `Free allows ${limits().photos} photos at once`;
-const whyUploads = () => `You've used all ${limits().uploadsPerDay} uploads for today. The count resets at midnight.`;
-const whyDownloads = (need = 1) => remaining('down') > 0 && need > 1 ? `You have ${remaining('down')} download${remaining('down') > 1 ? 's' : ''} left today, but this needs ${need}. The count resets at midnight.` : `You've used all ${limits().downloadsPerDay} downloads for today. The count resets at midnight.`;
+const whyDownloads = (need = 1) => remaining() > 0 && need > 1 ? `You have ${remaining()} download${remaining() > 1 ? 's' : ''} left today, but this needs ${need}. The count resets at midnight.` : `You've used all ${limits().downloadsPerDay} downloads for today. The count resets at midnight.`;
 const LOCK_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="7" width="9.6" height="6.6" rx="2"/><path d="M5.4 7V5.2a2.6 2.6 0 0 1 5.2 0V7"/></svg>';
 
 // ---------- 35mm cartridge icon (steel barrel, crimped caps, spool, wrapped label, DX code, film leader) ----------
@@ -1088,7 +1088,6 @@ async function addFiles(list) {
   for (let k = 0; k < files.length; k++) {
     const f = files[k];
     if (photos.length >= Math.min(L.photos, HARD.photos)) { stop = 'photos'; break; }          // rule: photos open at once
-    if (remaining('up') <= 0) { stop = 'uploads'; break; }                                      // rule: uploads per day
     if (!f.size) { rejected.push([f, 'is empty']); continue; }
     if (f.size > maxBytes) { rejected.push([f, `is over ${L.fileMB} MB`]); continue; }          // rule: file size
     const pd = await peekDims(f);
@@ -1098,24 +1097,23 @@ async function addFiles(list) {
     try {
       const { bmp, blob } = await decode(f, maxMP);
       if (bmp.width * bmp.height > maxMP) { if (bmp.close) bmp.close(); rejected.push([f, `is over ${L.megapixels} megapixels`]); continue; }
-      photos.push({ name:f.name || 'pasted image', fileName:(f.name || 'filmroom').replace(/\.[^.]+$/, ''), blob,
+      photos.push({ name:f.name || 'image', fileName:(f.name || 'filmroom').replace(/\.[^.]+$/, ''), blob,
         origKey:KEYS[EXT(f.name)] || MIMEKEY[f.type] || null, origLabel:safeLabel(EXT(f.name) || (f.type || '').replace('image/', '') || 'image'),
         thumb:coverThumb(bmp, bmp.width, bmp.height), state:defaultState() });
-      addUsage('up', 1);
       if (!firstBmp) firstBmp = bmp; else if (bmp.close) bmp.close();
     } catch (e) { rejected.push([f, 'couldn\'t be opened']); }
   }
   const added = photos.length - first;
   const skipped = rejected.length ? `${rejected.length} skipped: ${rejected.slice(0, 2).map(([f, why]) => `${(f.name || 'file').slice(0, 28)} ${why}`).join('; ')}${rejected.length > 2 ? '…' : ''}.` : '';
   if (!added) {
-    if (stop === 'photos') blocked(whyPhotos()); else if (stop === 'uploads') blocked(whyUploads());
+    if (stop) blocked(whyPhotos());
     else toast(skipped || 'Couldn\'t open that file. Try JPG, PNG, HEIC, WebP, AVIF, TIFF or BMP.', 5500);
     return;
   }
-  toast([added > 1 || skipped ? `Added ${added} photo${added > 1 ? 's' : ''}.` : '', skipped, stop ? (stop === 'photos' ? whyPhotos() : whyUploads()) : ''].filter(Boolean).join(' ') || '', skipped || stop ? 6000 : (added > 1 ? 2400 : 1));
+  toast([added > 1 || skipped ? `Added ${added} photo${added > 1 ? 's' : ''}.` : '', skipped, stop ? whyPhotos() : ''].filter(Boolean).join(' ') || '', skipped || stop ? 6000 : (added > 1 ? 2400 : 1));
   renderPhotos();
   await activate(first, { bmp:firstBmp });
-  if (stop && !isPro()) blocked(stop === 'photos' ? whyPhotos() : whyUploads());
+  if (stop && !isPro()) blocked(whyPhotos());
 }
 async function removePhoto(i) {
   if (busy || !photos[i]) return;
@@ -1192,7 +1190,6 @@ file.onchange = () => { addFiles(file.files); file.value = ''; };
 ['dragenter', 'dragover'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
 ['dragleave', 'drop'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
 document.addEventListener('drop', e => addFiles(e.dataTransfer.files));
-document.addEventListener('paste', e => { const f = [...e.clipboardData.items].filter(i => i.type.startsWith('image/')).map(i => i.getAsFile()); if (f.length) addFiles(f); });
 
 // ---------- Download in any format ----------
 const FORMATS = {
@@ -1221,8 +1218,8 @@ function buildMenu() {
   const item = (key, name, desc, locked) => `<button class="mi${selFmt === key ? ' sel' : ''}${locked ? ' locked' : ''}" role="menuitem" data-f="${key}"${locked ? ' data-lock="1"' : ''}><span class="t"><div class="n">${name}${locked ? '<span class="prochip">PRO</span>' : ''}</div><div class="d">${desc}</div></span>${CHECK}</button>`;
   const cut = origKey && supported[origKey] && r !== origKey;
   const origDesc = origLabel ? (cut ? `Your file is ${origLabel} · saves as ${f.label}${isPro() ? '' : ' on Free'}` : origKey && supported[origKey] ? `Your file is ${origLabel} · saves as ${f.label}` : `Your file is ${origLabel} · saves as ${f.label} (can't write ${origLabel})`) : 'Keeps the format you opened';
-  const left = remaining('down'), cap = limits().downloadsPerDay, zipOk = !!limits().zipMax;
-  const all = `<div class="usage"><span>Downloads left today</span><b>${left} of ${nf(cap)}</b></div>` + (photos.length > 1 ? `<button class="mi all${zipOk ? '' : ' locked'}" role="menuitem" data-all="1"><span class="t"><div class="n">Download all ${photos.length} photos${zipOk ? '' : '<span class="prochip">PRO</span>'}</div><div class="d">${zipOk ? `One ZIP, each photo with its own edits (up to ${limits().zipMax})` : 'One ZIP with every photo and its own edits'}</div></span></button><div class="msep"></div>` : '<div class="msep"></div>');
+  const left = remaining(), cap = limits().downloadsPerDay, zipOk = !!limits().zipMax;
+  const all = (cap ? `<div class="usage"><span>Downloads left today</span><b>${left} of ${nf(cap)}</b></div>` : '') + (photos.length > 1 ? `<button class="mi all${zipOk ? '' : ' locked'}" role="menuitem" data-all="1"><span class="t"><div class="n">Download all ${photos.length} photos${zipOk ? '' : '<span class="prochip">PRO</span>'}</div><div class="d">${zipOk ? `One ZIP, each photo with its own edits (up to ${limits().zipMax})` : 'One ZIP with every photo and its own edits'}</div></span></button><div class="msep"></div>` : (cap ? '<div class="msep"></div>' : ''));
   m.innerHTML = all + item('orig', 'Same as original', origDesc) +
     Object.keys(FORMATS).filter(k => supported[k]).map(k => item(k, FORMATS[k].label, FORMATS[k].note, !limits().formats.includes(k))).join('') +
     (isPro() ? '' : `<button class="mi promo" role="menuitem" data-promo="1"><span class="t"><div class="n">Unlock full resolution &amp; all formats</div><div class="d">Free exports are capped at ${limits().exportPx}px</div></span></button>`) +
@@ -1356,8 +1353,8 @@ const TICK = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-
 function featuresFor(id) {
   const L = LIMITS[id];
   return id === 'free'
-    ? ['5 film looks, preview all 14', `Export up to ${L.exportPx}px`, 'JPEG & PNG', `${L.photos} photos at once, ${L.fileMB} MB each`, `${L.uploadsPerDay} uploads and ${L.downloadsPerDay} downloads a day`, 'Crop, straighten & adjust']
-    : ['All 14 film looks', 'Full-resolution export', 'JPEG, PNG, WebP, TIFF & BMP', `${L.photos} photos at once, ${L.fileMB} MB each`, `${nf(L.uploadsPerDay)} uploads and ${nf(L.downloadsPerDay)} downloads a day`, `Download all as ZIP (up to ${L.zipMax})`, 'New film drops'];
+    ? ['5 film looks, preview all 14', `Export up to ${L.exportPx}px`, 'JPEG & PNG', `${L.photos} photos at once, ${L.fileMB} MB each`, `${L.downloadsPerDay} downloads a day`, 'Crop, straighten & adjust']
+    : ['All 14 film looks', 'Full-resolution export', 'JPEG, PNG, WebP, TIFF & BMP', `${L.photos} photos at once, ${L.fileMB} MB each`, 'Unlimited downloads', `Download all as ZIP (up to ${L.zipMax})`, 'New film drops'];
 }
 let lastOpts = {}, checkoutPlan = null;
 const sheet = $('sheet');
@@ -1543,9 +1540,9 @@ function panePlan(r) {
 }
 function paneUsage() {
   const L = limits(), U = usageNow().r, fmts = L.formats.map(k => FORMATS[k].label).join(', ');
-  return `<div class="asec first"><h4>Today</h4>${meter('Uploads', U.up, L.uploadsPerDay)}${meter('Downloads', U.down, L.downloadsPerDay)}${meter('Photos open', photos.length, L.photos)}<p class="hint">Daily counts reset at midnight.</p></div>
+  return `<div class="asec first"><h4>Today</h4>${L.downloadsPerDay ? meter('Downloads', U.down, L.downloadsPerDay) : row('Downloads', 'Unlimited')}${meter('Photos open', photos.length, L.photos)}${L.downloadsPerDay ? '<p class="hint">The download count resets at midnight.</p>' : ''}</div>
     <div class="asec"><h4>What your ${esc(PLANS[plan].name)} plan allows</h4>
-      ${row('File size', `up to ${L.fileMB} MB`)}${row('Resolution', `up to ${L.megapixels} megapixels`)}${row('Export size', L.exportPx ? `up to ${L.exportPx}px` : 'Full resolution')}
+      ${row('Downloads per day', L.downloadsPerDay ? L.downloadsPerDay : 'Unlimited')}${row('File size', `up to ${L.fileMB} MB`)}${row('Resolution', `up to ${L.megapixels} megapixels`)}${row('Export size', L.exportPx ? `up to ${L.exportPx}px` : 'Full resolution')}
       ${row('Export formats', esc(fmts))}${row('Film looks', L.allLooks ? 'All 14' : '5, plus Original')}${row('Download all (ZIP)', L.zipMax ? `up to ${L.zipMax} photos` : 'Not included')}</div>`;
 }
 function renderAccount() {

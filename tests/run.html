@@ -53,7 +53,6 @@ const IDS = ['ORIG', 'PROV', 'VELV', 'REAL', 'S400', 'ACRS', 'ASTI', 'SENS', 'P4
 const lookBtn = id => $all('#strip .film')[IDS.indexOf(id)];
 const unzipNames = async b => { const u = new Uint8Array(await b.arrayBuffer()), dv = new DataView(u.buffer), n = []; for (let i = 0; i < u.length - 30;) { if (dv.getUint32(i, true) === 0x04034b50) { const nl = dv.getUint16(i + 26, true), el = dv.getUint16(i + 28, true), cs = dv.getUint32(i + 18, true); n.push(new TextDecoder().decode(u.subarray(i + 30, i + 30 + nl))); i += 30 + nl + el + cs; } else i++; } return n; };
 const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(await crypto.subtle.digest(algo, buf))));
-const leftToday = () => +$$('#dlmenu .usage b').textContent.split(' ')[0];
 
 (async () => {
   /* ===================== BUSINESS RULES: FREE ===================== */
@@ -73,14 +72,14 @@ const leftToday = () => +$$('#dlmenu .usage b').textContent.split(' ')[0];
     await upload([pngHeader(6000, 4000, 'edge.png')]); const t = toastText(); return { pass: !/over 24 megapixels/.test(t), detail: t };
   });
   await boot();
-  await check('BR-F5', 'Free: 10 uploads a day; the 11th is refused even after removing photos', async () => {
-    for (let i = 0; i < 10; i++) { await upload([await png(8, 8, `u${i}.png`)]); if (nPhotos() >= 4) { $$('#thumbs .pt .rm').click(); await until(() => $$('#cyes'), 1500); $$('#cyes').click(); await sleep(500); } }
-    await upload([await png(8, 8, 'u11.png')]); const r = reason(), ok = /used all 10 uploads/.test(r); closeAll(); return { pass: ok, detail: r };
+  await check('BR-F5', 'There is no daily upload limit: 30 photos can be uploaded in one day (removing them as we go)', async () => {
+    let ok = 0; for (let i = 0; i < 30; i++) { await upload([await png(8, 8, `u${i}.png`)]); if (nPhotos() >= 1) ok++; if (nPhotos() >= 4) { $$('#thumbs .pt .rm').click(); await until(() => $$('#cyes'), 1500); $$('#cyes').click(); await sleep(400); } }
+    const stored = JSON.parse(localStorage.getItem('filmroom.usage') || '{}'); return { pass: ok === 30 && !modalOpen() && !('up' in (stored.device || {})), detail: `${ok} of 30 accepted; nothing is counted for uploads` };
   });
   await boot();
-  await check('BR-F6', 'Free: 5 downloads a day; the 6th is refused', async () => {
-    await upload([await png(64, 48, 'd.png')]); let done = 0; for (let i = 0; i < 5; i++) if (await download()) done++;
-    $$('#dlcaret').click(); await sleep(150); const left = $$('#dlmenu .usage b').textContent; $$('#dlcaret').click(); await download(); const r = reason(), ok = done === 5 && /used all 5 downloads/.test(r) && win.__dl.length === 5; closeAll();
+  await check('BR-F6', 'Free: 10 downloads a day; the 11th is refused', async () => {
+    await upload([await png(64, 48, 'd.png')]); let done = 0; for (let i = 0; i < 10; i++) if (await download()) done++;
+    $$('#dlcaret').click(); await sleep(150); const left = $$('#dlmenu .usage b').textContent; $$('#dlcaret').click(); await download(); const r = reason(), ok = done === 10 && /used all 10 downloads/.test(r) && win.__dl.length === 10; closeAll();
     return { pass: ok, detail: `${done} downloads, left: ${left}; ${r}` };
   });
   await boot();
@@ -117,13 +116,16 @@ const leftToday = () => +$$('#dlmenu .usage b').textContent.split(' ')[0];
   await check('BR-M3', 'Pro Monthly: full-resolution export (3000 x 2000 stays 3000 x 2000)', async () => {
     await upload([await png(3000, 2000, 'full.png')]); lookBtn('ASTI').click(); await sleep(500); await download(); const [w, h] = await blobDims(win.__blobs.at(-1)); return { pass: w === 3000 && h === 2000, detail: `${w} x ${h}` };
   });
-  await check('BR-M4', 'Pro Monthly: "Download all" makes one ZIP; each photo counts as one download', async () => {
+  await check('BR-M4', 'Pro Monthly: "Download all" makes one ZIP with every photo', async () => {
     await upload([await png(40, 30, 'a.png'), await png(40, 30, 'b.png')]); lookBtn('ORIG').click(); await sleep(300);
-    $$('#dlcaret').click(); await sleep(150); const before = leftToday(); $$('#dlmenu .mi.all').click(); await until(() => win.__dl.some(d => /\.zip$/.test(d.name)), 20000); await sleep(500);
-    const names = await unzipNames(win.__blobs.at(-1)); $$('#dlcaret').click(); await sleep(150); const after = leftToday();
-    return { pass: names.length === nPhotos() && before - after === names.length, detail: `${names.length} files in ZIP, downloads left ${before} -> ${after}` };
+    $$('#dlcaret').click(); await sleep(150); $$('#dlmenu .mi.all').click(); await until(() => win.__dl.some(d => /\.zip$/.test(d.name)), 20000); await sleep(500);
+    const names = await unzipNames(win.__blobs.at(-1)); return { pass: names.length === nPhotos(), detail: `${names.length} files in ZIP for ${nPhotos()} photos` };
   });
-  await check('BR-M5', 'Pro Monthly: 100 downloads a day (shown in the menu)', async () => { const t = $$('#dlmenu .usage b').textContent; return { pass: /of 100$/.test(t), detail: t }; });
+  await check('BR-M5', 'Pro Monthly: unlimited downloads (no daily counter, 12 in a row all succeed)', async () => {
+    $$('#dlcaret').click(); await sleep(150); const counter = !!$$('#dlmenu .usage'); $$('#dlcaret').click(); await sleep(100); lookBtn('ORIG').click(); await sleep(300);
+    const before = win.__dl.length; let done = 0; for (let i = 0; i < 12; i++) if (await download()) done++;
+    return { pass: !counter && done === 12 && win.__dl.length - before === 12 && !modalOpen(), detail: `${done} of 12 saved; daily counter shown: ${counter}` };
+  });
 
   /* ===================== ACCOUNT AND BILLING RULES ===================== */
   await boot(); await signIn(); await buy('monthly');
@@ -139,13 +141,13 @@ const leftToday = () => +$$('#dlmenu .usage b').textContent.split(' ')[0];
   });
   await boot();
   await check('BR-B3', 'Daily counters cannot be reset by winding the clock back (up to 2 days; beyond that only a server can know)', async () => {
-    await upload([await png(8, 8, 'c1.png')]); const used = JSON.parse(localStorage.getItem('filmroom.usage')).device.up;
-    const real = win.Date.now; win.Date.now = () => real() - 30 * 3600000; await upload([await png(8, 8, 'c2.png')]);
-    const after = JSON.parse(localStorage.getItem('filmroom.usage')).device.up; win.Date.now = real; return { pass: used === 1 && after === 2, detail: `uploads counted ${used} -> ${after}` };
+    await upload([await png(8, 8, 'c1.png')]); await download(); const used = JSON.parse(localStorage.getItem('filmroom.usage')).device.down;
+    const real = win.Date.now; win.Date.now = () => real() - 30 * 3600000; await download();
+    const after = JSON.parse(localStorage.getItem('filmroom.usage')).device.down; win.Date.now = real; return { pass: used === 1 && after === 2, detail: `downloads counted ${used} -> ${after}` };
   });
   await boot();
-  await check('BR-B4', 'Signing in does not reset the daily counters (one shared device counter)', async () => {
-    await upload([await png(8, 8, 'x1.png')]); await signIn(); const up = JSON.parse(localStorage.getItem('filmroom.usage')).device.up; return { pass: up === 1, detail: `uploads counted: ${up}` };
+  await check('BR-B4', 'Signing in does not reset the daily download counter (one shared device counter)', async () => {
+    await upload([await png(8, 8, 'x1.png')]); await download(); await signIn(); const d = JSON.parse(localStorage.getItem('filmroom.usage')).device.down; return { pass: d === 1, detail: `downloads counted: ${d}` };
   });
 
   /* ===================== ACCOUNT DIALOG ===================== */
@@ -154,7 +156,7 @@ const leftToday = () => +$$('#dlmenu .usage b').textContent.split(' ')[0];
     await openAcct(); const tabs = $all('.anav [data-atab]').map(b => b.textContent.trim()), sel = () => $all('.anav [aria-selected=true]').map(b => b.textContent.trim()).join();
     const g = $$('.apane h2').textContent + '|' + sel() + '|' + /Sign-in method/.test($$('.apane').textContent);
     $$('[data-atab=plan]').click(); await sleep(100); const p = $$('.apane h2').textContent + '|' + sel() + '|' + /Payment method/.test($$('.apane').textContent) + /Invoices/.test($$('.apane').textContent);
-    $$('[data-atab=usage]').click(); await sleep(100); const u = $$('.apane h2').textContent + '|' + sel() + '|' + /Uploads/.test($$('.apane').textContent) + /What your Free plan allows/.test($$('.apane').textContent);
+    $$('[data-atab=usage]').click(); await sleep(100); const u = $$('.apane h2').textContent + '|' + sel() + '|' + /Downloads/.test($$('.apane').textContent) + /What your Free plan allows/.test($$('.apane').textContent);
     const twoColumn = $$('.sheet').classList.contains('acctsheet'); closeAll();
     return { pass: tabs.join() === 'General,Plan & billing,Usage' && /^General\|General\|true$/.test(g) && /^Plan & billing\|Plan & billing\|truetrue$/.test(p) && /^Usage\|Usage\|truetrue$/.test(u) && twoColumn, detail: `${tabs.join(' / ')}; general:${g}; plan:${p}; usage:${u}` };
   });
@@ -163,9 +165,9 @@ const leftToday = () => +$$('#dlmenu .usage b').textContent.split(' ')[0];
     return { pass: plansView, detail: `plans view single-column: ${plansView}` };
   });
   await boot(); await signIn();
-  await check('ACC-3', 'Usage tab shows the real counts (2 uploads, 2 photos open) and this plan\'s limits', async () => {
-    await upload([await png(8, 8, 'a.png'), await png(8, 8, 'b.png')]); await openAcct('usage'); const t = $$('.apane').textContent.replace(/\s+/g, ' '); closeAll();
-    return { pass: /Uploads\s*2 \/ 10/.test(t) && /Downloads\s*0 \/ 5/.test(t) && /Photos open\s*2 \/ 5/.test(t) && /File size\s*up to 20 MB/.test(t) && /Export size\s*up to 2048px/.test(t) && /Download all \(ZIP\)\s*Not included/.test(t), detail: t.slice(0, 220) };
+  await check('ACC-3', 'Usage tab shows the real counts (1 download, 2 photos open) and this plan\'s limits; no upload counter', async () => {
+    await upload([await png(8, 8, 'a.png'), await png(8, 8, 'b.png')]); await download(); await openAcct('usage'); const t = $$('.apane').textContent.replace(/\s+/g, ' '); closeAll();
+    return { pass: !/Uploads/.test(t) && /Downloads\s*1 \/ 10/.test(t) && /Photos open\s*2 \/ 5/.test(t) && /Downloads per day\s*10/.test(t) && /File size\s*up to 20 MB/.test(t) && /Export size\s*up to 2048px/.test(t) && /Download all \(ZIP\)\s*Not included/.test(t), detail: t.slice(0, 240) };
   });
   await boot(); await signIn(); await buy('monthly');
   await check('ACC-4', 'Account removal: refused while a subscription is active; allowed after cancelling; clears the saved data and signs out', async () => {
