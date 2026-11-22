@@ -1,0 +1,919 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Film it</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,100..900&family=Google+Sans:wght@400..700&display=swap" rel="stylesheet">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<style>
+  :root { --ink:#060607; --blurple:#5865f2; --blurple-d:#4752c4; --glass:rgba(255,255,255,.06); --glass-line:rgba(255,255,255,.11);
+          --muted:rgba(255,255,255,.62); }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; color:#fff; font-family:"Google Sans",system-ui,-apple-system,sans-serif; font-size:15px; -webkit-font-smoothing:antialiased; }
+  body { background:
+      radial-gradient(90% 55% at 82% 108%, rgba(46,46,190,.5), transparent 62%),
+      radial-gradient(70% 45% at 8% 100%, rgba(30,30,140,.35), transparent 65%),
+      linear-gradient(180deg,#00000a 0%,#040420 28%,#090939 58%,#0f0f6b 100%);
+    background-attachment:fixed; overflow:hidden; }
+  button { font-family:inherit; }
+  .display { font-family:Archivo,"Arial Black",Impact,sans-serif; font-stretch:125%; font-weight:900; text-transform:uppercase; letter-spacing:-.015em; line-height:.94; }
+
+  .stars { position:fixed; inset:0; pointer-events:none; z-index:0; }
+  .stars i { position:absolute; border-radius:50%; background:#aab2ff; opacity:.3; animation:tw var(--d,5s) ease-in-out infinite alternate; }
+  .stars i.plus { background:none; border-radius:0; }
+  .stars i.plus::before, .stars i.plus::after { content:''; position:absolute; background:#aab2ff; left:50%; top:50%; transform:translate(-50%,-50%); }
+  .stars i.plus::before { width:100%; height:1.5px; } .stars i.plus::after { width:1.5px; height:100%; }
+  @keyframes tw { from { opacity:.12; } to { opacity:.6; } }
+
+  .app { position:relative; z-index:1; height:100%; display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:76px minmax(0,1fr) auto auto; }
+
+  /* header */
+  .top { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; padding:0 32px; }
+  .logo { display:inline-flex; align-items:center; gap:10px; font-size:22px; justify-self:start; line-height:1; }
+  .logo svg { display:block; }
+  .nav { display:flex; gap:6px; }
+  .navbtn { background:none; border:0; color:#fff; font-weight:600; font-size:16px; padding:9px 16px; border-radius:14px; cursor:pointer; transition:background .15s, opacity .15s; }
+  .navbtn:hover:not(:disabled) { background:rgba(255,255,255,.1); } .navbtn:disabled { opacity:.4; cursor:default; }
+  #adjtab, #cropbtn.on { background:rgba(255,255,255,.14); }
+  .nav:has(#cropbtn.on) #adjtab { background:none; }
+  .topr { justify-self:end; }
+
+  .btn { border:0; cursor:pointer; font-weight:600; border-radius:16px; display:inline-flex; align-items:center; justify-content:center; gap:10px;
+    transition:background .15s, transform .12s, opacity .15s; font-size:16px; height:50px; padding:0 26px; white-space:nowrap; }
+  .btn:active:not(:disabled) { transform:scale(.97); } .btn:disabled { opacity:.4; cursor:default; }
+  .btn.white { background:#fff; color:var(--ink); } .btn.white:hover:not(:disabled) { background:#e8e9ff; }
+  .btn.blurple { background:var(--blurple); color:#fff; } .btn.blurple:hover:not(:disabled) { background:var(--blurple-d); }
+  .btn.glass { background:rgba(255,255,255,.1); color:#fff; } .btn.glass:hover:not(:disabled) { background:rgba(255,255,255,.17); }
+  .btn.sm { height:40px; padding:0 18px; font-size:14px; border-radius:13px; }
+  .btn.pill { height:44px; padding:0 22px; border-radius:999px; font-size:15px; }
+
+  /* stage */
+  .stage { display:grid; grid-template-columns:minmax(0,1fr); padding:4px 32px 14px; min-height:0; }
+
+  .drop { position:relative; width:100%; height:100%; min-height:240px; border-radius:28px; background:rgba(4,4,28,.55); border:1px solid var(--glass-line);
+    box-shadow:0 40px 90px rgba(0,0,20,.55), inset 0 0 0 1px rgba(255,255,255,.03); backdrop-filter:blur(10px);
+    display:flex; align-items:center; justify-content:center; overflow:hidden; cursor:pointer; transition:border-color .2s, box-shadow .2s; }
+  .drop:hover, .drop.over { border-color:rgba(120,132,255,.65); box-shadow:0 40px 90px rgba(0,0,20,.55), 0 0 0 4px rgba(88,101,242,.22); }
+  body.has .drop { cursor:default; background:rgba(0,0,12,.55); }
+  body.has .drop:hover { border-color:var(--glass-line); box-shadow:0 40px 90px rgba(0,0,20,.55); }
+  .ph { text-align:center; color:var(--muted); }
+  .ph svg { display:block; margin:0 auto 14px; opacity:.85; }
+  .ph b { display:block; color:#fff; font-size:20px; font-weight:600; margin-bottom:4px; }
+  .ph .btn { margin-top:22px; }
+  body.has .ph { display:none; }
+  canvas { max-width:100%; max-height:100%; display:none; }
+  body.has canvas { display:block; }
+  .replace { position:absolute; top:16px; right:16px; display:none; background:rgba(255,255,255,.14); backdrop-filter:blur(12px); color:#fff; border:0;
+    padding:9px 16px; border-radius:12px; font-size:13px; font-weight:600; cursor:pointer; }
+  .replace:hover { background:rgba(255,255,255,.22); } body.has .replace { display:block; }
+  .caption { position:absolute; left:16px; bottom:16px; display:none; align-items:center; gap:10px; padding:8px 14px; border-radius:12px;
+    background:rgba(0,0,0,.45); backdrop-filter:blur(12px); font-size:13px; font-weight:600; }
+  .caption i { width:3px; height:3px; border-radius:50%; background:var(--muted); } .caption #fdim { color:var(--muted); font-weight:500; }
+  body.has .caption { display:flex; } .drop:has(.overlay.on) .caption { display:none; }
+  .tag { display:none !important; }
+
+  /* control dock */
+  .dock { display:flex; justify-content:center; padding:0 32px; }
+    .card { background:var(--glass); border:1px solid var(--glass-line); backdrop-filter:blur(16px); border-radius:22px; padding:12px 22px;
+    display:flex; align-items:center; justify-content:center; gap:14px 30px; flex-wrap:wrap; }
+  .controls.off { opacity:.4; pointer-events:none; } .controls.hide { display:none; }
+  .ctl { display:flex; align-items:center; gap:14px; font-weight:600; }
+  .ctl output { min-width:44px; text-align:right; color:var(--muted); font-weight:500; font-variant-numeric:tabular-nums; }
+  input[type=range] { -webkit-appearance:none; appearance:none; width:170px; height:5px; border-radius:3px; outline:none; cursor:pointer;
+    background:linear-gradient(to right,#fff var(--p,0%),rgba(255,255,255,.2) var(--p,0%)); }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:18px; height:18px; border-radius:50%; background:#fff; border:0; box-shadow:0 2px 8px rgba(0,0,0,.4); }
+  input[type=range]::-moz-range-thumb { width:18px; height:18px; border-radius:50%; background:#fff; border:0; }
+  #ang { background:rgba(255,255,255,.2); }
+  .croppanel { display:none; } .croppanel.on { display:flex; }
+  .chips { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; }
+  .chip { background:rgba(255,255,255,.1); border:0; color:#fff; font-weight:600; font-size:13px; padding:9px 14px; border-radius:12px; cursor:pointer; transition:background .15s; }
+  .chip:hover { background:rgba(255,255,255,.18); } .chip.active { background:#fff; color:var(--ink); }
+  .msg { font-size:12px; color:var(--muted); max-width:210px; min-height:16px; }
+  .cropact { display:flex; gap:8px; }
+  .hidden { display:none; }
+
+  /* download split button + format menu */
+  .split { position:relative; display:flex; gap:2px; }
+  .split #dl { border-radius:13px 4px 4px 13px; } .split .caret { border-radius:4px 13px 13px 4px; padding:0 12px; }
+  .fmt { margin-left:2px; padding:2px 7px; border-radius:6px; background:rgba(6,6,7,.09); font-size:12px; font-weight:700; }
+  .menu { display:none; position:absolute; top:calc(100% + 10px); right:0; width:320px; padding:8px; z-index:30; border-radius:20px;
+    background:rgba(12,12,46,.94); backdrop-filter:blur(20px); border:1px solid var(--glass-line); box-shadow:0 24px 60px rgba(0,0,12,.6); }
+  .menu.open { display:block; }
+  .mi { width:100%; display:flex; align-items:center; gap:12px; text-align:left; background:none; border:0; color:#fff; padding:10px 12px; border-radius:13px; cursor:pointer; }
+  .mi:hover { background:rgba(255,255,255,.09); }
+  .mi .t { flex:1; min-width:0; } .mi .n { font-weight:600; font-size:14px; } .mi .d { color:var(--muted); font-size:12px; margin-top:1px; }
+  .mi .ck { width:16px; height:16px; opacity:0; } .mi.sel .ck { opacity:1; }
+  .mq { margin:6px 4px 4px; padding:12px 12px 8px; border-top:1px solid var(--glass-line); display:none; }
+  .mq.on { display:block; } .mq .ctl { justify-content:space-between; font-size:13px; } .mq input[type=range] { width:150px; }
+  .toast { position:fixed; left:50%; bottom:200px; transform:translate(-50%,12px); padding:11px 18px; border-radius:14px; z-index:40; opacity:0; pointer-events:none;
+    background:rgba(255,255,255,.95); color:var(--ink); font-weight:600; font-size:14px; transition:opacity .2s, transform .2s; max-width:80vw; text-align:center; }
+  .toast.on { opacity:1; transform:translate(-50%,0); }
+
+  /* crop overlay */
+  .overlay { position:absolute; display:none; overflow:hidden; pointer-events:none; touch-action:none; }
+  .overlay.on { display:block; }
+  .cropbox { position:absolute; border:1.5px solid #fff; cursor:move; pointer-events:auto; box-shadow:0 0 0 9999px rgba(0,0,8,.62);
+    background:
+      linear-gradient(#fff6,#fff6) 33.333% 0/1px 100% no-repeat, linear-gradient(#fff6,#fff6) 66.666% 0/1px 100% no-repeat,
+      linear-gradient(#fff6,#fff6) 0 33.333%/100% 1px no-repeat, linear-gradient(#fff6,#fff6) 0 66.666%/100% 1px no-repeat; }
+  .h { position:absolute; width:26px; height:26px; margin:-13px 0 0 -13px; }
+  .h::after { content:''; position:absolute; inset:8px; background:#fff; border-radius:3px; box-shadow:0 0 0 1px rgba(0,0,0,.4); }
+  .h.nw{left:0;top:0;cursor:nwse-resize}.h.n{left:50%;top:0;cursor:ns-resize}.h.ne{left:100%;top:0;cursor:nesw-resize}
+  .h.e{left:100%;top:50%;cursor:ew-resize}.h.se{left:100%;top:100%;cursor:nwse-resize}.h.s{left:50%;top:100%;cursor:ns-resize}
+  .h.sw{left:0;top:100%;cursor:nesw-resize}.h.w{left:0;top:50%;cursor:ew-resize}
+  .overlay.locked .h.n,.overlay.locked .h.e,.overlay.locked .h.s,.overlay.locked .h.w { display:none; }
+
+  /* film shelf */
+  .strip { display:flex; justify-content:safe center; gap:0; overflow-x:auto; padding:16px 24px 24px; scrollbar-width:none; }
+  .strip::-webkit-scrollbar { display:none; }
+  .film { flex:0 0 112px; background:none; border:0; color:var(--muted); cursor:pointer; padding:0; display:flex; flex-direction:column; align-items:center; gap:9px;
+    font-size:12px; font-weight:600; text-align:center; transition:color .15s; position:relative; }
+  .film svg, .film img { width:100px; height:108px; object-fit:contain; overflow:visible; transition:transform .3s cubic-bezier(.2,.8,.2,1), filter .3s; filter:drop-shadow(0 8px 6px rgba(0,0,12,.6)); }
+  .film:hover { color:#fff; } .film:hover svg, .film:hover img { transform:translateY(-5px) rotate(-3deg); }
+  .film.active { color:#fff; }
+  .film.active svg, .film.active img { transform:translateY(-8px); filter:drop-shadow(0 12px 9px rgba(0,0,12,.7)) drop-shadow(0 0 16px rgba(88,101,242,.55)); }
+  .film.active::after { content:''; width:5px; height:5px; border-radius:50%; background:#fff; position:absolute; bottom:-10px; }
+  input[type=file] { display:none; }
+  @media (max-width:900px) {
+    .stage { padding:4px 16px 12px; } .nav { display:none; } .top { padding:0 20px; }
+  }
+</style>
+</head>
+<body>
+<!-- shared gradients / clips for the film cartridges -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="fc-steelH" x1="0" x2="1">
+    <stop offset="0" stop-color="#3f4045"/><stop offset=".16" stop-color="#a9acb3"/><stop offset=".3" stop-color="#f4f5f7"/>
+    <stop offset=".44" stop-color="#b4b7be"/><stop offset=".7" stop-color="#7a7d85"/><stop offset=".9" stop-color="#4a4c52"/><stop offset="1" stop-color="#2a2b2f"/>
+  </linearGradient>
+  <linearGradient id="fc-top" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbfbfc"/><stop offset=".55" stop-color="#b9bcc3"/><stop offset="1" stop-color="#7d8088"/></linearGradient>
+  <linearGradient id="fc-shade" gradientUnits="userSpaceOnUse" x1="20" y1="0" x2="88" y2="0">
+    <stop offset="0" stop-color="#000" stop-opacity=".62"/><stop offset=".13" stop-color="#000" stop-opacity=".18"/>
+    <stop offset=".27" stop-color="#fff" stop-opacity=".3"/><stop offset=".4" stop-color="#fff" stop-opacity="0"/>
+    <stop offset=".7" stop-color="#000" stop-opacity=".2"/><stop offset=".9" stop-color="#000" stop-opacity=".55"/><stop offset="1" stop-color="#000" stop-opacity=".72"/>
+  </linearGradient>
+  <linearGradient id="fc-ao" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".45"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>
+  <linearGradient id="fc-aob" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".45"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient>
+  <linearGradient id="fc-film" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9a5e36"/><stop offset=".5" stop-color="#7a4527"/><stop offset="1" stop-color="#4f2a15"/></linearGradient>
+  <clipPath id="fc-body"><path d="M20,40 L88,40 L88,114 A34,9 0 0 1 20,114 Z"/></clipPath>
+  <clipPath id="fc-label"><path d="M20,46 A34,9 0 0 0 88,46 L88,106 A34,9 0 0 1 20,106 Z"/></clipPath>
+  <filter id="fc-blur" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur stdDeviation="3"/></filter>
+  <filter id="fc-blur2"><feGaussianBlur stdDeviation=".9"/></filter>
+</defs></svg>
+<div class="stars" id="stars" aria-hidden="true"></div>
+<div class="app">
+  <header class="top">
+    <div class="logo display">
+      <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><rect x="2" y="5" width="26" height="20" rx="6" fill="none" stroke="#fff" stroke-width="2.6"/><circle cx="15" cy="15" r="4.6" fill="#fff"/><rect x="5.5" y="2.5" width="6" height="3.5" rx="1.5" fill="#fff"/></svg>
+      Film it
+    </div>
+    <nav class="nav"><button class="navbtn" id="adjtab" disabled>Adjust</button><button class="navbtn" id="cropbtn" disabled>Crop</button></nav>
+    <div class="topr"><div class="split">
+      <button class="btn white sm" id="dl" disabled>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8.5M4.5 7.5L8 11l3.5-3.5M2.5 13.5h11"/></svg>Download <span class="fmt" id="dlfmt">PNG</span></button>
+      <button class="btn white sm caret" id="dlcaret" disabled aria-label="Choose download format" aria-haspopup="true">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5L6 8l3.5-3.5"/></svg></button>
+      <div class="menu" id="dlmenu" role="menu"></div>
+    </div></div>
+  </header>
+
+  <main class="stage">
+    <div class="drop" id="drop">
+      <div class="ph">
+        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="9" width="34" height="26" rx="7"/><circle cx="15" cy="19" r="3"/><path d="M6 31l9-8 7 6 6-5 10 8"/></svg>
+        <b>Drop an image here</b>or paste one with Ctrl/Cmd + V
+        <div><button class="btn white" id="upbtn"><svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 11V2.5M4.5 6L8 2.5 11.5 6M2.5 13.5h11"/></svg>Upload image</button></div>
+      </div>
+      <canvas id="cv"></canvas>
+      <div class="overlay" id="ov"><div class="cropbox" id="cb">
+        <i class="h nw" data-h="nw"></i><i class="h n" data-h="n"></i><i class="h ne" data-h="ne"></i><i class="h e" data-h="e"></i>
+        <i class="h se" data-h="se"></i><i class="h s" data-h="s"></i><i class="h sw" data-h="sw"></i><i class="h w" data-h="w"></i>
+      </div></div>
+      <button class="replace" id="replace">Replace image</button>
+      <div class="caption"><span id="filmpill">Original</span><i></i><span id="fdim"></span></div>
+      <span class="tag" id="tag"></span>
+    </div>
+  </main>
+
+  <div class="dock">
+    <div class="card controls off" id="controls">
+      <label class="ctl">Filter<input type="range" id="amt" min="0" max="100" value="100"><output id="amtv">100%</output></label>
+      <label class="ctl">Grain<input type="range" id="grn" min="0" max="100" value="40"><output id="grnv">40%</output></label>
+    </div>
+    <div class="card croppanel" id="croppanel">
+      <div class="chips" id="chips"></div>
+      <label class="ctl">Angle<input type="range" id="ang" min="-45" max="45" step="0.1" value="0"><output id="angv">0.0°</output></label>
+      <button class="btn glass sm" id="auto">Auto straighten</button>
+      <span class="msg" id="cropmsg"></span>
+      <div class="cropact"><button class="btn glass sm" id="creset">Reset</button><button class="btn glass sm" id="ccancel">Cancel</button><button class="btn white sm" id="cdone">Done</button></div>
+    </div>
+  </div>
+
+  <div class="shelf"><div class="strip" id="strip"></div></div>
+  <div class="toast" id="toast" role="status"></div>
+  <div class="hidden"><span id="filmname"></span><span id="filmmeta"></span><span id="fname"></span><span id="docname"></span></div>
+  <input type="file" id="file" accept="image/*,.heic,.heif,.hif,.tif,.tiff,.avif,.webp,.bmp,.gif,.jfif,.png,.jpg,.jpeg">
+</div>
+
+<script>
+// ---------- Films (real Hald CLUTs sampled from actual film / Fujifilm output) ----------
+const FILMS = [
+  { id:'ORIG', label:'ORIGINAL',     iso:'--',  body:'#8a8a8a', band:'#ddd',    ink:'#222' },
+  { id:'PROV', label:'PROVIA 100F',  iso:'100', body:'#1f5fb4', band:'#f3ead0', ink:'#102a55', lut:'provia-100f' },
+  { id:'VELV', label:'VELVIA 50',    iso:'50',  body:'#c8202a', band:'#f6e8c8', ink:'#4a0a0e', lut:'velvia-50' },
+  { id:'ASTI', label:'ASTIA 100F',   iso:'100', body:'#e0a21b', band:'#fff2cf', ink:'#4a3200', lut:'astia-100f' },
+  { id:'REAL', label:'REALA 100',    iso:'100', body:'#2f9e6a', band:'#f4f0d8', ink:'#0d3322', lut:'reala-100' },
+  { id:'SENS', label:'SENSIA 100',   iso:'100', body:'#7a4fb0', band:'#efe6f6', ink:'#2a1745', lut:'sensia-100' },
+  { id:'P4X',  label:'PROVIA 400X',  iso:'400', body:'#14407f', band:'#e8eef7', ink:'#0a1d3a', lut:'provia-400x' },
+  { id:'S400', label:'SUPERIA 400',  iso:'400', body:'#3f8a3a', band:'#eef0c8', ink:'#173614', lut:'superia-400' },
+  { id:'XTRA', label:'X-TRA 800',    iso:'800', body:'#2a6b3a', band:'#f4e3b0', ink:'#0f2a16', lut:'xtra-800' },
+  { id:'400H', label:'PRO 400H',     iso:'400', body:'#2d8c8c', band:'#eef3ee', ink:'#0f3838', lut:'pro-400h' },
+  { id:'XPRO', label:'SUPERIA XPRO', iso:'200', body:'#b9632b', band:'#f7e6c2', ink:'#4a2208', lut:'superia-xpro' },
+  { id:'FP', label:'FP-100C',        iso:'100', body:'#5a5a5a', band:'#f1e9d6', ink:'#111',    lut:'fp-100c' },
+  { id:'FPN', label:'FP-100C NEG',   iso:'100', body:'#3a3a3a', band:'#e8dcc0', ink:'#111',    lut:'fp-100c-neg' },
+  { id:'ACRS', label:'ACROS 100',    iso:'100', body:'#161616', band:'#e8e8e8', ink:'#000',    lut:'acros-100' },
+  { id:'POLA', label:'POLAROID 690', iso:'600', body:'#e8e4d8', band:'#d8362b', ink:'#111',    lut:'polaroid-690' },
+];
+
+// ---------- 35mm cartridge icon (steel barrel, crimped caps, spool, wrapped label, DX code, film leader) ----------
+function canisterSVG(f, i) {
+  const cx = 54, R = 34, ry = 9;
+  const band = (y1, y2) => `M${cx-R},${y1} A${R},${ry} 0 0 0 ${cx+R},${y1} L${cx+R},${y2} A${R},${ry} 0 0 1 ${cx-R},${y2} Z`;
+  const arc = (y, r) => `M${cx-r},${y} A${r},${ry*r/R} 0 0 0 ${cx+r},${y}`;
+  const brand = f.id === 'POLA' ? 'POLAROID' : f.lut ? 'FUJIFILM' : '';
+  const name = f.id === 'POLA' ? '690' : f.label.replace(/\s+\d+[A-Z]?$/, '');
+  const fit = (txt, size, max) => Math.min(max, txt.length * size * .66);
+  // DX-style checker code that wraps around the barrel (columns foreshorten toward the edges)
+  let dx = '';
+  for (let j = 0; j < 9; j++) {
+    const th = (-52 + j * 13) * Math.PI / 180, d = 5.5 * Math.PI / 180;
+    const x0 = cx + R * Math.sin(th - d), x1 = cx + R * Math.sin(th + d), yo = ry * Math.cos(th);
+    for (let r = 0; r < 2; r++) {
+      const on = ((i * 5 + j * 3 + r * 7) % 3) !== 0;
+      dx += `<rect x="${x0.toFixed(2)}" y="${(98.6 + r * 3.1 + yo).toFixed(2)}" width="${(x1 - x0).toFixed(2)}" height="2.9" fill="${on ? '#101010' : '#d4d6da'}"/>`;
+    }
+  }
+  const t = id => `${id}${i}`;
+  return `<svg viewBox="0 8 124 134" aria-hidden="true">
+    <ellipse cx="56" cy="134" rx="39" ry="5.5" fill="#000" opacity=".6" filter="url(#fc-blur)"/>
+    <!-- steel barrel -->
+    <path d="M20,40 L88,40 L88,114 A34,9 0 0 1 20,114 Z" fill="url(#fc-steelH)"/>
+    <!-- wrapped paper label -->
+    <g clip-path="url(#fc-label)">
+      <rect x="18" y="40" width="72" height="72" fill="${f.body}"/>
+      <path d="${band(72, 94)}" fill="${f.band}"/>
+      <path d="${band(70.6, 72)}" fill="#fff" opacity=".55"/><path d="${band(94, 95.4)}" fill="#fff" opacity=".4"/>
+      <path d="${band(96.5, 106)}" fill="#050505" opacity=".38"/>
+      ${dx}
+    </g>
+    <defs><path id="${t('pa')}" d="${arc(53.5, 30)}"/><path id="${t('pb')}" d="${arc(65.5, 31)}"/><path id="${t('pc')}" d="${arc(87, 31)}"/></defs>
+    <g font-family="'Google Sans',sans-serif" text-anchor="middle" clip-path="url(#fc-label)">
+      ${brand ? `<text font-size="6.2" font-weight="700" fill="#fff" fill-opacity=".92" letter-spacing=".6"><textPath href="#${t('pa')}" startOffset="50%" textLength="${fit(brand, 6.2, 44)}" lengthAdjust="spacingAndGlyphs">${brand}</textPath></text>` : ''}
+      <text font-size="8.4" font-weight="800" fill="#fff"><textPath href="#${t('pb')}" startOffset="50%" textLength="${fit(name, 8.4, 44)}" lengthAdjust="spacingAndGlyphs">${name}</textPath></text>
+      <text font-size="17" font-weight="800" fill="${f.ink}"><textPath href="#${t('pc')}" startOffset="50%">${f.iso}</textPath></text>
+    </g>
+    <!-- cylinder shading over barrel + label -->
+    <rect x="20" y="40" width="68" height="84" fill="url(#fc-shade)" clip-path="url(#fc-body)"/>
+    <rect x="28.5" y="44" width="3.2" height="66" rx="1.6" fill="#fff" opacity=".42" filter="url(#fc-blur2)" clip-path="url(#fc-label)"/>
+    <rect x="20" y="46" width="68" height="14" fill="url(#fc-ao)" clip-path="url(#fc-body)"/>
+    <rect x="20" y="96" width="68" height="18" fill="url(#fc-aob)" clip-path="url(#fc-body)"/>
+    <!-- film leader leaving the felt light-trap -->
+    <path d="M80,63 L109,62 L119,70 L119,95 L109,97 L80,97 Z" fill="url(#fc-film)"/>
+    <g fill="#160b04">${[89, 97, 105].map(x => `<rect x="${x}" y="65.3" width="4.6" height="3.4" rx="1"/><rect x="${x}" y="91.2" width="4.6" height="3.4" rx="1"/>`).join('')}</g>
+    <path d="M81,63.6 L109,62.6" stroke="#fff" stroke-opacity=".22" stroke-width=".9"/>
+    <path d="M80,63 L119,70 L119,95 L109,97 L80,97 Z" fill="#000" opacity=".12"/>
+    <rect x="77.5" y="60.5" width="5" height="38.5" rx="1.6" fill="#0d0b0a"/>
+    <rect x="77.5" y="60.5" width="1.4" height="38.5" rx=".7" fill="#fff" opacity=".12"/>
+    <!-- bottom cap -->
+    <path d="M18,112 A36,9.5 0 0 0 90,112 L90,122 A36,9.5 0 0 1 18,122 Z" fill="url(#fc-steelH)"/>
+    <path d="M18,117 A36,9.5 0 0 0 90,117" fill="none" stroke="#000" stroke-opacity=".35" stroke-width=".7"/>
+    <path d="M18,113.2 A36,9.5 0 0 0 90,113.2" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width=".7"/>
+    <!-- top cap + spool -->
+    <path d="M18,30 A36,9.5 0 0 0 90,30 L90,40 A36,9.5 0 0 1 18,40 Z" fill="url(#fc-steelH)"/>
+    <path d="M18,35 A36,9.5 0 0 0 90,35" fill="none" stroke="#000" stroke-opacity=".35" stroke-width=".7"/>
+    <path d="M18,31.2 A36,9.5 0 0 0 90,31.2" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width=".7"/>
+    <ellipse cx="54" cy="30" rx="36" ry="9.5" fill="url(#fc-top)"/>
+    <ellipse cx="54" cy="30.2" rx="29" ry="7.3" fill="none" stroke="#000" stroke-opacity=".28"/>
+    <ellipse cx="54" cy="31" rx="29" ry="7.3" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width=".7"/>
+    <path d="M46,13 L46,30 A8,2.3 0 0 0 62,30 L62,13 Z" fill="url(#fc-steelH)"/>
+    <ellipse cx="54" cy="13" rx="8" ry="2.3" fill="#d9dbe0"/>
+    <rect x="51.3" y="12.2" width="5.4" height="1.5" rx=".6" fill="#2f3035"/>
+  </svg>`;
+}
+
+const $ = id => document.getElementById(id);
+const amt = $('amt'), grn = $('grn'), controls = $('controls');
+const drop = $('drop'), cv = $('cv'), file = $('file'), strip = $('strip'), dl = $('dl'), tag = $('tag');
+
+// ---------- Filter engine: WebGL2, full resolution, trilinear 3D-LUT lookup ----------
+const VS = `#version 300 es
+in vec2 p; void main(){ gl_Position = vec4(p,0.,1.); }`;
+const FS = `#version 300 es
+precision highp float; precision highp int; precision highp sampler2D;
+uniform sampler2D img; uniform sampler2D lut; uniform int useLut; uniform float uMix; uniform float uGrain; uniform float uSize;
+uniform vec2 uSrc, uReg, uCen, uRot; uniform float uScale, uOutH; uniform int uEdit;
+out vec4 o;
+const int N = 144;       // Hald level 12 -> 144^3 cube
+const int W = 1728;      // lut image is 1728 x 1728
+vec3 tex(int r,int g,int b){
+  int i = r + g*N + b*N*N;
+  return texelFetch(lut, ivec2(i % W, i / W), 0).rgb;
+}
+float hash(vec2 p){ vec3 q = fract(vec3(p.xyx)*.1031); q += dot(q, q.yzx+33.33); return fract((q.x+q.y)*q.z); }
+float vnoise(vec2 p){
+  vec2 i = floor(p), f = fract(p); f = f*f*(3.-2.*f);
+  return mix(mix(hash(i),hash(i+vec2(1,0)),f.x), mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x), f.y);
+}
+float grainAt(vec2 p){ return (vnoise(p) + .6*vnoise(p*1.9+37.) + .3*vnoise(p*3.7+11.)) / 1.9 - .5; }
+vec3 finish(vec3 base, vec3 graded){
+  vec3 col = mix(base, graded, uMix);
+  if(uGrain > 0.){
+    vec2 p = gl_FragCoord.xy / uSize;
+    float n = grainAt(p) * 2.;
+    vec3 chroma = vec3(grainAt(p+101.), grainAt(p+203.), grainAt(p+307.)) * 2.;
+    float l = dot(col, vec3(.2126,.7152,.0722));
+    float w = 1. - .75*pow(abs(l-.5)*2., 2.);          // strongest in midtones, like real film
+    col += (n*.8 + chroma*.35) * uGrain * .30 * w;
+  }
+  return clamp(col, 0., 1.);
+}
+void main(){
+  // output pixel -> position in the straightened ("rotated") frame -> position in the source image
+  vec2 q = vec2(gl_FragCoord.x, uOutH - gl_FragCoord.y) / uScale;
+  vec2 r = uCen - uReg*.5 + q;
+  vec2 sp = uSrc*.5 + vec2(uRot.x*r.x + uRot.y*r.y, -uRot.y*r.x + uRot.x*r.y);
+  if(uEdit==1 && (sp.x<0. || sp.y<0. || sp.x>uSrc.x || sp.y>uSrc.y)){ o = vec4(vec3(.047),1.); return; }
+  vec4 c = texture(img, sp / uSrc);
+  if(useLut==0){ o = vec4(finish(c.rgb, c.rgb),1.); return; }
+  vec3 f = clamp(c.rgb,0.,1.) * float(N-1);
+  ivec3 i0 = ivec3(floor(f)); ivec3 i1 = min(i0+1, ivec3(N-1)); vec3 t = f - vec3(i0);
+  vec3 c00 = mix(tex(i0.x,i0.y,i0.z), tex(i1.x,i0.y,i0.z), t.x);
+  vec3 c10 = mix(tex(i0.x,i1.y,i0.z), tex(i1.x,i1.y,i0.z), t.x);
+  vec3 c01 = mix(tex(i0.x,i0.y,i1.z), tex(i1.x,i0.y,i1.z), t.x);
+  vec3 c11 = mix(tex(i0.x,i1.y,i1.z), tex(i1.x,i1.y,i1.z), t.x);
+  o = vec4(finish(c.rgb, mix(mix(c00,c10,t.y), mix(c01,c11,t.y), t.z)), 1.);
+}`;
+
+const gl = cv.getContext('webgl2', { preserveDrawingBuffer:true, antialias:false, premultipliedAlpha:false, alpha:false });
+let prog, imgTex, uUseLut, uMix, uGrain, uSize, U = {};
+const lutCache = {};
+function initGL() {
+  if (!gl) { alert('Film it needs WebGL2 (any current browser).'); return; }
+  const mk = (t, src) => { const s = gl.createShader(t); gl.shaderSource(s, src); gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
+  prog = gl.createProgram();
+  gl.attachShader(prog, mk(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, mk(gl.FRAGMENT_SHADER, FS));
+  gl.linkProgram(prog); gl.useProgram(prog);
+  const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  gl.uniform1i(gl.getUniformLocation(prog, 'img'), 0); gl.uniform1i(gl.getUniformLocation(prog, 'lut'), 1);
+  uUseLut = gl.getUniformLocation(prog, 'useLut'); uMix = gl.getUniformLocation(prog, 'uMix');
+  uGrain = gl.getUniformLocation(prog, 'uGrain'); uSize = gl.getUniformLocation(prog, 'uSize');
+  ['uSrc','uReg','uCen','uRot','uScale','uOutH','uEdit'].forEach(n => U[n] = gl.getUniformLocation(prog, n));
+  gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE);
+  gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+}
+function upload(unit, bmp, mip) {
+  const t = gl.createTexture(); gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, bmp);
+  if (mip) { gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); }
+  else { gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST); }
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  return t;
+}
+async function getLut(name) {
+  if (!lutCache[name]) lutCache[name] = fetch(`luts/${name}.png`).then(r => r.blob())
+    .then(b => createImageBitmap(b, { colorSpaceConversion:'none', premultiplyAlpha:'none' })).then(bmp => upload(1, bmp));
+  return lutCache[name];
+}
+
+// ---------- App ----------
+let hasImage = false, current = FILMS[0], fileName = 'film-it', token = 0;
+
+FILMS.forEach((f, i) => {
+  const b = document.createElement('button');
+  b.className = 'film' + (i === 0 ? ' active' : '');
+  b.title = f.label;
+  b.innerHTML = canisterSVG(f, i) + `<span>${f.label}</span>`;
+  b.onclick = () => select(f, b);
+  strip.appendChild(b);
+});
+
+function select(f, btn) {
+  current = f;
+  strip.querySelectorAll('.film').forEach(x => x.classList.toggle('active', x === btn));
+  render();
+}
+
+async function render() {
+  if (!hasImage) return;
+  const my = ++token;
+  tag.textContent = current.label;
+  $('filmpill').textContent = $('filmname').textContent = current.label;
+  $('filmmeta').textContent = current.lut ? `ISO ${current.iso} · colour lookup from real film` : 'No film look applied';
+  let t = null;
+  if (current.lut) { t = await getLut(current.lut); if (my !== token) return; }
+  let reg;
+  if (editing) {                                   // show the whole straightened image so the crop box can move over it
+    const bd = bounds(geo.angle), sc = Math.min(1, 2200 / Math.max(bd.w, bd.h));
+    reg = { cx:0, cy:0, w:bd.w, h:bd.h, scale:sc, edit:1 };
+  } else {
+    const c = geo.crop || { cx:0, cy:0, w:src.w, h:src.h };
+    reg = { ...c, scale:1, edit:0 };
+  }
+  const cw = Math.max(1, Math.round(reg.w * reg.scale)), ch = Math.max(1, Math.round(reg.h * reg.scale));
+  if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
+  if (t) { gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, t); }
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, imgTex);
+  gl.uniform1i(uUseLut, current.lut ? 1 : 0);
+  gl.uniform1f(uMix, amt.value / 100);
+  gl.uniform1f(uGrain, grn.value / 100);
+  gl.uniform1f(uSize, Math.max(1.2, Math.max(reg.w, reg.h) / 1600) * reg.scale);  // grain scales with resolution
+  gl.uniform2f(U.uSrc, src.w, src.h); gl.uniform2f(U.uReg, reg.w, reg.h); gl.uniform2f(U.uCen, reg.cx, reg.cy);
+  gl.uniform2f(U.uRot, Math.cos(rad(geo.angle)), Math.sin(rad(geo.angle)));
+  gl.uniform1f(U.uScale, reg.scale); gl.uniform1f(U.uOutH, ch); gl.uniform1i(U.uEdit, reg.edit);
+  gl.viewport(0, 0, cw, ch);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  view = reg; layout();
+  $('fdim').textContent = `${Math.round(editing ? src.w : reg.w)} × ${Math.round(editing ? src.h : reg.h)}`;
+}
+
+// ---------- Crop & straighten ----------
+// geo.angle: degrees, positive = rotate image clockwise. geo.crop: rect in the straightened frame
+// (centre cx,cy and size w,h in source pixels, origin at the image centre).
+let src = { w:0, h:0 }, srcBmp = null, view = null, editing = false, snapshot = null, drag = null;
+let geo = { angle:0, crop:null }, chipKey = 'free', flip = false, autoFit = true;
+const ov = $('ov'), cb = $('cb'), ang = $('ang'), cropbtn = $('cropbtn'), cropmsg = $('cropmsg'), chipsEl = $('chips'), croppanel = $('croppanel');
+const CHIPS = [
+  { key:'free', label:'Free', r:null }, { key:'orig', label:'Original', r:() => src.w / src.h },
+  { key:'1:1', label:'1:1', r:1 }, { key:'4:5', label:'4:5', r:4/5 }, { key:'3:2', label:'3:2', r:3/2 }, { key:'16:9', label:'16:9', r:16/9 },
+];
+const rad = a => a * Math.PI / 180;
+function bounds(a) { const c = Math.abs(Math.cos(rad(a))), s = Math.abs(Math.sin(rad(a))); return { w:src.w*c + src.h*s, h:src.w*s + src.h*c }; }
+function curRatio() {
+  const c = CHIPS.find(x => x.key === chipKey); if (!c || c.r == null) return null;
+  const r = typeof c.r === 'function' ? c.r() : c.r; return flip ? 1 / r : r;
+}
+function fits(cr, a) {   // is the crop rect entirely inside the (rotated) image?
+  const c = Math.cos(rad(a)), s = Math.sin(rad(a));
+  for (const sx of [-1, 1]) for (const sy of [-1, 1]) {
+    const rx = cr.cx + sx * cr.w / 2, ry = cr.cy + sy * cr.h / 2;
+    if (Math.abs(c*rx + s*ry) > src.w/2 + .01 || Math.abs(-s*rx + c*ry) > src.h/2 + .01) return false;
+  }
+  return true;
+}
+function shrinkToFit(cr, a) {
+  if (!fits({ ...cr, w:0, h:0 }, a)) cr = { ...cr, cx:0, cy:0 };
+  if (fits(cr, a)) return cr;
+  let lo = 0, hi = 1;
+  for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; fits({ ...cr, w:cr.w*m, h:cr.h*m }, a) ? lo = m : hi = m; }
+  return { ...cr, w:cr.w*lo, h:cr.h*lo };
+}
+function biggest(aspect, cx, cy, a) {   // largest crop of this aspect that fits inside the rotated image
+  const S = Math.max(src.w, src.h) * 2;
+  return shrinkToFit({ cx, cy, w:S * aspect, h:S }, a);
+}
+const lerpR = (a, b, t) => ({ cx:a.cx+(b.cx-a.cx)*t, cy:a.cy+(b.cy-a.cy)*t, w:a.w+(b.w-a.w)*t, h:a.h+(b.h-a.h)*t });
+function applyProposal(prop) {   // accept as far as the proposal stays inside the image
+  const cur = geo.crop;
+  if (fits(prop, geo.angle)) { geo.crop = prop; return; }
+  let lo = 0, hi = 1;
+  for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; fits(lerpR(cur, prop, m), geo.angle) ? lo = m : hi = m; }
+  geo.crop = lerpR(cur, prop, lo);
+}
+function layout() {
+  if (!editing || !view) return;
+  const rc = cv.getBoundingClientRect(), dr = drop.getBoundingClientRect();
+  ov.style.left = rc.left - dr.left + 'px'; ov.style.top = rc.top - dr.top + 'px';
+  ov.style.width = rc.width + 'px'; ov.style.height = rc.height + 'px';
+  const k = rc.width / cv.width * view.scale, Wb = cv.width / view.scale, Hb = cv.height / view.scale, c = geo.crop;
+  cb.style.left = (c.cx - c.w/2 + Wb/2) * k + 'px'; cb.style.top = (c.cy - c.h/2 + Hb/2) * k + 'px';
+  cb.style.width = c.w * k + 'px'; cb.style.height = c.h * k + 'px';
+  ov.classList.toggle('locked', !!curRatio());
+}
+function pointerR(e) {
+  const rc = cv.getBoundingClientRect(), k = rc.width / cv.width * view.scale;
+  return { x:(e.clientX - rc.left) / k - cv.width / view.scale / 2, y:(e.clientY - rc.top) / k - cv.height / view.scale / 2 };
+}
+function propose(d, p) {
+  const c0 = d.c0, h = d.h;
+  if (h === 'move') return { ...c0, cx:c0.cx + p.x - d.start.x, cy:c0.cy + p.y - d.start.y };
+  const MIN = .03 * Math.min(src.w, src.h);
+  let L = c0.cx - c0.w/2, R = c0.cx + c0.w/2, T = c0.cy - c0.h/2, B = c0.cy + c0.h/2;
+  const ratio = curRatio();
+  if (ratio) {                                       // corner resize, aspect locked, opposite corner stays put
+    const sx = h.includes('w') ? -1 : 1, sy = h.includes('n') ? -1 : 1, ax = sx < 0 ? R : L, ay = sy < 0 ? B : T;
+    let w = Math.max(MIN, sx * (p.x - ax)); const hh0 = Math.max(MIN / ratio, sy * (p.y - ay));
+    w = Math.max(w, hh0 * ratio); const hh = w / ratio;
+    return { cx:ax + sx*w/2, cy:ay + sy*hh/2, w, h:hh };
+  }
+  if (h.includes('w')) L = Math.min(p.x, R - MIN);
+  if (h.includes('e')) R = Math.max(p.x, L + MIN);
+  if (h.includes('n')) T = Math.min(p.y, B - MIN);
+  if (h.includes('s')) B = Math.max(p.y, T + MIN);
+  return { cx:(L+R)/2, cy:(T+B)/2, w:R-L, h:B-T };
+}
+cb.addEventListener('pointerdown', e => {
+  drag = { h:e.target.dataset.h || 'move', start:pointerR(e), c0:{ ...geo.crop } };
+  cb.setPointerCapture(e.pointerId); e.preventDefault();
+});
+cb.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const prop = propose(drag, pointerR(e));
+  if (drag.h === 'move') {                           // axis-by-axis so the box slides along the image edge
+    applyProposal({ ...geo.crop, cx:prop.cx }); applyProposal({ ...geo.crop, cy:prop.cy });
+  } else applyProposal(prop);
+  autoFit = false; layout();
+});
+['pointerup', 'pointercancel'].forEach(ev => cb.addEventListener(ev, () => { drag = null; }));
+window.addEventListener('resize', layout);
+
+function renderChips() {
+  chipsEl.innerHTML = '';
+  CHIPS.forEach(c => {
+    const b = document.createElement('button'); b.className = 'chip' + (c.key === chipKey ? ' active' : '');
+    b.textContent = (flip && c.key === chipKey && c.key.includes(':')) ? c.key.split(':').reverse().join(':') : c.label;
+    b.title = c.key === chipKey && c.key !== 'free' ? 'Click again to swap landscape / portrait' : '';
+    b.onclick = () => setChip(c.key); chipsEl.appendChild(b);
+  });
+}
+function setChip(key) {
+  if (key === chipKey && key !== 'free') flip = !flip; else { chipKey = key; flip = false; }
+  const r = curRatio();
+  if (r) geo.crop = biggest(r, geo.crop.cx, geo.crop.cy, geo.angle);
+  renderChips(); layout();
+}
+function setAngle(v, fromAuto) {
+  geo.angle = Math.max(-45, Math.min(45, v)); ang.value = geo.angle; $('angv').textContent = geo.angle.toFixed(1) + '°';
+  const c = geo.crop, aspect = curRatio() || c.w / c.h;
+  geo.crop = autoFit ? biggest(aspect, c.cx, c.cy, geo.angle) : shrinkToFit(c, geo.angle);
+  render();
+}
+ang.addEventListener('input', () => { cropmsg.textContent = ''; setAngle(+ang.value); });
+ang.addEventListener('dblclick', () => { cropmsg.textContent = ''; setAngle(0); });
+
+// Auto straighten: histogram of edge directions (relative to the nearest axis); the dominant peak is the tilt.
+function detectTilt() {
+  const k = Math.min(1, 720 / Math.max(src.w, src.h)), w = Math.max(8, Math.round(src.w * k)), h = Math.max(8, Math.round(src.h * k));
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const x = c.getContext('2d', { willReadFrequently:true }); x.drawImage(srcBmp, 0, 0, w, h);
+  const px = x.getImageData(0, 0, w, h).data, g = new Float32Array(w * h);
+  for (let i = 0; i < w * h; i++) g[i] = .299 * px[i*4] + .587 * px[i*4+1] + .114 * px[i*4+2];
+  const gx = new Float32Array(w * h), gy = new Float32Array(w * h); let sum = 0, n = 0;
+  for (let y = 1; y < h - 1; y++) for (let xx = 1; xx < w - 1; xx++) {
+    const i = y * w + xx;
+    const sx = (g[i-w+1] + 2*g[i+1] + g[i+w+1]) - (g[i-w-1] + 2*g[i-1] + g[i+w-1]);
+    const sy = (g[i+w-1] + 2*g[i+w] + g[i+w+1]) - (g[i-w-1] + 2*g[i-w] + g[i-w+1]);
+    gx[i] = sx; gy[i] = sy; sum += Math.hypot(sx, sy); n++;
+  }
+  // Keep strong edges; remember whether each belongs to a "horizontal" line (vertical gradient) or a "vertical" one.
+  const thr = sum / n * 2, R = 20, ex = [], ey = [], em = [], eh = [];
+  for (let y = 1; y < h - 1; y++) for (let xx = 1; xx < w - 1; xx++) {
+    const i = y * w + xx, m = Math.hypot(gx[i], gy[i]); if (m < thr) continue;
+    let d = (Math.atan2(gx[i], -gy[i]) * 180 / Math.PI) % 90; if (d < 0) d += 90; if (d > 45) d -= 90;
+    if (Math.abs(d) > R + 6) continue;
+    ex.push(xx); ey.push(y); em.push(m); eh.push(Math.abs(gy[i]) > Math.abs(gx[i]) ? 1 : 0);
+  }
+  if (ex.length < 200) return null;
+  // For each candidate tilt, project edges onto the axis perpendicular to the lines; the right angle makes them pile up
+  // into sharp rows/columns, which maximises the sum of squared bin weights.
+  const steps = R * 20 + 1, score = new Float64Array(steps), size = Math.ceil(Math.hypot(w, h)) * 2 + 8, bins = new Float64Array(size * 2);
+  for (let si = 0; si < steps; si++) {
+    const al = (-R + si / 10) * Math.PI / 180, ca = Math.cos(al), sa = Math.sin(al);
+    bins.fill(0);
+    for (let j = 0; j < ex.length; j++) {
+      const t = eh[j] ? ey[j] * ca - ex[j] * sa : ex[j] * ca + ey[j] * sa;
+      bins[(eh[j] ? 0 : size) + ((t + size / 2) | 0)] += em[j];
+    }
+    let sc = 0; for (let q = 0; q < bins.length; q++) sc += bins[q] * bins[q]; score[si] = sc;
+  }
+  let pk = 0, mean = 0; for (let i = 0; i < steps; i++) { mean += score[i]; if (score[i] > score[pk]) pk = i; } mean /= steps;
+  if (!(score[pk] / mean > 1.25) || pk === 0 || pk === steps - 1) return null;   // no dominant lines
+  const y0 = score[pk-1], y1 = score[pk], y2 = score[pk+1], off = .5 * (y0 - y2) / (y0 - 2*y1 + y2);   // parabolic refine
+  return -(-R + (pk + (isFinite(off) ? off : 0)) / 10);   // slider angle that levels the dominant lines
+}
+$('auto').onclick = () => {
+  const a = detectTilt();
+  if (a == null) { cropmsg.textContent = 'No clear horizon or vertical lines found'; return; }
+  const v = Math.round(a * 10) / 10;
+  if (Math.abs(v) < .1) { cropmsg.textContent = 'Already level'; setAngle(0); return; }
+  autoFit = true; cropmsg.textContent = `Straightened by ${Math.abs(v).toFixed(1)}° ${v < 0 ? 'counter-clockwise' : 'clockwise'}`; setAngle(v);
+};
+
+function enterCrop() {
+  if (!hasImage) return;
+  snapshot = { geo:{ angle:geo.angle, crop:geo.crop && { ...geo.crop } }, chipKey, flip, autoFit };
+  if (!geo.crop) geo.crop = { cx:0, cy:0, w:src.w, h:src.h };
+  editing = true; ang.value = geo.angle; $('angv').textContent = geo.angle.toFixed(1) + '°'; cropmsg.textContent = '';
+  ov.classList.add('on'); croppanel.classList.add('on'); controls.classList.add('hide'); cropbtn.classList.add('on'); renderChips();
+  render();
+}
+async function exitCrop(commit) {
+  if (!editing) return;
+  if (!commit) { geo = snapshot.geo; ({ chipKey, flip, autoFit } = snapshot); }
+  else {                                             // snap to whole pixels so an unrotated crop is a pixel-exact cut-out
+    const c = geo.crop, w = Math.max(1, Math.floor(c.w)), h = Math.max(1, Math.floor(c.h));
+    const left = Math.round(c.cx - w/2 + src.w/2) - src.w/2, top = Math.round(c.cy - h/2 + src.h/2) - src.h/2;
+    geo.crop = { cx:left + w/2, cy:top + h/2, w, h };
+  }
+  editing = false; ov.classList.remove('on'); croppanel.classList.remove('on'); controls.classList.remove('hide'); cropbtn.classList.remove('on');
+  await render();
+}
+function resetCrop() {
+  geo = { angle:0, crop:{ cx:0, cy:0, w:src.w, h:src.h } }; chipKey = 'free'; flip = false; autoFit = true;
+  ang.value = 0; $('angv').textContent = '0.0°'; cropmsg.textContent = ''; renderChips(); render();
+}
+cropbtn.onclick = () => { if (!editing) enterCrop(); };
+$('adjtab').onclick = () => { if (editing) exitCrop(true); };
+$('upbtn').onclick = () => file.click();
+
+$('cdone').onclick = () => exitCrop(true);
+$('ccancel').onclick = () => exitCrop(false);
+$('creset').onclick = resetCrop;
+document.addEventListener('keydown', e => { if (!editing) return; if (e.key === 'Escape') exitCrop(false); if (e.key === 'Enter') exitCrop(true); });
+
+// ---------- Opening any photo format ----------
+const EXT = n => ((n || '').toLowerCase().match(/\.([a-z0-9]+)$/) || [])[1] || '';
+const KEYS = { jpg:'jpeg', jpeg:'jpeg', jfif:'jpeg', png:'png', webp:'webp', avif:'avif', tif:'tiff', tiff:'tiff', bmp:'bmp', gif:'png', heic:'heic', heif:'heic', hif:'heic' };
+const MIMEKEY = { 'image/jpeg':'jpeg', 'image/png':'png', 'image/webp':'webp', 'image/avif':'avif', 'image/tiff':'tiff', 'image/bmp':'bmp', 'image/heic':'heic', 'image/heif':'heic', 'image/gif':'png' };
+const isImageLike = b => !!b && ((b.type || '').startsWith('image/') || (EXT(b.name) in KEYS));
+const loadScript = src => new Promise((ok, no) => { const e = document.createElement('script'); e.src = src; e.onload = ok; e.onerror = () => no(new Error('Could not load ' + src)); document.head.appendChild(e); });
+let toastT; function toast(msg, ms = 2600) { const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); if (ms) toastT = setTimeout(() => t.classList.remove('on'), ms); }
+const BMPOPT = { imageOrientation:'from-image', premultiplyAlpha:'none' };
+async function decode(blob) {
+  try { return await createImageBitmap(blob, BMPOPT); } catch (e) { /* not natively supported: fall through */ }
+  const key = KEYS[EXT(blob.name)] || MIMEKEY[blob.type];
+  if (key === 'heic') {                                    // HEIC / HEIF (iPhone photos)
+    toast('Opening HEIC photo…', 0);
+    await loadScript('https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js');
+    const out = await window.heic2any({ blob, toType:'image/png' });
+    return createImageBitmap(Array.isArray(out) ? out[0] : out, BMPOPT);
+  }
+  if (key === 'tiff') {                                    // TIFF
+    toast('Opening TIFF…', 0);
+    await loadScript('https://cdn.jsdelivr.net/npm/utif@3.1.0/UTIF.js');
+    const buf = await blob.arrayBuffer(), ifds = UTIF.decode(buf); UTIF.decodeImage(buf, ifds[0]);
+    const rgba = UTIF.toRGBA8(ifds[0]);
+    return createImageBitmap(new ImageData(new Uint8ClampedArray(rgba.buffer, rgba.byteOffset, rgba.length), ifds[0].width, ifds[0].height));
+  }
+  throw new Error('unsupported');
+}
+
+async function load(blob) {
+  if (!isImageLike(blob)) { toast('That doesn\'t look like an image file.'); return; }
+  fileName = (blob.name || 'film-it').replace(/\.[^.]+$/, '');
+  $('fname').textContent = $('docname').textContent = fileName;
+  let bmp;
+  try { bmp = await decode(blob); toast('', 1); }
+  catch (e) { toast(`Couldn't open this file${EXT(blob.name) ? ' (.' + EXT(blob.name) + ')' : ''}. Try JPG, PNG, HEIC, WebP, AVIF, TIFF or BMP.`, 4500); return; }
+  origKey = KEYS[EXT(blob.name)] || MIMEKEY[blob.type] || null; origLabel = (EXT(blob.name) || (blob.type || '').replace('image/', '') || 'image').toUpperCase().replace('JPEG', 'JPG'); buildMenu();
+  const max = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+  if (Math.max(bmp.width, bmp.height) > max) {   // only if the GPU can't hold it
+    const k = max / Math.max(bmp.width, bmp.height);
+    bmp = await createImageBitmap(bmp, { resizeWidth: Math.floor(bmp.width * k), resizeHeight: Math.floor(bmp.height * k), resizeQuality:'high' });
+  }
+  src = { w:bmp.width, h:bmp.height }; srcBmp = bmp;      // full original resolution
+  geo = { angle:0, crop:null }; chipKey = 'free'; flip = false; autoFit = true;
+  if (editing) { editing = false; ov.classList.remove('on'); croppanel.classList.remove('on'); controls.classList.remove('hide'); cropbtn.classList.remove('on'); }
+  if (imgTex) gl.deleteTexture(imgTex);
+  imgTex = upload(0, bmp, true);
+  hasImage = true; drop.classList.add('has'); dl.disabled = false; $('dlcaret').disabled = false; cropbtn.disabled = false; $('adjtab').disabled = false; document.body.classList.add('has'); controls.classList.remove('off');
+  render();
+}
+
+drop.addEventListener('click', e => { if (!hasImage && e.target !== $('replace')) file.click(); });
+$('replace').onclick = e => { e.stopPropagation(); file.click(); };
+file.onchange = () => { load(file.files[0]); file.value = ''; };
+['dragenter', 'dragover'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+document.addEventListener('drop', e => load(e.dataTransfer.files[0]));
+document.addEventListener('paste', e => { const it = [...e.clipboardData.items].find(i => i.type.startsWith('image/')); if (it) load(it.getAsFile()); });
+
+// ---------- Download in any format ----------
+const FORMATS = {
+  png:  { label:'PNG',  ext:'png',  mime:'image/png',  note:'Lossless, full quality' },
+  jpeg: { label:'JPEG', ext:'jpg',  mime:'image/jpeg', note:'Small files, adjustable quality', lossy:true },
+  webp: { label:'WebP', ext:'webp', mime:'image/webp', note:'Small and modern', lossy:true },
+  avif: { label:'AVIF', ext:'avif', mime:'image/avif', note:'Smallest files', lossy:true },
+  tiff: { label:'TIFF', ext:'tif',  mime:'image/tiff', note:'Uncompressed, for editing' },
+  bmp:  { label:'BMP',  ext:'bmp',  mime:'image/bmp',  note:'Uncompressed' },
+};
+const supported = { png:true, jpeg:true, tiff:true, bmp:true, webp:false, avif:false };
+let selFmt = 'orig', quality = 95, origKey = null, origLabel = '';
+['webp', 'avif'].forEach(k => { const c = document.createElement('canvas'); c.width = c.height = 1;
+  c.toBlob(b => { supported[k] = !!b && b.type === FORMATS[k].mime; buildMenu(); }, FORMATS[k].mime); });
+function resolveFmt() {
+  if (selFmt !== 'orig') return selFmt;
+  if (origKey && supported[origKey]) return origKey;
+  return origKey === 'heic' ? 'jpeg' : 'png';       // browsers can't write HEIC, so a photo goes to JPEG
+}
+const CHECK = '<svg class="ck" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3L13 4.5"/></svg>';
+function buildMenu() {
+  const m = $('dlmenu'), r = resolveFmt(), f = FORMATS[r];
+  const item = (key, name, desc) => `<button class="mi${selFmt === key ? ' sel' : ''}" role="menuitem" data-f="${key}"><span class="t"><div class="n">${name}</div><div class="d">${desc}</div></span>${CHECK}</button>`;
+  const origDesc = origLabel ? (origKey && supported[origKey] ? `Your file is ${origLabel} · saves as ${f.label}` : `Your file is ${origLabel} · saves as ${f.label} (can't write ${origLabel})`) : 'Keeps the format you opened';
+  m.innerHTML = item('orig', 'Same as original', origDesc) +
+    Object.keys(FORMATS).filter(k => supported[k]).map(k => item(k, FORMATS[k].label, FORMATS[k].note)).join('') +
+    `<div class="mq${f.lossy ? ' on' : ''}"><label class="ctl">Quality<input type="range" id="q" min="40" max="100" value="${quality}"><output id="qv">${quality}%</output></label></div>`;
+  const q = $('q'); q.style.setProperty('--p', (quality - 40) / 60 * 100 + '%');
+  q.oninput = () => { quality = +q.value; $('qv').textContent = quality + '%'; q.style.setProperty('--p', (quality - 40) / 60 * 100 + '%'); };
+  m.querySelectorAll('.mi').forEach(b => b.onclick = () => { selFmt = b.dataset.f; buildMenu(); });
+  $('dlfmt').textContent = f.label;
+}
+const closeMenu = () => $('dlmenu').classList.remove('open');
+$('dlcaret').onclick = e => { e.stopPropagation(); $('dlmenu').classList.toggle('open'); };
+document.addEventListener('click', e => { if (!e.target.closest('.split')) closeMenu(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+
+function pixels() {
+  const t = document.createElement('canvas'); t.width = cv.width; t.height = cv.height;
+  const x = t.getContext('2d', { willReadFrequently:true }); x.drawImage(cv, 0, 0); return x.getImageData(0, 0, t.width, t.height);
+}
+function encodeBMP({ width:w, height:h, data }) {                // 24-bit, bottom-up
+  const row = (w * 3 + 3) & ~3, buf = new ArrayBuffer(54 + row * h), dv = new DataView(buf);
+  dv.setUint16(0, 0x4d42, true); dv.setUint32(2, buf.byteLength, true); dv.setUint32(10, 54, true);
+  dv.setUint32(14, 40, true); dv.setInt32(18, w, true); dv.setInt32(22, h, true); dv.setUint16(26, 1, true); dv.setUint16(28, 24, true);
+  dv.setUint32(34, row * h, true); dv.setInt32(38, 2835, true); dv.setInt32(42, 2835, true);
+  const o = new Uint8Array(buf, 54);
+  for (let y = 0; y < h; y++) { let p = (h - 1 - y) * row; for (let x = 0, i = y * w * 4; x < w; x++, i += 4) { o[p++] = data[i + 2]; o[p++] = data[i + 1]; o[p++] = data[i]; } }
+  return new Blob([buf], { type:'image/bmp' });
+}
+function encodeTIFF({ width:w, height:h, data }) {               // baseline uncompressed 8-bit RGB
+  const n = w * h * 3, off = 140, buf = new ArrayBuffer(off + n), dv = new DataView(buf);
+  dv.setUint16(0, 0x4949, true); dv.setUint16(2, 42, true); dv.setUint32(4, 8, true);
+  const E = [[256,4,1,w],[257,4,1,h],[258,3,3,134],[259,3,1,1],[262,3,1,2],[273,4,1,off],[277,3,1,3],[278,4,1,h],[279,4,1,n],[284,3,1,1]];
+  dv.setUint16(8, E.length, true);
+  E.forEach((e, i) => { const p = 10 + i * 12; dv.setUint16(p, e[0], true); dv.setUint16(p + 2, e[1], true); dv.setUint32(p + 4, e[2], true);
+    if (e[1] === 3 && e[2] === 1) dv.setUint16(p + 8, e[3], true); else dv.setUint32(p + 8, e[3], true); });
+  dv.setUint16(134, 8, true); dv.setUint16(136, 8, true); dv.setUint16(138, 8, true);
+  const o = new Uint8Array(buf, off); for (let i = 0, j = 0; i < data.length; i += 4) { o[j++] = data[i]; o[j++] = data[i + 1]; o[j++] = data[i + 2]; }
+  return new Blob([buf], { type:'image/tiff' });
+}
+dl.onclick = async () => {
+  if (!hasImage) return;
+  closeMenu();
+  if (editing) await exitCrop(true);
+  await render();
+  const key = resolveFmt(), f = FORMATS[key];
+  toast('Preparing ' + f.label + '…', 0);
+  await new Promise(r => setTimeout(r, 30));
+  let blob;
+  try {
+    blob = key === 'tiff' ? encodeTIFF(pixels()) : key === 'bmp' ? encodeBMP(pixels())
+      : await new Promise(r => cv.toBlob(r, f.mime, f.lossy ? quality / 100 : undefined));
+  } catch (e) { blob = null; }
+  if (!blob) { toast(`Couldn't create a ${f.label} file for an image this large. Try PNG or JPEG.`, 4500); return; }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${fileName}-${current.id.toLowerCase()}.${f.ext}`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  toast(`Saved as ${f.label}`, 1800);
+};
+buildMenu();
+[[amt, 'amtv'], [grn, 'grnv']].forEach(([el, out]) => {
+  const paint = () => el.style.setProperty('--p', (el.value - el.min) / (el.max - el.min) * 100 + '%'); paint();
+  el.addEventListener('input', () => { $(out).textContent = el.value + '%'; paint(); render(); });
+  el.addEventListener('dblclick', () => { el.value = el.defaultValue; el.dispatchEvent(new Event('input')); });
+});
+initGL();
+</script>
+<script>
+// faint background stars (deterministic so the sky doesn't jump between loads)
+(() => {
+  const el = document.getElementById('stars'); let seed = 7; const r = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 46; i++) {
+    const n = document.createElement('i'), big = r() < .14, size = big ? 12 + r() * 6 : 2 + r() * 3;
+    if (big) n.className = 'plus';
+    n.style.cssText = `left:${r()*100}%;top:${r()*100}%;width:${size}px;height:${size}px;--d:${3 + r()*5}s;animation-delay:-${r()*6}s`;
+    el.appendChild(n);
+  }
+})();
+</script>
+
+<script type="module">
+// Real 3D film cartridges, rendered once each with three.js and dropped into the shelf as images.
+// (If three.js can't load, the SVG cartridges built earlier stay in place.)
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+(async () => {
+  try {
+    await Promise.all(['500', '600', '700'].map(w => document.fonts.load(`${w} 64px "Google Sans"`)));
+    const W = 440, H = 474, R = 12.5;
+    const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true, preserveDrawingBuffer:true });
+    renderer.setPixelRatio(1); renderer.setSize(W, H);
+    renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.1;
+    const scene = new THREE.Scene();
+    scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.03).texture;
+    const key = new THREE.DirectionalLight(0xffffff, 2.6); key.position.set(-70, 55, 60); scene.add(key);
+    const rim = new THREE.DirectionalLight(0x8fa0ff, .9); rim.position.set(60, 20, -40); scene.add(rim);
+    const cam = new THREE.PerspectiveCamera(17, W / H, 1, 600);
+    const target = new THREE.Vector3(11, 3, 0), dist = 232, el = 17 * Math.PI / 180;
+    cam.position.set(target.x, target.y + Math.sin(el) * dist, Math.cos(el) * dist); cam.lookAt(target);
+
+    const metal = (rough = .3, col = 0xeceff3) => new THREE.MeshStandardMaterial({ color:col, metalness:.88, roughness:rough, envMapIntensity:1.5 });
+    const lathe = pts => new THREE.LatheGeometry(pts.map(p => new THREE.Vector2(p[0], p[1])), 160);
+    const g = new THREE.Group(); scene.add(g);
+
+    // steel barrel
+    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 36, 128, 1, true), metal(.34)); g.add(barrel);
+    // crimped end cap: rolled bead, shallow groove, raised collar for the spool
+    const cap = [[0, 0], [12.2, 0]];
+    for (let a = -90; a <= 90; a += 15) cap.push([12.55 + Math.cos(a * Math.PI / 180) * .95, .95 + Math.sin(a * Math.PI / 180) * .95]);
+    cap.push([11.9, 1.9], [11.4, 1.5], [10.8, 1.5], [10.2, 1.9], [5.2, 2.6], [4.3, 2.75], [4.3, 3.0], [0, 3.0]);
+    const capGeo = lathe(cap);
+    const top = new THREE.Mesh(capGeo, metal(.26)); top.position.y = 18; g.add(top);
+    const bot = new THREE.Mesh(capGeo, metal(.3)); bot.scale.y = -1; bot.position.y = -18; g.add(bot);
+    // spool stem with collar + notched tip, and the small rewind stub underneath
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(3.1, 3.1, 8.5, 64), metal(.22)); stem.position.y = 18 + 3 + 4.25; g.add(stem);
+    const tip = new THREE.Mesh(new THREE.CylinderGeometry(3.1, 3.1, .5, 64), metal(.4, 0xbfc3ca)); tip.position.y = 18 + 3 + 8.7; g.add(tip);
+    const slot = new THREE.Mesh(new THREE.BoxGeometry(1.1, .45, 6.4), new THREE.MeshStandardMaterial({ color:0x15161a, roughness:.7 })); slot.position.y = 18 + 3 + 8.75; g.add(slot);
+    const stub = new THREE.Mesh(new THREE.CylinderGeometry(3.0, 3.0, 2.6, 48), metal(.35)); stub.position.y = -18 - 1.3; g.add(stub);
+
+    // film leader: perforated, tapered tip, gently curled, leaving through a felt-lined slit at the back right
+    const LW = 36, LH = 29, PXMM = 28;
+    const lc = document.createElement('canvas'); lc.width = LW * PXMM; lc.height = LH * PXMM; const lg = lc.getContext('2d');
+    const grad = lg.createLinearGradient(0, 0, 0, lc.height); grad.addColorStop(0, '#92572b'); grad.addColorStop(.5, '#7d4623'); grad.addColorStop(1, '#6c3b1c');
+    lg.fillStyle = grad; lg.fillRect(0, 0, lc.width, lc.height);
+    const lh = lg.createLinearGradient(0, 0, lc.width, 0); lh.addColorStop(0, 'rgba(0,0,0,.25)'); lh.addColorStop(.3, 'rgba(255,220,170,.10)'); lh.addColorStop(1, 'rgba(255,230,190,.18)');
+    lg.fillStyle = lh; lg.fillRect(0, 0, lc.width, lc.height);
+    const leaderMap = new THREE.CanvasTexture(lc); leaderMap.colorSpace = THREE.SRGBColorSpace; leaderMap.anisotropy = 8;
+    const ac = document.createElement('canvas'); ac.width = lc.width; ac.height = lc.height; const ag = ac.getContext('2d');
+    ag.fillStyle = '#000'; ag.fillRect(0, 0, ac.width, ac.height);
+    const cw = ac.width, ch = ac.height;
+    ag.fillStyle = '#fff'; ag.beginPath(); ag.moveTo(0, 0); ag.lineTo(cw - 190, 0); ag.lineTo(cw, 150); ag.lineTo(cw, ch - 150); ag.lineTo(cw - 190, ch); ag.lineTo(0, ch); ag.closePath(); ag.fill();
+    ag.fillStyle = '#000'; const pw = 2.8 * PXMM, ph = 2.0 * PXMM, pitch = 4.75 * PXMM;
+    for (let x = 4 * PXMM; x < cw - 250; x += pitch) for (const y of [1.1 * PXMM, ch - 1.1 * PXMM - ph]) { ag.beginPath(); ag.roundRect(x, y, pw, ph, 9); ag.fill(); }
+    const leaderAlpha = new THREE.CanvasTexture(ac);
+    const lgeo = new THREE.PlaneGeometry(LW, LH, 36, 1); lgeo.translate(LW / 2 - 3, 0, 0);
+    const pos = lgeo.attributes.position; for (let i = 0; i < pos.count; i++) { const x = pos.getX(i) + 3; pos.setZ(i, .012 * x * x * (x > 0 ? 1 : 0)); } lgeo.computeVertexNormals();
+    const leader = new THREE.Mesh(lgeo, new THREE.MeshStandardMaterial({ map:leaderMap, alphaMap:leaderAlpha, transparent:true, alphaTest:.5, side:THREE.DoubleSide, roughness:.42, metalness:0 }));
+    const slotA = 160 * Math.PI / 180, runY = (slotA + Math.PI), sx = Math.sin(slotA) * (R - .4), sz = Math.cos(slotA) * (R - .4);
+    leader.position.set(sx, 0, sz); leader.rotation.y = runY; g.add(leader);
+    const felt = new THREE.Mesh(new THREE.BoxGeometry(2.6, 31, 1.5), new THREE.MeshStandardMaterial({ color:0x0c0c0e, roughness:1 }));
+    felt.position.set(Math.sin(slotA) * R, 0, Math.cos(slotA) * R); felt.rotation.y = runY; g.add(felt);
+
+    // soft contact shadow
+    const sc = document.createElement('canvas'); sc.width = sc.height = 256; const sg = sc.getContext('2d');
+    const rg = sg.createRadialGradient(128, 128, 8, 128, 128, 126); rg.addColorStop(0, 'rgba(0,0,10,.62)'); rg.addColorStop(.55, 'rgba(0,0,10,.28)'); rg.addColorStop(1, 'rgba(0,0,10,0)');
+    sg.fillStyle = rg; sg.fillRect(0, 0, 256, 256);
+    const shadow = new THREE.Mesh(new THREE.PlaneGeometry(64, 64), new THREE.MeshBasicMaterial({ map:new THREE.CanvasTexture(sc), transparent:true, depthWrite:false }));
+    shadow.rotation.x = -Math.PI / 2; shadow.position.set(10, -21.2, 0); scene.add(shadow);
+
+    // wrapped paper label, drawn flat then wrapped around the barrel (front = centre of the canvas)
+    const LBW = 2048, LBH = 752;
+    function labelTexture(f) {
+      const c = document.createElement('canvas'); c.width = LBW; c.height = LBH; const x = c.getContext('2d');
+      const name = f.id === 'POLA' ? '690' : f.label.replace(/\s+\d+[A-Z]?$/, '');
+      const brand = f.id === 'POLA' ? 'POLAROID' : f.lut ? 'FUJIFILM' : '';
+      x.fillStyle = f.body; x.fillRect(0, 0, LBW, LBH);
+      const y1 = LBH * .37, y2 = LBH * .71, cx = LBW / 2;
+      const top = x.createLinearGradient(0, 0, 0, y1); top.addColorStop(0, 'rgba(255,255,255,.14)'); top.addColorStop(1, 'rgba(0,0,0,.18)'); x.fillStyle = top; x.fillRect(0, 0, LBW, y1);
+      x.fillStyle = f.band; x.fillRect(0, y1, LBW, y2 - y1);
+      x.fillStyle = 'rgba(255,255,255,.7)'; x.fillRect(0, y1 - 5, LBW, 5); x.fillRect(0, y2, LBW, 4);
+      const bot = x.createLinearGradient(0, y2, 0, LBH); bot.addColorStop(0, 'rgba(0,0,0,.30)'); bot.addColorStop(1, 'rgba(0,0,0,.52)'); x.fillStyle = bot; x.fillRect(0, y2 + 4, LBW, LBH - y2);
+      x.textAlign = 'center'; x.textBaseline = 'alphabetic';
+      const fit = (t, size, maxW, w = 700) => { let s = size; do { x.font = `${w} ${s}px "Google Sans"`; s -= 4; } while (x.measureText(t).width > maxW && s > 20); };
+      if (brand) { x.fillStyle = 'rgba(255,255,255,.92)'; x.font = '700 50px "Google Sans"'; x.letterSpacing = '16px'; x.fillText(brand, cx + 8, LBH * .115); x.letterSpacing = '0px'; }
+      x.fillStyle = '#fff'; fit(name, 132, 560); x.fillText(name, cx, LBH * .30);
+      x.fillStyle = f.ink; fit(f.iso, 230, 400); x.fillText(f.iso, cx, y2 - (y2 - y1) * .17);
+      x.fillStyle = f.ink; x.globalAlpha = .75; x.font = '600 42px "Google Sans"'; x.letterSpacing = '8px';
+      x.textAlign = 'right'; x.fillText('ISO', cx - 250, y2 - (y2 - y1) * .22); x.textAlign = 'left'; x.fillText('EXP·36', cx + 250, y2 - (y2 - y1) * .22);
+      x.letterSpacing = '0px'; x.globalAlpha = 1; x.textAlign = 'center';
+      // DX-style checker code
+      const dxw = 40, n = 14, x0 = cx - n * dxw / 2, ty = y2 + 44;
+      for (let r = 0; r < 2; r++) for (let j = 0; j < n; j++) { const on = ((f.id.charCodeAt(0) + j * 3 + r * 7) % 3) !== 0; x.fillStyle = on ? '#0d0d0d' : '#d6d8dc'; x.fillRect(x0 + j * dxw, ty + r * 34, dxw - 3, 31); }
+      x.fillStyle = 'rgba(255,255,255,.6)'; x.font = '600 30px "Google Sans"'; x.letterSpacing = '6px'; x.fillText('135 · DX CODED', cx, LBH - 38); x.letterSpacing = '0px';
+      // repeat the brand around the wrap so the sides never look blank
+      x.fillStyle = 'rgba(255,255,255,.55)'; x.font = '700 76px "Google Sans"';
+      [cx - 760, cx + 760].forEach(px => { x.fillText(name, px, LBH * .30); });
+      const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+    }
+    const labelGeo = new THREE.CylinderGeometry(R + .12, R + .12, 28, 160, 1, true);
+    const label = new THREE.Mesh(labelGeo, null); label.rotation.y = Math.PI; g.add(label);
+
+    g.rotation.y = -.14;                    // turn slightly so the label reads and the leader shows on the right
+    const imgs = [];
+    for (const f of FILMS) {
+      const tex = labelTexture(f);
+      label.material = new THREE.MeshPhysicalMaterial({ map:tex, roughness:.55, metalness:0, clearcoat:.55, clearcoatRoughness:.28, envMapIntensity:.55 });
+      renderer.render(scene, cam);
+      imgs.push(renderer.domElement.toDataURL('image/png'));
+      tex.dispose(); label.material.dispose();
+      await new Promise(r => setTimeout(r, 0));
+    }
+    document.querySelectorAll('#strip .film').forEach((btn, i) => {
+      const img = new Image(); img.alt = ''; img.src = imgs[i]; img.draggable = false;
+      const svg = btn.querySelector('svg'); if (svg) svg.replaceWith(img);
+    });
+  } catch (e) { console.warn('3D cartridges unavailable; keeping SVG fallback.', e); }
+})();
+</script>
+</body>
+</html>
