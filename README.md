@@ -24,7 +24,7 @@ Pricing is built into the UI, but **no payments are processed**. Plan state is k
 
 | | Free | Pro Monthly | Pro Yearly | Lifetime |
 |---|---|---|---|---|
-| Price (₹, incl. GST) | 0 | 249 / month | 1,499 / year | 2,999 once |
+| Price (₹, incl. GST) | 0 | 199 / month | 1,999 / year | 3,999 once |
 | Film looks | 5 (all 14 can be previewed) | All 14 | All 14 | All 14 |
 | Export | up to 2048px, JPEG and PNG | Full resolution, JPEG, PNG, WebP, TIFF, BMP | Same | Same |
 
