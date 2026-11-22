@@ -705,7 +705,7 @@ $('auto').onclick = () => {
   if (a == null) { cropmsg.textContent = 'No clear horizon or vertical lines found'; return; }
   const v = Math.round(a * 10) / 10;
   if (Math.abs(v) < .1) { cropmsg.textContent = 'Already level'; setAngle(0); return; }
-  autoFit = true; cropmsg.textContent = `Straightened by ${Math.abs(v).toFixed(1)}° ${v < 0 ? 'counter-clockwise' : 'clockwise'}`; setAngle(v);
+  autoFit = true; cropmsg.textContent = ''; setAngle(v);
 };
 
 function enterCrop() {
