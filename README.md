@@ -1,10 +1,10 @@
-# Film it
+# Filmroom
 
 Give any photo the look of classic Fujifilm and Polaroid film stocks, add grain, crop and straighten, then download it in the format you want. Everything runs in your browser, so your photos never leave your device.
 
 **[Open the app](https://siddharthsimharaju.github.io/film-it/)**
 
-![Film it](docs/screenshot.png)
+![Filmroom](docs/screenshot.png)
 
 ## Features
 
@@ -48,4 +48,4 @@ Auto-straighten, HEIC and TIFF decoding use [heic2any](https://github.com/alexco
 
 ## About me
 
-Hi, I'm Siddharth. Film it is a small project I designed and built with [Claude Code](https://claude.com/claude-code). You can find me on GitHub at [@SiddharthSimharaju](https://github.com/SiddharthSimharaju).
+Hi, I'm Siddharth. Filmroom is a small project I designed and built with [Claude Code](https://claude.com/claude-code). You can find me on GitHub at [@SiddharthSimharaju](https://github.com/SiddharthSimharaju).

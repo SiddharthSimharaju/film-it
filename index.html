@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Film it</title>
+<title>Filmroom</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,100..900&family=Google+Sans:wght@400..700&display=swap" rel="stylesheet">
@@ -225,8 +225,8 @@
   @media (max-width:560px) {
     .plans { grid-template-columns:minmax(0,1fr); } .sheet { padding:30px 18px 22px; border-radius:24px; }
     .sheet h2 { font-size:26px; padding:0 34px; } .sheet .sub { margin-bottom:22px; } .modal { padding:12px; }
-    .top { grid-template-columns:auto 1fr; padding:0 12px; } .logo { font-size:17px; gap:8px; } .logo svg { width:24px; height:24px; }
-    .topr { gap:6px; } .btn.sm { padding:0 12px; } .fmt { display:none; } .split #dl { gap:6px; }
+    .top { grid-template-columns:auto 1fr; padding:0 10px; } .logo { font-size:15px; gap:6px; } .logo svg { width:20px; height:20px; }
+    .topr { gap:5px; } .btn.sm { padding:0 10px; } .split .caret { padding:0 9px; } .fmt { display:none; } .split #dl { gap:6px; }
     .stage { padding:4px 12px 10px; } .dock { padding:0 12px; } .card { padding:10px 16px; gap:10px 20px; } input[type=range] { width:120px; }
   }
 </style>
@@ -257,7 +257,7 @@
   <header class="top">
     <div class="logo display">
       <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><rect x="2" y="5" width="26" height="20" rx="6" fill="none" stroke="#fff" stroke-width="2.6"/><circle cx="15" cy="15" r="4.6" fill="#fff"/><rect x="5.5" y="2.5" width="6" height="3.5" rx="1.5" fill="#fff"/></svg>
-      Film it
+      Filmroom
     </div>
     <nav class="nav"><button class="navbtn" id="adjtab" disabled>Adjust</button><button class="navbtn" id="cropbtn" disabled>Crop</button></nav>
     <div class="topr"><button class="btn blurple sm" id="planbtn">Upgrade</button><div class="split">
@@ -337,7 +337,7 @@ const PLANS = {
 };
 const FREE_LOOKS = ['ORIG', 'PROV', 'VELV', 'REAL', 'S400', 'ACRS', 'POLA'];   // everything else is Pro
 const FREE_MAX_PX = 2048, FREE_FORMATS = ['png', 'jpeg'];
-let plan = 'free'; try { const p = localStorage.getItem('filmit.plan'); if (p && PLANS[p]) plan = p; } catch (e) {}
+let plan = 'free'; try { const p = (localStorage.getItem('filmroom.plan') || localStorage.getItem('filmit.plan')); if (p && PLANS[p]) plan = p; } catch (e) {}
 FILMS.sort((a, b) => FREE_LOOKS.includes(b.id) - FREE_LOOKS.includes(a.id));
 const isPro = () => plan !== 'free';
 const lookLocked = f => !isPro() && !FREE_LOOKS.includes(f.id);
@@ -466,7 +466,7 @@ const gl = cv.getContext('webgl2', { preserveDrawingBuffer:true, antialias:false
 let prog, imgTex, uUseLut, uMix, uGrain, uSize, U = {};
 const lutCache = {};
 function initGL() {
-  if (!gl) { alert('Film it needs WebGL2 (any current browser).'); return; }
+  if (!gl) { alert('Filmroom needs WebGL2 (any current browser).'); return; }
   const mk = (t, src) => { const s = gl.createShader(t); gl.shaderSource(s, src); gl.compileShader(s);
     if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
   prog = gl.createProgram();
@@ -498,7 +498,7 @@ async function getLut(name) {
 }
 
 // ---------- App ----------
-let hasImage = false, current = FILMS[0], fileName = 'film-it', token = 0;
+let hasImage = false, current = FILMS[0], fileName = 'filmroom', token = 0;
 
 FILMS.forEach((f, i) => {
   const b = document.createElement('button');
@@ -772,7 +772,7 @@ async function decode(blob) {
 
 async function load(blob) {
   if (!isImageLike(blob)) { toast('That doesn\'t look like an image file.'); return; }
-  fileName = (blob.name || 'film-it').replace(/\.[^.]+$/, '');
+  fileName = (blob.name || 'filmroom').replace(/\.[^.]+$/, '');
   $('fname').textContent = $('docname').textContent = fileName;
   let bmp;
   try { bmp = await decode(blob); toast('', 1); }
@@ -910,7 +910,7 @@ const XBTN = '<button class="x" data-close aria-label="Close"><svg width="14" he
 function openModal() { $('modal').classList.add('open'); document.body.classList.add('modal-open'); const x = sheet.querySelector('.x'); if (x) x.focus({ preventScroll:true }); }
 function closeModal() { $('modal').classList.remove('open'); document.body.classList.remove('modal-open'); }
 function openPlans(opts = {}) { renderPlans(opts); openModal(); }
-function setPlan(p) { plan = p; try { localStorage.setItem('filmit.plan', p); } catch (e) {} refreshPlanUI(); }
+function setPlan(p) { plan = p; try { localStorage.setItem('filmroom.plan', p); } catch (e) {} refreshPlanUI(); }
 function updateProTag() { $('protag').classList.toggle('on', hasImage && lookLocked(current)); }
 function refreshPlanUI() {
   document.body.classList.toggle('is-pro', isPro());
