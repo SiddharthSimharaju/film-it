@@ -168,7 +168,8 @@
   .lockbadge { position:absolute; top:-2px; right:20px; z-index:2; width:22px; height:22px; border-radius:50%; display:grid; place-items:center; color:#fff;
     background:linear-gradient(140deg,rgba(255,255,255,.3),rgba(255,255,255,.1)); border:1px solid rgba(255,255,255,.3); backdrop-filter:blur(8px); }
   .lockbadge svg { width:12px; height:12px; }
-  body.is-pro .lockbadge { display:none; }
+  body.is-pro .lockbadge, body.is-pro .shelfdiv { display:none; }
+  .shelfdiv { flex:none; width:1px; align-self:stretch; margin:14px 16px 30px; background:linear-gradient(180deg,transparent,rgba(255,255,255,.28),transparent); }
   .protag { display:none; padding:2px 8px; border-radius:6px; background:#fff; color:var(--ink); font-size:11px; font-weight:700; letter-spacing:.04em; }
   .protag.on { display:inline-flex; }
   .prochip { margin-left:8px; padding:1px 6px; border-radius:5px; background:rgba(255,255,255,.16); font-size:10px; font-weight:700; letter-spacing:.05em; vertical-align:1px; }
@@ -337,6 +338,7 @@ const PLANS = {
 const FREE_LOOKS = ['ORIG', 'PROV', 'VELV', 'REAL', 'S400', 'ACRS', 'POLA'];   // everything else is Pro
 const FREE_MAX_PX = 2048, FREE_FORMATS = ['png', 'jpeg'];
 let plan = 'free'; try { const p = localStorage.getItem('filmit.plan'); if (p && PLANS[p]) plan = p; } catch (e) {}
+FILMS.sort((a, b) => FREE_LOOKS.includes(b.id) - FREE_LOOKS.includes(a.id));
 const isPro = () => plan !== 'free';
 const lookLocked = f => !isPro() && !FREE_LOOKS.includes(f.id);
 const LOCK_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="7" width="9.6" height="6.6" rx="2"/><path d="M5.4 7V5.2a2.6 2.6 0 0 1 5.2 0V7"/></svg>';
@@ -504,6 +506,7 @@ FILMS.forEach((f, i) => {
   b.title = f.label;
   b.innerHTML = canisterSVG(f, i) + `<span>${f.label}</span>` + (FREE_LOOKS.includes(f.id) ? '' : `<i class="lockbadge" title="Pro look">${LOCK_SVG}</i>`);
   b.onclick = () => select(f, b);
+  if (i > 0 && !FREE_LOOKS.includes(f.id) && FREE_LOOKS.includes(FILMS[i - 1].id)) { const d = document.createElement('i'); d.className = 'shelfdiv'; d.title = 'Pro looks'; strip.appendChild(d); }
   strip.appendChild(b);
 });
 
