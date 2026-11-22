@@ -38,11 +38,11 @@ Every rule, where it is enforced and the test that proves it is in [docs/BUSINES
 
 The app is client-side only, so plans and limits behave correctly for honest users but **can be bypassed by a determined one** until a server owns them. [SECURITY.md](SECURITY.md) has the full penetration-test and verification report, what was fixed, and what to build before taking real payments.
 
-To run the 42 automated tests (business rules and security): `python3 -m http.server 8731`, then open <http://localhost:8731/tests/run.html>. After editing any inline script, run `python3 tools/update-csp.py` to refresh the content-security policy's script hashes.
+To run the 44 automated tests (business rules and security): `python3 -m http.server 8731`, then open <http://localhost:8731/tests/run.html>. After editing any inline script, run `python3 tools/update-csp.py` to refresh the content-security policy's script hashes.
 
 ## Accounts (Google sign-in)
 
-Plans belong to an account. Buying a plan needs a sign-in. The account dialog has three tabs: **General** (profile, sign-in method, delete account), **Plan & billing** (change plan, cancel or resume, payment method, invoices with downloadable receipts) and **Usage** (today's uploads and downloads against the plan's limits).
+Plans belong to an account. Buying a plan needs a sign-in. The account dialog has three tabs: **General** (profile, sign-in method, delete account), **Plan & billing** (change plan, cancel or resume, payment method, invoices with a downloadable PDF receipt) and **Usage** (today's uploads and downloads against the plan's limits).
 
 Sign-in is a **demo** until you add a Google OAuth client ID:
 

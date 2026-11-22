@@ -183,6 +183,26 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
     return { pass: Object.keys(JSON.parse(localStorage.getItem('filmroom.accounts') || '{}')).length === 0 && !localStorage.getItem('filmroom.session') && $$('#acctbtn').classList.contains('out'), detail: 'record and session cleared; signed out' };
   });
 
+  await boot(); await signIn(); await buy('yearly');
+  await check('ACC-6', 'Receipt is a valid one-page PDF with the receipt number, transaction id, date, method, GST split and total', async () => {
+    await openAcct('plan'); const n = win.__blobs.length; $$('[data-receipt]').click(); await sleep(400);
+    const blob = win.__blobs[win.__blobs.length - 1], text = await blob.text(), name = win.__dl.at(-1).name;
+    const xrefAt = +(text.match(/startxref\n(\d+)/) || [])[1], xrefOk = text.slice(xrefAt, xrefAt + 4) === 'xref';
+    const offs = [...text.matchAll(/(\d{10}) 00000 n /g)].map(m => +m[1]), objOk = offs.every((o, k) => text.slice(o).startsWith(`${k + 1} 0 obj`));
+    const lenOk = (() => { const m = text.match(/\/Length (\d+) >>\nstream\n/); return m && text.slice(m.index + m[0].length).indexOf('\nendstream') === +m[1]; })();
+    const has = s => text.includes(s), id = (text.match(/No\. (FR-\d{8}-[0-9A-Z]{4})/) || [])[1];
+    const ok = blob.type === 'application/pdf' && text.startsWith('%PDF-1.4') && text.trimEnd().endsWith('%%EOF') && xrefOk && objOk && lenOk && /\/Count 1 /.test(text)
+      && has('PAYMENT RECEIPT') && !!id && has('RECEIPT NUMBER') && /pay_demo_[a-z0-9]{12}/.test(text) && has('TRANSACTION ID') && has('IST') && has('UPI - demo@upi')
+      && has('Pro Yearly') && has('1,694.07') && has('304.93') && has('INR 1,999.00') && has('DEMO RECEIPT') && name === `Filmroom-receipt-${id}.pdf`;
+    return { pass: ok, detail: `${blob.size} bytes, ${name}; xref ok ${xrefOk}, objects ok ${objOk}, length ok ${!!lenOk}` };
+  });
+  await boot();
+  await check('ACC-7', 'Receipt text cannot be forged or break the PDF: parentheses, backslashes, newlines and non-Latin letters in a name', async () => {
+    const real = win.completeSignIn({ sub: 'r2', name: 'Eve (A\\B)\nTOTAL PAID INR 0 हिन्दी', email: 'e@e.test' }); win.activatePlan('monthly', { type: 'UPI', label: 'x)(y' });
+    win.openAccount('plan'); await sleep(300); $$('[data-receipt]').click(); await sleep(400); const text = await win.__blobs.at(-1).text();
+    return { pass: real === true && (text.match(/\(TOTAL PAID\)/g) || []).length === 1 && /Eve \\\(A\\\\B\\\) TOTAL PAID INR 0 \?+/.test(text) && text.trimEnd().endsWith('%%EOF'), detail: 'the name stays one escaped line (no forged total row); PDF still well-formed' };
+  });
+
   /* ===================== SECURITY ===================== */
   await boot();
   await check('SEC-1', 'XSS via file name: markup in a name never runs or becomes HTML', async () => {

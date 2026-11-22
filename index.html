@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-PZqpvfGNr6ZrM0WHxmkETQvUsCZ+roYacVzRdKy9/IE=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://accounts.google.com/gsi/; frame-src 'self' https://accounts.google.com/gsi/; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-Vo5QMCk7rN3v3fCaTpwMvNwqzcDqyRpNOf8nCfC9pHk=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://accounts.google.com/gsi/; frame-src 'self' https://accounts.google.com/gsi/; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin">
 <!-- Clickjacking guard: the page stays hidden unless it is the top window or framed by our own origin. -->
 <style id="antiframe">html{display:none!important}</style>
@@ -302,7 +302,10 @@
   .gbox { display:flex; justify-content:center; min-height:46px; } .gbtn { width:100%; max-width:320px; height:50px; gap:12px; }
   .ahead { display:flex; align-items:center; gap:16px; margin:4px 0 22px; } .ahead b { display:block; font-size:20px; letter-spacing:-.03em; } .ahead span { color:var(--muted); }
   .asec { padding:18px 0; border-top:1px solid rgba(255,255,255,.12); } .asec h4 { margin:0 0 12px; font-size:14px; font-weight:600; color:var(--muted); letter-spacing:.02em; }
-  .acard { display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; padding:16px 18px; border-radius:16px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); }
+  .acard { border-radius:16px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); overflow:hidden; margin-bottom:6px; }
+  .acard .ctop, .acard .cfoot { display:flex; justify-content:space-between; align-items:center; gap:14px 18px; flex-wrap:wrap; padding:16px 18px; }
+  .acard .cfoot { padding:12px 18px; border-top:1px solid rgba(255,255,255,.1); background:rgba(0,0,10,.16); color:var(--muted); font-size:13px; }
+  .btn.cancel { color:#ff9aa3; } .btn.cancel:hover:not(:disabled) { background:rgba(255,77,94,.16); }
   .acard b { font-size:17px; letter-spacing:-.02em; } .acard .st { color:var(--muted); font-size:13px; margin-top:3px; }
   .badge2 { margin-left:8px; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:700; letter-spacing:.04em; vertical-align:2px; background:rgba(88,101,242,.5); } .badge2.warn { background:rgba(255,170,60,.35); }
   .arow { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:9px 2px; font-size:14px; } .arow span:first-child { color:var(--muted); }
@@ -1402,7 +1405,8 @@ function startCheckout(id) {
 function renderSuccess(id) {
   const p = PLANS[id];
   sheet.innerHTML = XBTN + `<div class="done"><div class="ok">${TICK}</div><h2>You're on ${p.name}</h2>
-    <p>All 14 film looks, full-resolution export and every format are unlocked. Manage billing any time from your account.</p><div class="cact" style="max-width:340px;margin:0 auto"><button class="btn glass" data-acc="plan">View account</button><button class="btn white" data-close="1">Start filming</button></div></div>`;
+    <p>All 14 film looks, full-resolution export and every format are unlocked. Manage billing any time from your account.</p><div class="cact" style="max-width:340px;margin:0 auto"><button class="btn glass" data-acc="plan">View account</button><button class="btn white" data-close="1">Start filming</button></div>
+    ${(rec().invoices[0] || {}).id ? `<p style="margin:16px 0 0"><button class="linkbtn" data-receipt="${esc(rec().invoices[0].id)}">Download receipt (PDF)</button></p>` : ''}</div>`;
 }
 // ---------- Accounts (Google sign-in) ----------
 // Sign-in is a DEMO until you paste a Google OAuth client ID here. With an ID, "Continue with Google" becomes Google's real
@@ -1424,7 +1428,9 @@ function cleanRecord(r) {                                 // anything read back 
   if ((p === 'monthly' || p === 'yearly') && !renewsAt) p = 'free';           // a subscription without a valid renewal date is not trusted
   if (p === 'free' || p === 'lifetime') renewsAt = null;
   const invoices = (Array.isArray(r.invoices) ? r.invoices : []).filter(i => i && typeof i === 'object' && typeof i.plan === 'string' && Object.hasOwn(PLANS, i.plan) && i.plan !== 'free' && okTime(+i.date)).slice(0, 50)
-    .map(i => ({ id:cleanText(i.id, 24).replace(/[^A-Za-z0-9-]/g, '') || 'FR-0', date:+i.date, plan:i.plan, name:PLANS[i.plan].name, amount:PLANS[i.plan].amount }));
+    .map(i => ({ id:cleanText(i.id, 24).replace(/[^A-Za-z0-9-]/g, '') || 'FR-0', date:+i.date, plan:i.plan, name:PLANS[i.plan].name, amount:PLANS[i.plan].amount,
+      txn:cleanText(i.txn, 40).replace(/[^A-Za-z0-9_-]/g, ''), to:okTime(+i.to) ? +i.to : null,
+      method:i.method && typeof i.method === 'object' && ['UPI', 'Card', 'Netbanking'].includes(i.method.type) ? { type:i.method.type, label:cleanText(i.method.label, 40) } : null }));
   const method = r.method && typeof r.method === 'object' && ['UPI', 'Card', 'Netbanking'].includes(r.method.type) ? { type:r.method.type, label:cleanText(r.method.label, 40) } : null;
   const profile = r.profile && typeof r.profile === 'object' ? { name:cleanText(r.profile.name, 100), email:cleanText(r.profile.email, 200), picture:safePicture(r.profile.picture) } : null;
   return { plan:p, since:okTime(+r.since) ? +r.since : null, joined:okTime(+r.joined) ? +r.joined : null, renewsAt, canceled:r.canceled === true, method, invoices, profile };
@@ -1449,7 +1455,7 @@ function syncPlan() {                                     // set the active plan
     if (r.canceled) { r.plan = 'free'; r.renewsAt = null; r.canceled = false; }
     else {                                                // mock auto-renewal: Razorpay would charge the saved method here
       const per = TERM_DAYS[r.plan] * DAY, n = Math.floor((now - r.renewsAt) / per) + 1, p = PLANS[r.plan];
-      for (let i = Math.max(0, n - 24); i < n; i++) { const d = r.renewsAt + i * per; r.invoices.unshift({ id:'FR-' + d.toString(36).toUpperCase(), date:d, plan:r.plan, name:p.name, amount:p.amount }); }
+      for (let i = Math.max(0, n - 24); i < n; i++) { const d = r.renewsAt + i * per; r.invoices.unshift({ id:invoiceId(d), date:d, plan:r.plan, name:p.name, amount:p.amount, txn:newTxn(), to:d + per, method:r.method }); }
       r.invoices = r.invoices.slice(0, 50); r.renewsAt += n * per;
     }
   }
@@ -1459,7 +1465,7 @@ function syncPlan() {                                     // set the active plan
 function activatePlan(id, method) {
   const r = rec(), p = PLANS[id], now = Date.now();
   r.plan = id; r.since = now; r.canceled = false; r.renewsAt = TERM_DAYS[id] ? now + TERM_DAYS[id] * DAY : null; r.method = method || r.method;
-  r.invoices.unshift({ id:'FR-' + now.toString(36).toUpperCase(), date:now, plan:id, name:p.name, amount:p.amount });
+  r.invoices.unshift({ id:invoiceId(now), date:now, plan:id, name:p.name, amount:p.amount, txn:newTxn(), to:r.renewsAt, method:r.method });
   saveRec(r); plan = id; refreshPlanUI();
 }
 function completeSignIn(u) {
@@ -1531,9 +1537,11 @@ function panePlan(r) {
   const status = !paid ? 'You\'re on the Free plan.' : r.plan === 'lifetime' ? 'Lifetime access. It never expires.'
     : r.canceled ? `Cancelled. Pro stays until ${fmtDate(r.renewsAt)}.` : `Renews on ${fmtDate(r.renewsAt)} for ${fmtINR(p.amount)}.`;
   const inv = r.invoices.map(i => `<div class="arow inv"><span>${fmtDate(i.date)} · ${esc(i.name)}</span><span class="r">${fmtINR(i.amount)}<button class="linkbtn" data-receipt="${esc(i.id)}">Receipt</button></span></div>`).join('');
-  return `<div class="acard"><div><b>${p.name}${paid ? `<span class="badge2${r.canceled ? ' warn' : ''}">${r.canceled ? 'ENDING' : 'ACTIVE'}</span>` : ''}</b><div class="st">${status}</div></div>
-      <button class="btn glass sm" data-changeplan="1">${paid ? 'Change plan' : 'Upgrade'}</button></div>
-    ${recurring ? `<div class="btns">${r.canceled ? '<button class="btn white sm" data-resume="1">Resume subscription</button>' : '<button class="btn glass sm" data-cancelsub="1">Cancel subscription</button>'}</div>` : ''}
+  const foot = !recurring ? '' : r.canceled
+    ? `<div class="cfoot"><span>Your subscription ends on ${fmtDate(r.renewsAt)}. Resume to keep Pro.</span><button class="btn white sm" data-resume="1">Resume subscription</button></div>`
+    : `<div class="cfoot"><span>Cancel any time. You keep Pro until the end of the period.</span><button class="btn glass sm cancel" data-cancelsub="1">Cancel subscription</button></div>`;
+  return `<div class="acard"><div class="ctop"><div><b>${p.name}${paid ? `<span class="badge2${r.canceled ? ' warn' : ''}">${r.canceled ? 'ENDING' : 'ACTIVE'}</span>` : ''}</b><div class="st">${status}</div></div>
+      <button class="btn glass sm" data-changeplan="1">${paid ? 'Change plan' : 'Upgrade'}</button></div>${foot}</div>
     <div class="asec"><h4>Payment method</h4>${row('On file', r.method ? `${esc(r.method.type)} · ${esc(r.method.label)}${paid ? '<button class="linkbtn" data-pm="1">Update</button>' : ''}` : 'None')}</div>
     <div class="asec"><h4>Invoices</h4>${inv || '<div class="arow"><span>No invoices yet</span><span></span></div>'}</div>
     <p class="hint">Demo mode: no payments are processed.</p>`;
@@ -1573,10 +1581,77 @@ function renderCancel() {
     <div class="cact"><button class="btn glass" data-acc="1">Keep my plan</button><button class="btn danger" data-confirmcancel="1">Cancel subscription</button></div></div>`;
 }
 function openAccount(tab) { acctTab = tab || 'general'; renderAccount(); openModal(); }
+// ---------- Receipts (a real one-page PDF, built in the browser) ----------
+// Seller details printed on receipts. Fill these in before launch: an Indian GST invoice needs the legal name, address and GSTIN.
+const BUSINESS = { name:'Filmroom', legalName:'', address:[], gstin:'', support:'' };
+const ymd = ms => new Date(ms).toLocaleDateString('en-CA').replace(/-/g, '');
+const invoiceId = ms => `FR-${ymd(ms)}-${(ms % 1679616).toString(36).toUpperCase().padStart(4, '0')}`;
+const newTxn = () => { const a = new Uint8Array(12); crypto.getRandomValues(a); return 'pay_demo_' + [...a].map(b => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join(''); };   // a real Razorpay payment id (pay_...) replaces this
+const AFM = s => s.split(',').map(Number);                // Helvetica character widths (1/1000 em) for ASCII 32..126, to right-align text
+const HELV = AFM('278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584');
+const HELVB = AFM('278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584');
+const pdfText = t => String(t == null ? '' : t).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\x20-\x7e]/g, '?');   // the standard PDF fonts are Latin-only
+const pdfEsc = t => pdfText(t).replace(/[\\()]/g, '\\$&');
+const textW = (t, size, bold) => { const W = bold ? HELVB : HELV; let n = 0; for (const ch of pdfText(t)) n += W[ch.charCodeAt(0) - 32]; return n * size / 1000; };
+const money = n => Number(n).toLocaleString('en-IN', { minimumFractionDigits:2, maximumFractionDigits:2 });
+const istStamp = ms => new Date(ms).toLocaleString('en-IN', { timeZone:'Asia/Kolkata', day:'numeric', month:'short', year:'numeric', hour:'numeric', minute:'2-digit', hour12:true }).replace(',', '') + ' IST';
+function buildReceiptPDF(i, u) {
+  const ops = [], hex = h => [(h >> 16) & 255, (h >> 8) & 255, h & 255].map(v => (v / 255).toFixed(3)).join(' ');
+  const rect = (x, y, w, h, c) => ops.push(`${hex(c)} rg ${x} ${y} ${w} ${h} re f`);
+  const line = (x1, y1, x2, y2, c = 0xdcdde8, wd = .7) => ops.push(`${hex(c)} RG ${wd} w ${x1} ${y1} m ${x2} ${y2} l S`);
+  const box = (x, y, w, h, c, wd = 1) => ops.push(`${hex(c)} RG ${wd} w ${x} ${y} ${w} ${h} re S`);
+  const text = (x, y, s, size = 10, o = {}) => { const w = textW(s, size, o.bold), px = o.align === 'right' ? x - w : o.align === 'center' ? x - w / 2 : x;
+    ops.push(`BT ${hex(o.color == null ? 0x15152b : o.color)} rg /${o.bold ? 'F2' : 'F1'} ${size} Tf ${px.toFixed(2)} ${y} Td (${pdfEsc(s)}) Tj ET`); };
+  const field = (x, y, label, value, o = {}) => { text(x, y, label, 7.5, { bold:true, color:0x8a8ca8 }); text(x, y - 15, value, o.size || 10.5, { bold:!!o.bold }); };
+  const NAVY = 0x0a0a3d, BLUE = 0x5865f2, GREY = 0x6b6d86, L = 48, R = 547;
+  const txn = i.txn || 'pay_demo_' + i.id, demo = /^pay_demo_/.test(txn);
+  const base = Math.round(i.amount / 1.18 * 100) / 100, gst = Math.round((i.amount - base) * 100) / 100;
+  const period = i.plan === 'lifetime' ? 'Lifetime access' : `${fmtDate(i.date)} to ${fmtDate(i.to || i.date + (TERM_DAYS[i.plan] || 0) * DAY)}`;
+  const term = i.plan === 'lifetime' ? 'One-time payment' : i.plan === 'yearly' ? 'Billed yearly' : 'Billed monthly';
+  // header band
+  rect(0, 742, 595, 100, NAVY); rect(0, 739, 595, 3, BLUE);
+  text(L, 790, BUSINESS.name, 26, { bold:true, color:0xffffff }); text(L, 770, 'Film looks for your photos', 9.5, { color:0xb8bcff });
+  text(R, 794, 'PAYMENT RECEIPT', 13, { bold:true, color:0xffffff, align:'right' }); text(R, 775, 'No. ' + i.id, 10, { color:0xdfe1ff, align:'right' });
+  // status + key facts
+  rect(L, 690, 70, 22, 0x12a150); text(L + 35, 697, 'PAID', 10.5, { bold:true, color:0xffffff, align:'center' });
+  text(L + 82, 697, `${money(i.amount)} INR received`, 10.5, { color:GREY });
+  line(L, 672, R, 672);
+  field(L, 652, 'RECEIPT NUMBER', i.id, { bold:true }); field(220, 652, 'DATE AND TIME', istStamp(i.date)); field(400, 652, 'TRANSACTION ID', txn, { size:9.5, bold:true });
+  field(L, 604, 'PAYMENT METHOD', i.method ? `${i.method.type} - ${i.method.label}` : 'Not recorded'); field(220, 604, 'CURRENCY', 'INR (Indian Rupee)'); field(400, 604, 'PAYMENT STATUS', 'Paid in full');
+  line(L, 566, R, 566);
+  // parties
+  text(L, 544, 'BILLED TO', 7.5, { bold:true, color:0x8a8ca8 }); text(L, 527, u.name, 12, { bold:true }); text(L, 512, u.email, 10, { color:GREY });
+  text(320, 544, 'FROM', 7.5, { bold:true, color:0x8a8ca8 }); text(320, 527, BUSINESS.legalName || BUSINESS.name, 12, { bold:true });
+  let sy = 512; for (const a of BUSINESS.address) { text(320, sy, a, 10, { color:GREY }); sy -= 13; } if (BUSINESS.gstin) text(320, sy, 'GSTIN: ' + BUSINESS.gstin, 10, { color:GREY });
+  // line items
+  rect(L, 452, R - L, 26, 0xf0f1fb); text(L + 12, 461, 'DESCRIPTION', 8, { bold:true, color:GREY }); text(300, 461, 'PERIOD', 8, { bold:true, color:GREY }); text(R - 12, 461, 'AMOUNT (INR)', 8, { bold:true, color:GREY, align:'right' });
+  text(L + 12, 428, i.name, 11.5, { bold:true }); text(L + 12, 413, term + ' - GST included in the price', 8.5, { color:GREY }); text(300, 428, period, 10); text(R - 12, 428, money(base), 11, { align:'right' });
+  line(L, 396, R, 396);
+  // totals
+  text(380, 372, 'Subtotal (excluding GST)', 10, { color:GREY }); text(R - 12, 372, money(base), 10.5, { align:'right' });
+  text(380, 354, 'GST at 18% (included)', 10, { color:GREY }); text(R - 12, 354, money(gst), 10.5, { align:'right' });
+  rect(330, 296, R - 330, 40, NAVY); text(344, 311, 'TOTAL PAID', 10, { bold:true, color:0xffffff }); text(R - 14, 310, `INR ${money(i.amount)}`, 14, { bold:true, color:0xffffff, align:'right' });
+  // notice
+  if (demo) { rect(L, 222, R - L, 46, 0xfff4e0); box(L, 222, R - L, 46, 0xf0b35a, .8); text(L + 14, 249, 'DEMO RECEIPT', 10, { bold:true, color:0x9a5b00 }); text(L + 14, 234, 'No payment was processed. This receipt was generated in demo mode and is not a tax document.', 9, { color:0x7a5200 }); }
+  // footer
+  line(L, 110, R, 110); text(L, 92, 'Thank you for choosing ' + BUSINESS.name + '.', 10.5, { bold:true }); text(L, 77, 'Please keep this receipt for your records.', 9, { color:GREY });
+  if (BUSINESS.support) text(L, 63, 'Questions? ' + BUSINESS.support, 9, { color:GREY });
+  text(R, 77, 'Generated on ' + istStamp(Date.now()), 8.5, { color:GREY, align:'right' }); text(R, 63, 'Page 1 of 1', 8.5, { color:GREY, align:'right' });
+  const content = ops.join('\n');
+  const objs = ['<< /Type /Catalog /Pages 2 0 R >>', '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> /Contents 4 0 R >>',
+    `<< /Length ${content.length} >>\nstream\n${content}\nendstream`,
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>', '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>',
+    `<< /Title (${pdfEsc(BUSINESS.name + ' receipt ' + i.id)}) /Producer (${pdfEsc(BUSINESS.name)}) /CreationDate (D:${new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14)}Z) >>`];
+  let out = '%PDF-1.4\n'; const offs = [];
+  objs.forEach((o, k) => { offs.push(out.length); out += `${k + 1} 0 obj\n${o}\nendobj\n`; });
+  const xref = out.length;
+  out += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n${offs.map(o => String(o).padStart(10, '0') + ' 00000 n \n').join('')}trailer\n<< /Size ${objs.length + 1} /Root 1 0 R /Info 7 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  return new Blob([Uint8Array.from(out, c => c.charCodeAt(0))], { type:'application/pdf' });
+}
 function receiptFor(id) {
-  const i = rec().invoices.find(x => x.id === id); if (!i) return;
-  const gst = Math.round(i.amount - i.amount / 1.18);
-  saveBlob(new Blob([`Filmroom receipt\n\nInvoice:   ${i.id}\nDate:      ${fmtDate(i.date)}\nPlan:      ${i.name}\nAmount:    ${fmtINR(i.amount)} (includes GST ${fmtINR(gst)})\nBilled to: ${user.name} <${user.email}>\n\nDemo mode: no payment was taken.\n`], { type:'text/plain' }), `filmroom-receipt-${i.id}.txt`);
+  const i = rec().invoices.find(x => x.id === id); if (!i || !user) return;
+  saveBlob(buildReceiptPDF(i, user), `${safeName(BUSINESS.name)}-receipt-${safeName(i.id)}.pdf`);
 }
 
 $('modal').addEventListener('click', e => {

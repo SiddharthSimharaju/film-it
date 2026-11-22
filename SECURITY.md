@@ -34,10 +34,10 @@ I attacked the app the way a hostile user would (console, edited storage, malici
 
 ## 2. Verification and validation (IV&V)
 
-**Verification (built right):** `tests/run.html` drives the real app through its UI. **42 tests, all passing**:
+**Verification (built right):** `tests/run.html` drives the real app through its UI. **44 tests, all passing**:
 
 - `BR-*` (23): every business rule in `docs/BUSINESS_RULES.md`, per plan: photo, size, resolution, photo, size and resolution limits, the Free download limit, export cap, formats, looks, ZIP, expiry, cancellation.
-- `ACC-*` (5): the account dialog and account removal.
+- `ACC-*` (7): the account dialog, account removal and the PDF receipt (including that hostile text cannot forge or break it).
 - `SEC-*` (14): each attack above, as a regression test, plus the CSP, pinned libraries, network allow-list and the HEIC sandbox. (Clickjacking needs a second origin, so it was verified by hand with a hostile page.)
 
 Run it: `python3 -m http.server 8731`, open `http://localhost:8731/tests/run.html`. After editing any inline script, run `python3 tools/update-csp.py` (a test fails if the policy is stale).

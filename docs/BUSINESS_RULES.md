@@ -69,7 +69,7 @@ What each plan allows, and where each rule lives in the code. Every rule is chec
 | A5 | Lifetime never expires and cannot be cancelled. | `panePlan` | ACC-1 |
 | A6 | When a plan lapses, the Free limits apply to *new* uploads and exports. Photos already open stay open. | `limits()` | BR-B2 |
 | A7 | An account with an active subscription cannot be removed until it is cancelled. Removing an account clears its saved plan data. | `deleteAccount` | ACC-4, ACC-5 |
-| A8 | Every payment creates an invoice with a downloadable receipt. GST (18%) is included in the price. | `activatePlan`, `receiptFor` | ACC-1 |
+| A8 | Every payment creates an invoice. Its receipt is a one-page PDF with the receipt number, transaction ID, date and time (IST), payment method, billed-to and from details, the billing period, the price split into subtotal and GST (18%, included in the price) and the total paid. Seller details (legal name, address, GSTIN) come from `BUSINESS` in `index.html`: fill them in before launch. | `activatePlan`, `buildReceiptPDF` | ACC-6, ACC-7 |
 
 ### Daily download counter (Free only)
 | # | Rule | Code | Test |
