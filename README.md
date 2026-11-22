@@ -8,6 +8,7 @@ Give any photo the look of classic Fujifilm and Polaroid film stocks, add grain,
 
 ## Features
 
+- **Many photos at once:** drop or pick as many as you like. Each photo keeps its own film look, grain, adjustments and crop, **Apply look to all** copies one photo's look to the rest, and **Download all** saves every edited photo in one ZIP.
 - **Film looks:** Provia 100F, Provia 400X, Velvia 50, Astia 100F, Reala 100, Sensia 100, Superia 400, X-Tra 800, Pro 400H, Superia XPRO, FP-100C (and Neg), Acros 100 and Polaroid 690.
 - **Filter strength:** blend each look from 0 to 100%.
 - **Film grain:** adjustable, scaled to the photo's resolution.

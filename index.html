@@ -28,7 +28,7 @@
   .stars i.plus::before { width:100%; height:1.5px; } .stars i.plus::after { width:1.5px; height:100%; }
   @keyframes tw { from { opacity:.12; } to { opacity:.6; } }
 
-  .app { position:relative; z-index:1; height:100%; display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:76px minmax(0,1fr) auto auto; }
+  .app { position:relative; z-index:1; height:100%; display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:76px minmax(0,1fr) auto auto auto; }
 
   /* header */
   .top { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; padding:0 32px; }
@@ -119,6 +119,27 @@
   .adj input[type=range] { width:100%; height:4px; background:linear-gradient(to right, rgba(255,255,255,.2) var(--a,50%), #fff var(--a,50%), #fff var(--b,50%), rgba(255,255,255,.2) var(--b,50%)); }
   @media (max-width:900px) { .adjpanel.on { grid-template-columns:repeat(2,minmax(0,1fr)); } .adjpanel .btn { grid-column:1 / -1; } }
 
+  /* multiple photos */
+  .photos { display:none; align-items:center; gap:16px; padding:0 32px 10px; }
+  body.has .photos { display:flex; }
+  .thumbs { flex:1; min-width:0; display:flex; gap:8px; overflow-x:auto; padding:4px 3px; scrollbar-width:none; }
+  .thumbs::-webkit-scrollbar { display:none; }
+  .pt { position:relative; flex:none; width:56px; height:56px; border-radius:13px; overflow:hidden; cursor:pointer; background:#000; border:2px solid transparent; opacity:.72; transition:opacity .15s, border-color .15s, transform .15s; }
+  .pt img { width:100%; height:100%; object-fit:cover; display:block; pointer-events:none; }
+  .pt:hover { opacity:1; } .pt.on { border-color:#fff; opacity:1; }
+  .pt .rm { position:absolute; top:2px; right:2px; width:19px; height:19px; border-radius:50%; border:0; padding:0; background:rgba(0,0,10,.7); color:#fff; font-size:13px; line-height:1; cursor:pointer; display:none; place-items:center; }
+  .pt:hover .rm, .pt.on .rm { display:grid; } .pt .rm:hover { background:#000; }
+  .pact { display:flex; align-items:center; gap:10px; flex:none; }
+  .pcount { color:var(--muted); font-size:13px; font-variant-numeric:tabular-nums; margin-right:2px; }
+  .busy { position:fixed; inset:0; z-index:55; display:none; align-items:center; justify-content:center; background:rgba(0,0,12,.45); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); }
+  .busy.on { display:flex; }
+  .busybox { min-width:260px; padding:22px 26px; border-radius:22px; text-align:center; display:grid; gap:14px; justify-items:center;
+    background:linear-gradient(140deg,rgba(255,255,255,.16),rgba(255,255,255,.05)), rgba(8,8,44,.75); border:1px solid var(--glass-edge); box-shadow:var(--glass-shadow); }
+  .busybox .spin { width:22px; height:22px; border-color:rgba(255,255,255,.25); border-top-color:#fff; }
+  .busybox b { font-weight:600; }
+  .bar { width:100%; height:5px; border-radius:3px; background:rgba(255,255,255,.18); overflow:hidden; } .bar i { display:block; height:100%; width:0; background:#fff; transition:width .2s; }
+  @media (max-width:900px) { .photos { padding:0 14px 8px; gap:10px; } .pt { width:48px; height:48px; } .pcount { display:none; } }
+
   /* crop overlay */
   .overlay { position:absolute; display:none; overflow:hidden; pointer-events:none; touch-action:none; }
   .overlay.on { display:block; }
@@ -179,6 +200,7 @@
   .protag.on { display:inline-flex; }
   .prochip { margin-left:8px; padding:1px 6px; border-radius:5px; background:rgba(255,255,255,.16); font-size:10px; font-weight:700; letter-spacing:.05em; vertical-align:1px; }
   .mi.locked .n, .mi.locked .d { opacity:.75; }
+  .mi.all { background:rgba(255,255,255,.1); } .mi.all:hover { background:rgba(255,255,255,.17); } .msep { height:1px; background:var(--glass-line); margin:6px 4px; }
   .mi.promo { margin-top:4px; background:linear-gradient(140deg,rgba(88,101,242,.4),rgba(88,101,242,.16)); }
   .mi.promo:hover { background:linear-gradient(140deg,rgba(88,101,242,.55),rgba(88,101,242,.24)); }
   body.modal-open { overflow:hidden; }
@@ -228,7 +250,7 @@
   .done h2 { text-align:center; } .done p { color:var(--muted); margin:10px auto 24px; max-width:360px; }
   @media (max-width:980px) { .plans { grid-template-columns:repeat(2,minmax(0,1fr)); } }
   @media (max-width:900px) {
-    .app { grid-template-rows:auto minmax(0,1fr) auto auto; }
+    .app { grid-template-rows:auto minmax(0,1fr) auto auto auto; }
     .top { grid-template-columns:auto 1fr; grid-template-areas:'logo actions' 'nav nav'; row-gap:8px; padding:10px 14px 6px; height:auto; }
     .logo { grid-area:logo; } .topr { grid-area:actions; } .nav { grid-area:nav; justify-content:center; }
     .navbtn { padding:8px 14px; font-size:15px; }
@@ -284,19 +306,25 @@
     <div class="drop" id="drop">
       <div class="ph">
         <svg width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="9" width="34" height="26" rx="7"/><circle cx="15" cy="19" r="3"/><path d="M6 31l9-8 7 6 6-5 10 8"/></svg>
-        <b>Drop an image here</b>or paste one with Ctrl/Cmd + V
-        <div><button class="btn white" id="upbtn"><svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 11V2.5M4.5 6L8 2.5 11.5 6M2.5 13.5h11"/></svg>Upload image</button></div>
+        <b>Drop images here</b>or paste with Ctrl/Cmd + V
+        <div><button class="btn white" id="upbtn"><svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 11V2.5M4.5 6L8 2.5 11.5 6M2.5 13.5h11"/></svg>Upload images</button></div>
       </div>
       <canvas id="cv"></canvas>
       <div class="overlay" id="ov"><div class="cropbox" id="cb">
         <i class="h nw" data-h="nw"></i><i class="h n" data-h="n"></i><i class="h ne" data-h="ne"></i><i class="h e" data-h="e"></i>
         <i class="h se" data-h="se"></i><i class="h s" data-h="s"></i><i class="h sw" data-h="sw"></i><i class="h w" data-h="w"></i>
       </div></div>
-      <button class="replace" id="replace">Replace image</button>
       <div class="caption"><span id="filmpill">Original</span><span class="protag" id="protag">PRO</span><i></i><span id="fdim"></span></div>
       <span class="tag" id="tag"></span>
     </div>
   </main>
+
+  <div class="photos" id="photos">
+    <div class="thumbs" id="thumbs"></div>
+    <div class="pact"><span class="pcount" id="pcount"></span>
+      <button class="btn glass sm" id="applyall" style="display:none" title="Copy this photo's film look, grain and adjustments to every photo">Apply look to all</button>
+      <button class="btn glass sm" id="addphotos">+ Add photos</button></div>
+  </div>
 
   <div class="dock">
     <div class="card controls off" id="controls">
@@ -321,9 +349,10 @@
 
   <div class="shelf"><div class="strip" id="strip"></div></div>
   <div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Plans"><div class="sheet" id="sheet"></div></div>
+  <div class="busy" id="busy"><div class="busybox"><span class="spin"></span><b id="busytxt"></b><div class="bar"><i id="busybar"></i></div></div></div>
   <div class="toast" id="toast" role="status"></div>
   <div class="hidden"><span id="filmname"></span><span id="filmmeta"></span><span id="fname"></span><span id="docname"></span></div>
-  <input type="file" id="file" accept="image/*,.heic,.heif,.hif,.tif,.tiff,.avif,.webp,.bmp,.gif,.jfif,.png,.jpg,.jpeg">
+  <input type="file" id="file" multiple accept="image/*,.heic,.heif,.hif,.tif,.tiff,.avif,.webp,.bmp,.gif,.jfif,.png,.jpg,.jpeg">
 </div>
 
 <script>
@@ -529,6 +558,8 @@ async function getLut(name) {
 
 // ---------- App ----------
 let hasImage = false, current = FILMS[0], fileName = 'filmroom', token = 0;
+const photos = [];                                  // every opened photo: { name, fileName, blob, origKey, origLabel, thumb, state }
+let cur = -1, busy = false, actToken = 0, thumbT = 0;
 
 FILMS.forEach((f, i) => {
   const b = document.createElement('button');
@@ -576,7 +607,7 @@ async function render() {
   gl.uniform1f(U.uScale, reg.scale); gl.uniform1f(U.uOutH, ch); gl.uniform1i(U.uEdit, reg.edit);
   gl.viewport(0, 0, cw, ch);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-  view = reg; layout();
+  view = reg; layout(); scheduleThumb();
   $('fdim').textContent = `${Math.round(editing ? src.w : reg.w)} × ${Math.round(editing ? src.h : reg.h)}`;
 }
 
@@ -805,54 +836,164 @@ const isImageLike = b => !!b && ((b.type || '').startsWith('image/') || (EXT(b.n
 const loadScript = src => new Promise((ok, no) => { const e = document.createElement('script'); e.src = src; e.onload = ok; e.onerror = () => no(new Error('Could not load ' + src)); document.head.appendChild(e); });
 let toastT; function toast(msg, ms = 2600) { const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); if (ms) toastT = setTimeout(() => t.classList.remove('on'), ms); }
 const BMPOPT = { imageOrientation:'from-image', premultiplyAlpha:'none' };
-async function decode(blob) {
-  try { return await createImageBitmap(blob, BMPOPT); } catch (e) { /* not natively supported: fall through */ }
+async function decode(blob) {                        // -> { bmp, blob }  (blob is always something the browser can decode natively)
+  try { return { bmp: await createImageBitmap(blob, BMPOPT), blob }; } catch (e) { /* not natively supported: fall through */ }
   const key = KEYS[EXT(blob.name)] || MIMEKEY[blob.type];
   if (key === 'heic') {                                    // HEIC / HEIF (iPhone photos)
     toast('Opening HEIC photo…', 0);
     await loadScript('https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js');
-    const out = await window.heic2any({ blob, toType:'image/png' });
-    return createImageBitmap(Array.isArray(out) ? out[0] : out, BMPOPT);
+    const out = await window.heic2any({ blob, toType:'image/png' }), png = Array.isArray(out) ? out[0] : out;
+    return { bmp: await createImageBitmap(png, BMPOPT), blob: png };
   }
   if (key === 'tiff') {                                    // TIFF
     toast('Opening TIFF…', 0);
     await loadScript('https://cdn.jsdelivr.net/npm/utif@3.1.0/UTIF.js');
     const buf = await blob.arrayBuffer(), ifds = UTIF.decode(buf); UTIF.decodeImage(buf, ifds[0]);
-    const rgba = UTIF.toRGBA8(ifds[0]);
-    return createImageBitmap(new ImageData(new Uint8ClampedArray(rgba.buffer, rgba.byteOffset, rgba.length), ifds[0].width, ifds[0].height));
+    const rgba = UTIF.toRGBA8(ifds[0]), id = new ImageData(new Uint8ClampedArray(rgba.buffer, rgba.byteOffset, rgba.length), ifds[0].width, ifds[0].height);
+    const c = document.createElement('canvas'); c.width = id.width; c.height = id.height; c.getContext('2d').putImageData(id, 0, 0);
+    const png = await new Promise(r => c.toBlob(r, 'image/png'));
+    return { bmp: await createImageBitmap(id), blob: png };
   }
   throw new Error('unsupported');
 }
 
-async function load(blob) {
-  if (!isImageLike(blob)) { toast('That doesn\'t look like an image file.'); return; }
-  fileName = (blob.name || 'filmroom').replace(/\.[^.]+$/, '');
-  $('fname').textContent = $('docname').textContent = fileName;
-  let bmp;
-  try { bmp = await decode(blob); toast('', 1); }
-  catch (e) { toast(`Couldn't open this file${EXT(blob.name) ? ' (.' + EXT(blob.name) + ')' : ''}. Try JPG, PNG, HEIC, WebP, AVIF, TIFF or BMP.`, 4500); return; }
-  origKey = KEYS[EXT(blob.name)] || MIMEKEY[blob.type] || null; origLabel = (EXT(blob.name) || (blob.type || '').replace('image/', '') || 'image').toUpperCase().replace('JPEG', 'JPG'); buildMenu();
+// ---------- Multiple photos ----------
+const defaultState = () => ({ film:'ORIG', amt:100, grn:40, adj:{ exposure:0, contrast:0, highlights:0, shadows:0 }, geo:{ angle:0, crop:null }, chipKey:'free', flip:false, autoFit:true });
+const snap = () => ({ film:current.id, amt:+amt.value, grn:+grn.value, adj:{ ...adj }, geo:{ angle:geo.angle, crop:geo.crop && { ...geo.crop } }, chipKey, flip, autoFit });
+function paintRange(el) { el.style.setProperty('--p', (el.value - el.min) / (el.max - el.min) * 100 + '%'); }
+function applyState(st) {
+  current = FILMS.find(f => f.id === st.film) || FILMS[0];
+  strip.querySelectorAll('.film').forEach((b, i) => b.classList.toggle('active', FILMS[i] === current));
+  amt.value = st.amt; grn.value = st.grn; $('amtv').textContent = amt.value + '%'; $('grnv').textContent = grn.value + '%'; paintRange(amt); paintRange(grn);
+  Object.assign(adj, st.adj);
+  document.querySelectorAll('#adjpanel input[type=range]').forEach(el => { el.value = adj[el.dataset.k]; $('av-' + el.dataset.k).textContent = fmtAdj(adj[el.dataset.k]); paintAdj(el); });
+  geo = { angle:st.geo.angle, crop:st.geo.crop && { ...st.geo.crop } }; chipKey = st.chipKey; flip = st.flip; autoFit = st.autoFit;
+  ang.value = geo.angle; $('angv').textContent = geo.angle.toFixed(1) + '°'; renderChips();
+}
+function coverThumb(el, w, h) {
+  const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'), k = Math.max(128 / w, 128 / h), dw = w * k, dh = h * k;
+  x.imageSmoothingQuality = 'high'; x.drawImage(el, (128 - dw) / 2, (128 - dh) / 2, dw, dh); return c.toDataURL('image/jpeg', .82);
+}
+function captureThumb() {                                // refresh the active photo's thumbnail so it shows the edited look
+  if (cur < 0 || editing || !photos[cur]) return;
+  const t = coverThumb(cv, cv.width, cv.height); photos[cur].thumb = t;
+  const im = $('thumbs').children[cur] && $('thumbs').children[cur].querySelector('img'); if (im) im.src = t;
+}
+function scheduleThumb() { clearTimeout(thumbT); thumbT = setTimeout(captureThumb, 350); }
+function renderPhotos() {
+  const el = $('thumbs'); el.textContent = '';
+  photos.forEach((p, i) => {
+    const d = document.createElement('div'); d.className = 'pt' + (i === cur ? ' on' : ''); d.dataset.i = i; d.title = p.name; d.tabIndex = 0; d.setAttribute('role', 'button');
+    const im = document.createElement('img'); im.alt = ''; im.src = p.thumb;
+    const rm = document.createElement('button'); rm.className = 'rm'; rm.dataset.rm = i; rm.type = 'button'; rm.title = 'Remove'; rm.setAttribute('aria-label', 'Remove ' + p.name); rm.textContent = '×';
+    d.append(im, rm); el.appendChild(d);
+  });
+  $('pcount').textContent = photos.length ? (photos.length > 1 ? `${cur + 1} of ${photos.length}` : '1 photo') : '';
+  $('applyall').style.display = photos.length > 1 ? '' : 'none';
+  const on = el.children[cur]; if (on && on.scrollIntoView) on.scrollIntoView({ block:'nearest', inline:'nearest' });
+  buildMenu();
+}
+async function getBitmap(p) {
+  let bmp = await createImageBitmap(p.blob, BMPOPT);
   const max = gl.getParameter(gl.MAX_TEXTURE_SIZE);
-  if (Math.max(bmp.width, bmp.height) > max) {   // only if the GPU can't hold it
+  if (Math.max(bmp.width, bmp.height) > max) {           // only if the GPU can't hold it
     const k = max / Math.max(bmp.width, bmp.height);
-    bmp = await createImageBitmap(bmp, { resizeWidth: Math.floor(bmp.width * k), resizeHeight: Math.floor(bmp.height * k), resizeQuality:'high' });
+    bmp = await createImageBitmap(bmp, { resizeWidth:Math.floor(bmp.width * k), resizeHeight:Math.floor(bmp.height * k), resizeQuality:'high' });
   }
-  src = { w:bmp.width, h:bmp.height }; srcBmp = bmp;      // full original resolution
-  geo = { angle:0, crop:null }; chipKey = 'free'; flip = false; autoFit = true;
-  if (editing) { editing = false; ov.classList.remove('on'); croppanel.classList.remove('on'); controls.classList.remove('hide'); cropbtn.classList.remove('on'); }
+  return bmp;
+}
+async function activate(i, o = {}) {
+  const p = photos[i]; if (!p || (busy && !o.batch)) return;
+  if (editing) await exitCrop(true);
+  if (cur >= 0 && photos[cur]) photos[cur].state = snap();
+  const my = ++actToken;
+  let bmp; try { bmp = o.bmp || await getBitmap(p); } catch (e) { toast(`Couldn't reopen ${p.name}.`, 3500); return; }
+  if (my !== actToken) { if (bmp.close) bmp.close(); return; }
+  src = { w:bmp.width, h:bmp.height }; if (srcBmp && srcBmp !== bmp && srcBmp.close) srcBmp.close(); srcBmp = bmp;
   if (imgTex) gl.deleteTexture(imgTex);
   imgTex = upload(0, bmp, true);
-  hasImage = true; drop.classList.add('has'); dl.disabled = false; $('dlcaret').disabled = false; cropbtn.disabled = false; $('adjtab').disabled = false; $('adjstab').disabled = false; resetAdj(); tab = 'film'; applyTab(); document.body.classList.add('has'); controls.classList.remove('off');
-  render();
+  cur = i; origKey = p.origKey; origLabel = p.origLabel; fileName = p.fileName; $('fname').textContent = $('docname').textContent = fileName;
+  applyState(p.state);
+  hasImage = true; drop.classList.add('has'); dl.disabled = false; $('dlcaret').disabled = false; cropbtn.disabled = false; $('adjtab').disabled = false; $('adjstab').disabled = false;
+  document.body.classList.add('has'); controls.classList.remove('off');
+  applyTab(); renderPhotos();
+  await render();
 }
+async function addFiles(list) {
+  const all = [...list].filter(Boolean), files = all.filter(isImageLike);
+  if (!files.length) { if (all.length) toast('That doesn\'t look like an image file.'); return; }
+  if (busy) return;
+  const first = photos.length; let failed = 0, firstBmp = null;
+  for (let k = 0; k < files.length; k++) {
+    const f = files[k]; if (files.length > 1) toast(`Opening ${k + 1} of ${files.length}…`, 0);
+    try {
+      const { bmp, blob } = await decode(f);
+      photos.push({ name:f.name || 'pasted image', fileName:(f.name || 'filmroom').replace(/\.[^.]+$/, ''), blob,
+        origKey:KEYS[EXT(f.name)] || MIMEKEY[f.type] || null, origLabel:(EXT(f.name) || (f.type || '').replace('image/', '') || 'image').toUpperCase().replace('JPEG', 'JPG'),
+        thumb:coverThumb(bmp, bmp.width, bmp.height), state:defaultState() });
+      if (!firstBmp) firstBmp = bmp; else if (bmp.close) bmp.close();
+    } catch (e) { failed++; }
+  }
+  if (photos.length === first) { toast(`Couldn't open ${failed > 1 ? 'those files' : 'this file'}. Try JPG, PNG, HEIC, WebP, AVIF, TIFF or BMP.`, 4500); return; }
+  toast(failed ? `Added ${photos.length - first}. ${failed} couldn't be opened.` : files.length > 1 ? `Added ${files.length} photos` : '', failed || files.length > 1 ? 2800 : 1);
+  renderPhotos();
+  await activate(first, { bmp:firstBmp });
+}
+async function removePhoto(i) {
+  if (busy || !photos[i]) return;
+  const was = i === cur;
+  if (was && editing) await exitCrop(false);
+  photos.splice(i, 1);
+  if (!photos.length) { resetEmpty(); return; }
+  if (was) { cur = -1; await activate(Math.min(i, photos.length - 1)); }
+  else { if (i < cur) cur--; renderPhotos(); }
+}
+function resetEmpty() {
+  hasImage = false; cur = -1; clearTimeout(thumbT);
+  if (imgTex) { gl.deleteTexture(imgTex); imgTex = null; } if (srcBmp && srcBmp.close) srcBmp.close(); srcBmp = null;
+  drop.classList.remove('has'); document.body.classList.remove('has');
+  dl.disabled = true; $('dlcaret').disabled = true; cropbtn.disabled = true; $('adjtab').disabled = true; $('adjstab').disabled = true; controls.classList.add('off');
+  origKey = null; origLabel = ''; tab = 'film'; applyState(defaultState()); applyTab(); renderPhotos(); updateProTag();
+}
+// run fn on every photo in turn (each is opened so it renders with its own settings), then return to the one you were on
+function showBusy(txt, f) { $('busy').classList.add('on'); $('busytxt').textContent = txt; $('busybar').style.width = Math.round(f * 100) + '%'; }
+async function batch(label, fn) {
+  if (busy) return; if (editing) await exitCrop(true);
+  busy = true; const keep = cur; if (cur >= 0) photos[cur].state = snap();
+  try {
+    for (let i = 0; i < photos.length; i++) {
+      showBusy(`${label} ${i + 1} of ${photos.length}…`, i / photos.length);
+      await activate(i, { batch:true }); await fn(i);
+    }
+    showBusy('Finishing…', 1); await activate(keep, { batch:true });
+  } finally { busy = false; $('busy').classList.remove('on'); }
+}
+async function applyLookToAll() {
+  if (photos.length < 2 || busy) return;
+  if (editing) await exitCrop(true);
+  photos[cur].state = snap(); const s = photos[cur].state;
+  photos.forEach((p, i) => { if (i !== cur) p.state = { ...p.state, film:s.film, amt:s.amt, grn:s.grn, adj:{ ...s.adj } }; });
+  await batch('Applying look to photo', async () => { await new Promise(r => setTimeout(r, 30)); captureThumb(); });
+  toast(`Applied ${current.label} look to all ${photos.length} photos`, 2600);
+}
+$('thumbs').addEventListener('click', e => {
+  const rm = e.target.closest('[data-rm]'); if (rm) { e.stopPropagation(); removePhoto(+rm.dataset.rm); return; }
+  const pt = e.target.closest('.pt'); if (pt && +pt.dataset.i !== cur) activate(+pt.dataset.i);
+});
+$('thumbs').addEventListener('keydown', e => { const pt = e.target.closest && e.target.closest('.pt'); if (pt && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); activate(+pt.dataset.i); } });
+$('addphotos').onclick = () => file.click();
+$('applyall').onclick = applyLookToAll;
+document.addEventListener('keydown', e => {              // left / right arrows move between photos
+  if (busy || editing || !photos.length || $('modal').classList.contains('open') || (e.target.closest && e.target.closest('input,textarea,select'))) return;
+  if (e.key === 'ArrowRight' && cur < photos.length - 1) activate(cur + 1); else if (e.key === 'ArrowLeft' && cur > 0) activate(cur - 1);
+});
 
-drop.addEventListener('click', e => { if (!hasImage && e.target !== $('replace')) file.click(); });
-$('replace').onclick = e => { e.stopPropagation(); file.click(); };
-file.onchange = () => { load(file.files[0]); file.value = ''; };
+drop.addEventListener('click', e => { if (!hasImage) file.click(); });
+file.onchange = () => { addFiles(file.files); file.value = ''; };
 ['dragenter', 'dragover'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
 ['dragleave', 'drop'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
-document.addEventListener('drop', e => load(e.dataTransfer.files[0]));
-document.addEventListener('paste', e => { const it = [...e.clipboardData.items].find(i => i.type.startsWith('image/')); if (it) load(it.getAsFile()); });
+document.addEventListener('drop', e => addFiles(e.dataTransfer.files));
+document.addEventListener('paste', e => { const f = [...e.clipboardData.items].filter(i => i.type.startsWith('image/')).map(i => i.getAsFile()); if (f.length) addFiles(f); });
 
 // ---------- Download in any format ----------
 const FORMATS = {
@@ -881,13 +1022,15 @@ function buildMenu() {
   const item = (key, name, desc, locked) => `<button class="mi${selFmt === key ? ' sel' : ''}${locked ? ' locked' : ''}" role="menuitem" data-f="${key}"${locked ? ' data-lock="1"' : ''}><span class="t"><div class="n">${name}${locked ? '<span class="prochip">PRO</span>' : ''}</div><div class="d">${desc}</div></span>${CHECK}</button>`;
   const cut = origKey && supported[origKey] && r !== origKey;
   const origDesc = origLabel ? (cut ? `Your file is ${origLabel} · saves as ${f.label}${isPro() ? '' : ' on Free'}` : origKey && supported[origKey] ? `Your file is ${origLabel} · saves as ${f.label}` : `Your file is ${origLabel} · saves as ${f.label} (can't write ${origLabel})`) : 'Keeps the format you opened';
-  m.innerHTML = item('orig', 'Same as original', origDesc) +
+  const all = photos.length > 1 ? `<button class="mi all" role="menuitem" data-all="1"><span class="t"><div class="n">Download all ${photos.length} photos</div><div class="d">One ZIP, each photo with its own edits</div></span></button><div class="msep"></div>` : '';
+  m.innerHTML = all + item('orig', 'Same as original', origDesc) +
     Object.keys(FORMATS).filter(k => supported[k]).map(k => item(k, FORMATS[k].label, FORMATS[k].note, !isPro() && !FREE_FORMATS.includes(k))).join('') +
     (isPro() ? '' : `<button class="mi promo" role="menuitem" data-promo="1"><span class="t"><div class="n">Unlock full resolution &amp; all formats</div><div class="d">Free exports are capped at ${FREE_MAX_PX}px</div></span></button>`) +
     `<div class="mq${f.lossy ? ' on' : ''}"><label class="ctl">Quality<input type="range" id="q" min="40" max="100" value="${quality}"><output id="qv">${quality}%</output></label></div>`;
   const q = $('q'); q.style.setProperty('--p', (quality - 40) / 60 * 100 + '%');
   q.oninput = () => { quality = +q.value; $('qv').textContent = quality + '%'; q.style.setProperty('--p', (quality - 40) / 60 * 100 + '%'); };
   m.querySelectorAll('.mi').forEach(b => b.onclick = () => {
+    if (b.dataset.all) { closeMenu(); downloadAll(); return; }
     if (b.dataset.promo) { closeMenu(); openPlans(); return; }
     if (b.dataset.lock) { closeMenu(); openPlans({ reason:`${FORMATS[b.dataset.f].label} export is a Pro feature` }); return; }
     selFmt = b.dataset.f; buildMenu();
@@ -930,28 +1073,69 @@ function encodeTIFF({ width:w, height:h, data }) {               // baseline unc
   const o = new Uint8Array(buf, off); for (let i = 0, j = 0; i < data.length; i += 4) { o[j++] = data[i]; o[j++] = data[i + 1]; o[j++] = data[i + 2]; }
   return new Blob([buf], { type:'image/tiff' });
 }
-dl.onclick = async () => {
-  if (!hasImage) return;
-  closeMenu();
-  if (lookLocked(current)) { openPlans({ reason:`${current.label} is a Pro look` }); return; }
-  if (editing) await exitCrop(true);
-  await render();
+function crc32(u8) {
+  let c, crc = ~0; if (!crc32.t) { crc32.t = new Uint32Array(256); for (let n = 0; n < 256; n++) { c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; crc32.t[n] = c >>> 0; } }
+  for (let i = 0; i < u8.length; i++) crc = crc32.t[(crc ^ u8[i]) & 255] ^ (crc >>> 8);
+  return ~crc >>> 0;
+}
+function makeZip(files) {                                // plain "store" ZIP: photos are already compressed
+  const enc = new TextEncoder(), parts = [], central = [], d = new Date();
+  const time = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1), date = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+  let off = 0;
+  for (const f of files) {
+    const name = enc.encode(f.name), crc = crc32(f.data), n = f.data.length;
+    const lh = new DataView(new ArrayBuffer(30)); lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(10, time, true); lh.setUint16(12, date, true);
+    lh.setUint32(14, crc, true); lh.setUint32(18, n, true); lh.setUint32(22, n, true); lh.setUint16(26, name.length, true);
+    const ch = new DataView(new ArrayBuffer(46)); ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true); ch.setUint16(12, time, true); ch.setUint16(14, date, true);
+    ch.setUint32(16, crc, true); ch.setUint32(20, n, true); ch.setUint32(24, n, true); ch.setUint16(28, name.length, true); ch.setUint32(42, off, true);
+    parts.push(lh, name, f.data); central.push(ch, name); off += 30 + name.length + n;
+  }
+  const cs = central.reduce((a, p) => a + (p.byteLength ?? p.length), 0), end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true); end.setUint32(12, cs, true); end.setUint32(16, off, true);
+  return new Blob([...parts, ...central, end], { type:'application/zip' });
+}
+function saveBlob(blob, name) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+async function exportCurrent() {                         // encode whatever is on screen right now, with the current format settings
   const key = resolveFmt(), f = FORMATS[key], { c:out, capped } = exportSource();
-  toast('Preparing ' + f.label + '…', 0);
-  await new Promise(r => setTimeout(r, 30));
   let blob;
   try {
     blob = key === 'tiff' ? encodeTIFF(pixels(out)) : key === 'bmp' ? encodeBMP(pixels(out))
       : await new Promise(r => out.toBlob(r, f.mime, f.lossy ? quality / 100 : undefined));
   } catch (e) { blob = null; }
+  return { blob, f, capped, out, name:`${fileName}-${current.id.toLowerCase()}.${f.ext}` };
+}
+dl.onclick = async () => {
+  if (!hasImage || busy) return;
+  closeMenu();
+  if (lookLocked(current)) { openPlans({ reason:`${current.label} is a Pro look` }); return; }
+  if (editing) await exitCrop(true);
+  await render();
+  toast('Preparing ' + FORMATS[resolveFmt()].label + '…', 0);
+  await new Promise(r => setTimeout(r, 30));
+  const { blob, f, capped, out, name } = await exportCurrent();
   if (!blob) { toast(`Couldn't create a ${f.label} file for an image this large. Try PNG or JPEG.`, 4500); return; }
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `${fileName}-${current.id.toLowerCase()}.${f.ext}`;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  saveBlob(blob, name);
   toast(capped ? `Saved as ${f.label} at ${out.width} × ${out.height}. Upgrade for full resolution.` : `Saved as ${f.label}`, capped ? 4200 : 1800);
 };
+async function downloadAll() {
+  if (!hasImage || busy || photos.length < 2) return;
+  closeMenu(); if (editing) await exitCrop(true);
+  photos[cur].state = snap();
+  const locked = photos.filter(p => { const f = FILMS.find(x => x.id === p.state.film); return f && lookLocked(f); });
+  if (locked.length) { openPlans({ reason:`${locked.length} of your photos ${locked.length > 1 ? 'use' : 'uses a'} Pro look${locked.length > 1 ? 's' : ''}` }); return; }
+  const files = [], used = new Set(); let capped = false, failed = 0;
+  await batch('Exporting photo', async () => {
+    const r = await exportCurrent(); if (!r.blob) { failed++; return; }
+    capped = capped || r.capped; let name = r.name, n = 2;
+    while (used.has(name.toLowerCase())) name = r.name.replace(/(\.[^.]+)$/, `-${n++}$1`);
+    used.add(name.toLowerCase()); files.push({ name, data:new Uint8Array(await r.blob.arrayBuffer()) });
+  });
+  if (!files.length) { toast('Couldn\'t export those photos. Try PNG or JPEG.', 4500); return; }
+  saveBlob(makeZip(files), 'filmroom-photos.zip');
+  toast(`Saved ${files.length} photo${files.length > 1 ? 's' : ''} as a ZIP${failed ? ` (${failed} failed)` : ''}${capped ? `. Free exports are capped at ${FREE_MAX_PX}px.` : ''}`, capped || failed ? 4500 : 2200);
+}
 // ---------- Pricing UI (mock) ----------
 const TICK = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3L13 4.5"/></svg>';
 const FEATURES = {
