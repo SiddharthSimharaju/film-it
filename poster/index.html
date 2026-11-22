@@ -6,148 +6,121 @@
   Social poster for Filmroom.
     ?layout=portrait   1080 x 1350  (Instagram)
     ?layout=landscape  1600 x 900   (X, LinkedIn)
-  Concept: one scene, shot on different films, laid out as a tilted 35mm strip over a warm light-leak sky, with every film roll fanned below.
-  Frames come from the real app (poster/art/frame-*.jpg); cartridges are the 3D renders in poster/art/*.webp.
+  Concept: the real app on the right, a strip of 35mm frames (real portraits run through the app's own looks) laid over it,
+  and a few film rolls beside the strip. A flat navy matte frames the artwork.
+  Images: poster/art/app.jpg (app screenshot), poster/people/*.jpg (strip frames, captured from the app), poster/art/*.webp (3D cartridges).
 -->
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,100..900&family=Google+Sans:wght@400..700&display=swap" rel="stylesheet">
 <style>
-  :root { --ink:#06061c; --cream:#fbe9c8; --amber:#f2a65a; --orange:#ff7a3d; --pink:#ff4f8b; --violet:#8a63ff; }
+  :root { --ink:#06061c; --cream:#fbe9c8; --amber:#f2a65a; --orange:#ff7a3d; --pink:#ff4f8b; --matte:#0e0e46; }
   * { box-sizing:border-box; margin:0; }
   html,body { background:#000; }
   body { font-family:"Google Sans",system-ui,sans-serif; color:#fff; -webkit-font-smoothing:antialiased; }
-  .poster { position:relative; overflow:hidden; isolation:isolate; background:
-      radial-gradient(62% 46% at 100% 0%, rgba(255,122,61,.62), transparent 64%),
-      radial-gradient(52% 38% at 0% 58%, rgba(255,79,139,.34), transparent 66%),
-      radial-gradient(75% 52% at 72% 102%, rgba(78,64,240,.6), transparent 70%),
-      linear-gradient(180deg,#05051a 0%,#07072e 52%,#0c0c52 100%); }
+  /* outer canvas = the matte; .art is the picture inside it */
+  .poster { position:relative; overflow:hidden; background:var(--matte); }
+  .art { position:absolute; overflow:hidden; isolation:isolate; background:
+      radial-gradient(60% 46% at 100% 0%, rgba(255,122,61,.5), transparent 64%),
+      radial-gradient(50% 38% at 0% 62%, rgba(255,79,139,.26), transparent 66%),
+      radial-gradient(75% 52% at 72% 102%, rgba(78,64,240,.55), transparent 70%),
+      linear-gradient(180deg,#05051a 0%,#07072e 52%,#0c0c52 100%); box-shadow:0 0 0 1px rgba(255,255,255,.06); }
   .abs { position:absolute; }
-  /* light leaks and film-light streaks */
   .leak { position:absolute; filter:blur(38px); mix-blend-mode:screen; pointer-events:none; }
-  .leak.a { background:linear-gradient(100deg,rgba(255,150,70,.0),rgba(255,120,60,.75) 40%,rgba(255,60,120,.0)); transform:rotate(-24deg); }
-  .leak.b { background:radial-gradient(closest-side,rgba(255,200,130,.55),transparent); }
+  .leak.a { background:linear-gradient(100deg,rgba(255,150,70,0),rgba(255,120,60,.6) 40%,rgba(255,60,120,0)); transform:rotate(-24deg); }
   .stars i { position:absolute; border-radius:50%; background:#fff; }
-  /* brand */
-  .brand { position:absolute; display:flex; align-items:center; gap:14px; font:900 28px/1 Archivo,sans-serif; font-stretch:125%; text-transform:uppercase; letter-spacing:-.01em; z-index:6; }
-  .brand svg { width:38px; height:38px; }
-  /* headline */
+  .brand { position:absolute; display:flex; align-items:center; gap:14px; font:900 26px/1 Archivo,sans-serif; font-stretch:125%; text-transform:uppercase; letter-spacing:-.01em; z-index:6; }
+  .brand svg { width:36px; height:36px; }
   h1 { position:absolute; font-family:Archivo,sans-serif; font-stretch:125%; font-weight:900; text-transform:uppercase; letter-spacing:-.03em; line-height:.86; z-index:6; text-shadow:0 10px 50px rgba(0,0,30,.55); }
   h1 .l1 { display:block; color:#fff; }
   h1 .l2 { display:block; background:linear-gradient(96deg,#fff1cf 0%,#ffb066 30%,#ff5c8d 66%,#b98aff 100%); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 8px 34px rgba(255,100,90,.35)); }
-  .sub { position:absolute; font-size:29px; line-height:1.38; color:rgba(255,255,255,.86); z-index:6; text-shadow:0 2px 24px rgba(0,0,30,.6); text-wrap:balance; }
+  .sub { position:absolute; line-height:1.4; color:rgba(255,255,255,.84); z-index:6; text-shadow:0 2px 24px rgba(0,0,30,.6); text-wrap:pretty; }
   .sub b { color:#fff; font-weight:600; }
-  /* edge print running up the left side, like the margin of a film roll */
-  .edgeprint { position:absolute; left:20px; top:50%; transform:translateY(-50%) rotate(-90deg); transform-origin:left top; font-size:13px; letter-spacing:.34em; color:var(--amber); opacity:.55; font-weight:600; white-space:nowrap; z-index:2; }
+  /* coming soon pill */
+  .pill { position:absolute; z-index:8; display:inline-flex; align-items:center; gap:12px; padding:13px 24px 13px 18px; border-radius:999px; background:#fff; color:var(--ink); font-weight:700; font-size:22px; letter-spacing:.01em; box-shadow:0 12px 34px rgba(0,0,30,.4); }
+  .pill i { width:12px; height:12px; border-radius:50%; background:var(--orange); box-shadow:0 0 0 5px rgba(255,122,61,.25); }
+  /* the app window */
+  .appwin { position:absolute; z-index:3; border-radius:16px; overflow:hidden; background:#05051a; box-shadow:0 60px 120px rgba(0,0,25,.7), 0 0 0 1px rgba(255,255,255,.14); }
+  .appwin img { display:block; width:100%; height:auto; }
   /* the film strip */
-  .stripwrap { position:absolute; left:50%; z-index:3; }
-  .strip { position:relative; display:flex; flex-direction:column; background:#110e0c; border-radius:16px; box-shadow:0 50px 100px rgba(0,0,25,.75), 0 0 0 1px rgba(255,255,255,.07), inset 0 0 0 2px rgba(255,255,255,.03); }
-  .glowbehind { position:absolute; inset:-30px -10px; background:radial-gradient(60% 60% at 50% 50%,rgba(255,160,80,.55),transparent 70%); filter:blur(30px); z-index:-1; }
-  .holes { height:36px; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='46' height='36'><rect x='10' y='8' width='26' height='20' rx='5.5' fill='%23fbe9c8'/></svg>"); background-repeat:repeat-x; background-position:20px 0; }
-  .frames { display:flex; gap:22px; padding:6px 22px; }
-  .fr { width:var(--fw); height:var(--fh); flex:none; border-radius:6px; overflow:hidden; position:relative; box-shadow:inset 0 0 0 2px rgba(0,0,0,.55); background:#000; }
-  .fr img { width:100%; height:100%; object-fit:cover; display:block; }
-  .fr::after { content:''; position:absolute; inset:0; background:linear-gradient(130deg,rgba(255,255,255,.2),transparent 36%,transparent 70%,rgba(255,200,140,.12)); pointer-events:none; }
-  .edge { display:flex; gap:22px; padding:2px 22px 4px; height:28px; font-size:13px; font-weight:700; letter-spacing:.16em; color:var(--amber); text-transform:uppercase; }
+  .stripwrap { position:absolute; z-index:5; }
+  .strip { position:relative; display:flex; flex-direction:column; background:#110e0c; border-radius:12px; box-shadow:0 40px 80px rgba(0,0,25,.7), 0 0 0 1px rgba(255,255,255,.08); }
+  .glowbehind { position:absolute; inset:-24px -8px; background:radial-gradient(60% 60% at 50% 50%,rgba(255,160,80,.4),transparent 70%); filter:blur(26px); z-index:-1; }
+  .holes { height:28px; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='36' height='28'><rect x='8' y='6' width='20' height='16' rx='4.5' fill='%23fbe9c8'/></svg>"); background-repeat:repeat-x; background-position:14px 0; }
+  .frames { display:flex; gap:var(--gap); padding:5px var(--pad); }
+  .fr { width:var(--fw); height:var(--fh); flex:none; border-radius:5px; overflow:hidden; position:relative; box-shadow:inset 0 0 0 2px rgba(0,0,0,.55); background:#000; }
+  .fr img { width:100%; height:100%; object-fit:cover; object-position:50% 14%; display:block; }
+  .fr::after { content:''; position:absolute; inset:0; background:linear-gradient(130deg,rgba(255,255,255,.16),transparent 36%,transparent 72%,rgba(255,200,140,.1)); pointer-events:none; }
+  .edge { display:flex; gap:var(--gap); padding:2px var(--pad) 3px; height:24px; font-size:11px; font-weight:700; letter-spacing:.12em; color:var(--amber); text-transform:uppercase; white-space:nowrap; }
   .edge span { width:var(--fw); flex:none; display:flex; justify-content:space-between; align-items:center; }
-  .stripwrap.back { opacity:.26; filter:blur(5px); z-index:2; }
   /* cartridges */
-  .arc img { position:absolute; display:block; height:auto; transform-origin:50% 100%; }
-  .tagline { position:absolute; left:0; right:0; text-align:center; font-size:21px; font-weight:600; letter-spacing:.34em; text-transform:uppercase; color:var(--cream); opacity:.85; z-index:7; }
-  .tagline i { font-style:normal; color:var(--pink); padding:0 .4em; }
-  /* coming soon sticker */
-  .sticker { position:absolute; z-index:8; width:210px; height:210px; filter:drop-shadow(0 16px 36px rgba(255,90,100,.45)) drop-shadow(0 4px 12px rgba(0,0,20,.5)); transform:rotate(13deg); }
-  /* film grain, vignette */
-  .grain { position:absolute; inset:0; z-index:9; pointer-events:none; mix-blend-mode:overlay; opacity:.34;
+  .carts img { position:absolute; display:block; height:auto; z-index:6; filter:drop-shadow(0 16px 14px rgba(0,0,25,.65)); }
+  .grain { position:absolute; inset:0; z-index:9; pointer-events:none; mix-blend-mode:overlay; opacity:.3;
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='320'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
-  .vig { position:absolute; inset:0; z-index:9; pointer-events:none; background:radial-gradient(120% 90% at 50% 45%,transparent 55%,rgba(0,0,14,.55) 100%); }
+  .vig { position:absolute; inset:0; z-index:9; pointer-events:none; background:radial-gradient(120% 90% at 50% 45%,transparent 58%,rgba(0,0,14,.45) 100%); }
 
-  /* ===== portrait 1080 x 1350 ===== */
-  .portrait { width:1080px; height:1350px; --fw:360px; --fh:248px; }
-  .portrait .brand { left:64px; top:58px; }
-  .portrait h1 .l1 { font-size:112px; } .portrait h1 .l2 { font-size:208px; margin-top:8px; }
-  .portrait h1 { left:60px; top:112px; }
-  .portrait .sub { left:64px; top:430px; width:640px; }
-  .portrait .stripwrap { top:610px; transform:translateX(-50%) rotate(-7deg); }
-  .portrait .stripwrap.back { top:760px; transform:translateX(-46%) rotate(5deg) scale(.9); }
-  .portrait .sticker { right:46px; top:52px; }
-  .portrait .tagline { top:1298px; }
-  .portrait .leak.a { width:900px; height:210px; right:-260px; top:240px; }
-  .portrait .leak.b { width:700px; height:700px; left:-300px; top:700px; }
-  /* ===== landscape 1600 x 900 ===== */
-  .landscape { width:1600px; height:900px; --fw:326px; --fh:224px; }
-  .landscape .brand { left:80px; top:60px; }
-  .landscape h1 .l1 { font-size:96px; } .landscape h1 .l2 { font-size:178px; margin-top:6px; }
-  .landscape h1 { left:76px; top:124px; }
-  .landscape .sub { left:80px; top:398px; width:560px; font-size:27px; }
-  .landscape .stripwrap { top:150px; left:1250px; transform:translateX(-50%) rotate(-9deg); }
-  .landscape .stripwrap.back { top:300px; left:1290px; transform:translateX(-50%) rotate(4deg) scale(.9); }
-  .landscape .sticker { left:84px; top:540px; width:164px; height:164px; }
-  .landscape .tagline { top:850px; font-size:18px; }
-  .landscape .leak.a { width:900px; height:200px; right:-220px; top:120px; }
-  .landscape .leak.b { width:640px; height:640px; left:-240px; top:420px; }
+  /* ===== portrait 1080 x 1350, art 1000 x 1270 ===== */
+  .portrait { width:1080px; height:1350px; }
+  .portrait .art { left:40px; top:40px; width:1000px; height:1270px; }
+  .portrait .brand { left:60px; top:54px; }
+  .portrait h1 { left:56px; top:112px; }
+  .portrait h1 .l1 { font-size:100px; } .portrait h1 .l2 { font-size:188px; margin-top:8px; }
+  .portrait .sub { left:60px; top:410px; width:640px; font-size:27px; }
+  .portrait .pill { right:60px; top:46px; }
+  .portrait .appwin { left:84px; top:590px; width:832px; }
+  .portrait .stripwrap { left:62px; top:930px; transform:rotate(-3deg); --fw:128px; --fh:170px; --gap:16px; --pad:18px; }
+  .portrait .leak.a { width:800px; height:200px; right:-240px; top:240px; }
+  /* ===== landscape 1600 x 900, art 1488 x 788 ===== */
+  .landscape { width:1600px; height:900px; }
+  .landscape .art { left:56px; top:56px; width:1488px; height:788px; }
+  .landscape .brand { left:72px; top:56px; }
+  .landscape h1 { left:68px; top:118px; }
+  .landscape h1 .l1 { font-size:88px; } .landscape h1 .l2 { font-size:164px; margin-top:6px; }
+  .landscape .sub { left:72px; top:392px; width:520px; font-size:25px; }
+  .landscape .pill { left:72px; top:620px; }
+  .landscape .appwin { left:712px; top:92px; width:720px; }
+  .landscape .stripwrap { left:650px; top:440px; transform:rotate(-4deg); --fw:150px; --fh:200px; --gap:18px; --pad:20px; }
+  .landscape .leak.a { width:800px; height:200px; right:-200px; top:90px; }
 </style>
 </head>
 <body>
 <div class="poster" id="poster">
-  <div class="leak a"></div><div class="leak b"></div>
+ <div class="art">
+  <div class="leak a"></div>
   <div class="stars abs" id="stars" style="inset:0"></div>
-  <div class="edgeprint" id="edgeprint"></div>
 
   <div class="brand"><svg viewBox="0 0 30 30"><rect x="2" y="5" width="26" height="20" rx="6" fill="none" stroke="#fff" stroke-width="2.6"/><circle cx="15" cy="15" r="4.6" fill="#fff"/><rect x="5.5" y="2.5" width="6" height="3.5" rx="1.5" fill="#fff"/></svg>Filmroom</div>
   <h1><span class="l1">Edit like</span><span class="l2">film.</span></h1>
-  <p class="sub">Give any photo the look of classic film. Pick a roll, add grain, crop and straighten. <b>Editing, made easier.</b></p>
+  <p class="sub">Real Fujifilm looks, adjustable grain, crop and straighten. It all runs in your browser, so <b>your photos stay yours.</b></p>
+  <div class="pill"><i></i>Coming soon</div>
 
-  <div class="stripwrap back" id="back"></div>
+  <div class="appwin"><img src="art/app.jpg" alt=""></div>
   <div class="stripwrap" id="front"></div>
-  <div class="arc" id="arc"></div>
-  <div class="tagline" id="tagline">Pick a roll<i>/</i>Add grain<i>/</i>Done</div>
+  <div class="carts" id="carts"></div>
 
-  <div class="sticker">
-    <svg viewBox="0 0 210 210">
-      <defs><path id="ring" d="M105,105 m-80,0 a80,80 0 1,1 160,0 a80,80 0 1,1 -160,0"/></defs>
-      <circle cx="105" cy="105" r="102" fill="#fff"/>
-      <circle cx="105" cy="105" r="96" fill="none" stroke="#06061c" stroke-width="1.6" stroke-dasharray="3 5"/>
-      <text font-family="Google Sans, sans-serif" font-weight="700" font-size="16.5" letter-spacing="5.2" fill="#06061c"><textPath href="#ring">FILMROOM · FILM LOOKS · FILMROOM · FILM LOOKS ·</textPath></text>
-      <circle cx="105" cy="105" r="62" fill="#06061c"/>
-      <text x="105" y="102" text-anchor="middle" font-family="Archivo, sans-serif" font-weight="900" font-stretch="125%" font-size="19" fill="#fff" letter-spacing="-.2">COMING</text>
-      <text x="105" y="127" text-anchor="middle" font-family="Archivo, sans-serif" font-weight="900" font-stretch="125%" font-size="25" fill="#ff9a52" letter-spacing="-.4">SOON</text>
-    </svg>
-  </div>
   <div class="vig"></div><div class="grain"></div>
+ </div>
 </div>
 <script>
 const layout = new URLSearchParams(location.search).get('layout') === 'landscape' ? 'landscape' : 'portrait';
 const poster = document.getElementById('poster'); poster.classList.add(layout);
-const W = layout === 'portrait' ? 1080 : 1600, H = layout === 'portrait' ? 1350 : 900;
+const W = layout === 'portrait' ? 1000 : 1488, H = layout === 'portrait' ? 1270 : 788;
 
-// ---- the film strip: the same scene on five different films ----
-const FRAMES = [['orig', 'Original', '4'], ['prov', 'Provia 100F', '5'], ['velv', 'Velvia 50', '6'], ['400h', 'Pro 400H', '7'], ['xpro', 'Superia XPRO', '8']];
-function strip(el, order, glow) {
-  el.innerHTML = `<div class="strip">${glow ? '<div class="glowbehind"></div>' : ''}<div class="holes"></div>
-    <div class="frames">${order.map(([id]) => `<div class="fr"><img src="art/frame-${id}.jpg" alt=""></div>`).join('')}</div>
-    <div class="edge">${order.map(([, name, n]) => `<span><b>&#9654; ${n}A</b><b>${name}</b></span>`).join('')}</div><div class="holes"></div></div>`;
-}
-const SHOWN = layout === 'portrait' ? FRAMES : [FRAMES[0], FRAMES[2], FRAMES[3]];   // landscape: a shorter strip that stays clear of the headline
-strip(document.getElementById('front'), SHOWN, true);
-strip(document.getElementById('back'), [...SHOWN].reverse(), false);
-document.getElementById('edgeprint').textContent = 'FILMROOM 400   ▶ 12   ▶ 12A   ▶ 13   ▶ 13A   ▶ 14   ▶ 14A   ▶ 15';
+// ---- the film strip: real portraits, each run through a different look in the app ----
+const FRAMES = [['a', 'Provia 100F', '5'], ['b', 'Velvia 50', '6'], ['c', 'Pro 400H', '7'], ['d', 'Provia 100F', '8']];
+const SHOWN = layout === 'portrait' ? FRAMES : FRAMES.slice(0, 3);
+document.getElementById('front').innerHTML = `<div class="strip"><div class="glowbehind"></div><div class="holes"></div>
+  <div class="frames">${SHOWN.map(([id]) => `<div class="fr"><img src="people/${id}.jpg" alt=""></div>`).join('')}</div>
+  <div class="edge">${SHOWN.map(([, name, n]) => `<span><b>&#9654; ${n}A</b><b>${name}</b></span>`).join('')}</div><div class="holes"></div></div>`;
 
-// ---- every film roll, fanned in an arc ----
-const IDS = ['orig', 'prov', 'velv', 'real', 's400', 'acrs', 'asti', 'sens', 'p4x', 'xtra', '400h', 'xpro', 'fp', 'fpn', 'pola'];
-// Portrait: two staggered, gently curved rows (8 + 7). Landscape: one curved row. No roll covers another, so every label is readable.
-const arc = document.getElementById('arc');
-const rows = layout === 'portrait'
-  ? [{ ids:IDS.slice(0, 8), cx:540, step:131, top:984, drop:40, w:126, z:1 }, { ids:IDS.slice(8), cx:540, step:131, top:1088, drop:40, w:126, z:2 }]
-  : [{ ids:IDS, cx:800, step:104, top:698, drop:40, w:100, z:1 }];
-rows.forEach(row => row.ids.forEach((id, k) => {
-  const mid = (row.ids.length - 1) / 2, t = (k - mid) / mid, im = new Image(); im.src = `art/${id}.webp`; im.alt = '';
-  const x = row.cx + (k - mid) * row.step, y = row.top + row.drop * t * t;
-  im.style.cssText = `width:${row.w}px;left:${(x - row.w / 2).toFixed(1)}px;top:${y.toFixed(1)}px;transform:rotate(${(t * 9).toFixed(1)}deg);z-index:${10 + row.z};filter:drop-shadow(0 18px 16px rgba(0,0,25,.7));`;
-  arc.appendChild(im);
-}));
+// ---- a few rolls beside the strip ----
+const carts = document.getElementById('carts');
+const ROLLS = layout === 'portrait'
+  ? [{ id:'velv', x:712, y:1122, w:112, r:-8 }, { id:'400h', x:804, y:1100, w:112, r:2 }, { id:'xpro', x:892, y:1132, w:104, r:9 }]
+  : [{ id:'velv', x:1214, y:560, w:108, r:-7 }, { id:'400h', x:1292, y:532, w:108, r:3 }, { id:'prov', x:1368, y:570, w:100, r:10 }];
+ROLLS.forEach(c => { const im = new Image(); im.src = `art/${c.id}.webp`; im.alt = ''; im.style.cssText = `width:${c.w}px;left:${c.x}px;top:${c.y}px;transform:rotate(${c.r}deg)`; carts.appendChild(im); });
 
 // ---- a few stars ----
 let seed = 5; const r = () => (seed = (seed * 16807) % 2147483647) / 2147483647, st = document.getElementById('stars');
-for (let i = 0; i < 56; i++) { const n = document.createElement('i'), s = 2 + r() * 3.5; n.style.cssText = `left:${r() * W}px;top:${r() * H}px;width:${s}px;height:${s}px;opacity:${.18 + r() * .5}`; st.appendChild(n); }
+for (let i = 0; i < 48; i++) { const n = document.createElement('i'), s = 2 + r() * 3.5; n.style.cssText = `left:${r() * W}px;top:${r() * H}px;width:${s}px;height:${s}px;opacity:${.18 + r() * .5}`; st.appendChild(n); }
 document.title = 'poster-ready';
 </script>
 </body>
