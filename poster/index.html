@@ -46,21 +46,21 @@
 
   /* ===== portrait 1080 x 1350 ===== */
   .portrait { width:1080px; height:1350px; }
-  .portrait .brand { left:84px; top:80px; }
-  .portrait h1 { left:80px; top:140px; }
+  .portrait .brand { left:84px; top:144px; }
+  .portrait h1 { left:80px; top:204px; }
   .portrait h1 .l1 { font-size:100px; } .portrait h1 .l2 { font-size:188px; margin-top:8px; }
-  .portrait .sub { left:84px; top:440px; width:640px; font-size:27px; }
-  .portrait .pill { right:84px; top:70px; }
-  .portrait .appwin { left:84px; top:712px; width:912px; }
+  .portrait .sub { left:84px; top:494px; width:640px; font-size:27px; }
+  .portrait .pill { right:84px; top:134px; }
+  .portrait .appwin { left:140px; top:708px; width:800px; }
   .portrait .leak.a { width:800px; height:200px; right:-240px; top:260px; }
   /* ===== landscape 1600 x 900 ===== */
   .landscape { width:1600px; height:900px; }
-  .landscape .brand { left:96px; top:140px; }
-  .landscape h1 { left:92px; top:202px; }
+  .landscape .brand { left:96px; top:196px; }
+  .landscape h1 { left:92px; top:258px; }
   .landscape h1 .l1 { font-size:88px; } .landscape h1 .l2 { font-size:164px; margin-top:6px; }
-  .landscape .sub { left:96px; top:476px; width:520px; font-size:25px; }
-  .landscape .pill { left:96px; top:706px; }
-  .landscape .appwin { left:700px; top:205px; width:820px; }
+  .landscape .sub { left:96px; top:502px; width:520px; font-size:25px; }
+  .landscape .pill { left:96px; top:652px; }
+  .landscape .appwin { left:764px; top:228px; width:740px; }
   .landscape .leak.a { width:800px; height:200px; right:-200px; top:110px; }
 </style>
 </head>
@@ -88,7 +88,7 @@ const W = layout === 'portrait' ? 1080 : 1600, H = layout === 'portrait' ? 1350 
 const carts = document.getElementById('carts');
 // five rolls in a gentle arc, the middle one highest, lifted so they overlap the screenshot's bottom edge
 const ORDER = ['asti', 'velv', '400h', 'prov', 'real'], LIFT = [40, 14, 0, 14, 40];
-const G = layout === 'portrait' ? { cx:540, step:136, w:140, top:1078 } : { cx:1110, step:112, w:118, top:525 };
+const G = layout === 'portrait' ? { cx:540, step:136, w:140, top:1030 } : { cx:1134, step:112, w:118, top:510 };
 const ROLLS = ORDER.map((id, k) => ({ id, x:G.cx + (k - 2) * G.step - G.w / 2, y:G.top + LIFT[k], w:G.w, r:(k - 2) * 5 }));
 ROLLS.forEach(c => { const im = new Image(); im.src = `art/${c.id}.webp`; im.alt = ''; im.style.cssText = `width:${c.w}px;left:${c.x}px;top:${c.y}px;transform:rotate(${c.r}deg)`; carts.appendChild(im); });
 
