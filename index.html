@@ -160,6 +160,74 @@
     box-shadow:var(--glass-shadow); -webkit-backdrop-filter:blur(30px) saturate(170%); backdrop-filter:blur(30px) saturate(170%); }
   #adjtab, #cropbtn.on { background:linear-gradient(140deg,rgba(255,255,255,.22),rgba(255,255,255,.08)); box-shadow:inset 0 1px 0 rgba(255,255,255,.3); }
   .nav:has(#cropbtn.on) #adjtab { background:none; box-shadow:none; }
+
+  /* plans, paywall and mock checkout */
+  .topr { display:flex; align-items:center; gap:10px; }
+  .btn.pro { background:linear-gradient(140deg,rgba(255,255,255,.24),rgba(255,255,255,.08)); box-shadow:inset 0 1px 0 rgba(255,255,255,.3); color:#fff; }
+  .btn.pro svg { color:#ffd479; }
+  .lockbadge { position:absolute; top:-2px; right:20px; z-index:2; width:22px; height:22px; border-radius:50%; display:grid; place-items:center; color:#fff;
+    background:linear-gradient(140deg,rgba(255,255,255,.3),rgba(255,255,255,.1)); border:1px solid rgba(255,255,255,.3); backdrop-filter:blur(8px); }
+  .lockbadge svg { width:12px; height:12px; }
+  body.is-pro .lockbadge { display:none; }
+  .protag { display:none; padding:2px 8px; border-radius:6px; background:#fff; color:var(--ink); font-size:11px; font-weight:700; letter-spacing:.04em; }
+  .protag.on { display:inline-flex; }
+  .prochip { margin-left:8px; padding:1px 6px; border-radius:5px; background:rgba(255,255,255,.16); font-size:10px; font-weight:700; letter-spacing:.05em; vertical-align:1px; }
+  .mi.locked .n, .mi.locked .d { opacity:.75; }
+  .mi.promo { margin-top:4px; background:linear-gradient(140deg,rgba(88,101,242,.4),rgba(88,101,242,.16)); }
+  .mi.promo:hover { background:linear-gradient(140deg,rgba(88,101,242,.55),rgba(88,101,242,.24)); }
+  body.modal-open { overflow:hidden; }
+  .modal { position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center; padding:24px; background:rgba(0,0,12,.62);
+    -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); }
+  .modal.open { display:flex; }
+  .sheet { position:relative; width:min(1040px,100%); max-height:calc(100vh - 48px); overflow:auto; border-radius:28px; padding:36px 34px 26px;
+    background:linear-gradient(140deg,rgba(255,255,255,.12),rgba(255,255,255,.04)), rgba(6,6,38,.86); border:1px solid var(--glass-edge); box-shadow:var(--glass-shadow); }
+  .sheet h2 { margin:0; font-size:32px; font-weight:600; letter-spacing:-.035em; text-align:center; }
+  .sheet .sub { text-align:center; color:var(--muted); margin:8px 0 26px; }
+  .reason { display:flex; width:max-content; max-width:100%; margin:0 auto 14px; align-items:center; gap:8px; padding:7px 14px; border-radius:999px;
+    background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.16); font-size:13px; font-weight:600; }
+  .reason svg { width:14px; height:14px; }
+  .x { position:absolute; top:16px; right:16px; width:36px; height:36px; border-radius:50%; border:0; background:rgba(255,255,255,.1); color:#fff; cursor:pointer; display:grid; place-items:center; }
+  .x:hover { background:rgba(255,255,255,.18); }
+  .plans { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
+  .plan { position:relative; display:flex; flex-direction:column; padding:24px 20px 22px; border-radius:22px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12); }
+  .plan.hot { border-color:rgba(130,142,255,.9); background:linear-gradient(160deg,rgba(88,101,242,.3),rgba(255,255,255,.05));
+    box-shadow:0 0 0 1px rgba(130,142,255,.45), 0 18px 50px rgba(40,50,200,.35); }
+  .plan .badge { position:absolute; top:-11px; left:50%; transform:translateX(-50%); background:#fff; color:var(--ink); font-size:12px; font-weight:700; padding:4px 12px; border-radius:999px; white-space:nowrap; }
+  .plan h3 { margin:0 0 14px; font-size:16px; font-weight:600; }
+  .plan .price { display:flex; align-items:baseline; gap:6px; }
+  .plan .price b { font-size:38px; font-weight:600; letter-spacing:-.04em; } .plan .price span { color:var(--muted); }
+  .plan .pn { color:var(--muted); font-size:13px; min-height:20px; margin:6px 0 18px; }
+  .plan .btn { width:100%; height:46px; margin-bottom:20px; }
+  .plan ul { list-style:none; margin:0; padding:0; display:grid; gap:11px; font-size:14px; }
+  .plan li { display:flex; gap:10px; align-items:flex-start; line-height:1.35; }
+  .plan li svg { flex:none; width:16px; height:16px; margin-top:1px; color:#a5b0ff; }
+  .foot { text-align:center; color:var(--muted); font-size:12px; margin-top:22px; }
+  .foot a { color:#fff; cursor:pointer; text-decoration:underline; }
+  .co { max-width:460px; margin:0 auto; }
+  .back { background:none; border:0; color:var(--muted); font:inherit; font-weight:600; cursor:pointer; padding:0; margin-bottom:14px; }
+  .back:hover { color:#fff; }
+  .co h2 { text-align:left; font-size:28px; margin-bottom:18px; }
+  .sum, .rowl { display:flex; justify-content:space-between; align-items:center; gap:16px; }
+  .sum { padding:16px 18px; border-radius:16px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); margin-bottom:14px; }
+  .sum b { display:block; font-size:16px; } .sum span { color:var(--muted); font-size:13px; } .sum strong { font-size:22px; letter-spacing:-.03em; }
+  .rowl { padding:8px 4px; color:var(--muted); font-size:14px; } .rowl.total { color:#fff; font-weight:600; font-size:16px; border-top:1px solid rgba(255,255,255,.12); margin-top:6px; padding-top:14px; }
+  .methods { display:flex; gap:8px; margin:18px 0; }
+  .co .pay { width:100%; height:52px; }
+  .demo { text-align:center; color:var(--muted); font-size:12px; margin:14px 0 0; }
+  .spin { width:16px; height:16px; border-radius:50%; border:2px solid rgba(0,0,0,.2); border-top-color:#000; animation:sp .7s linear infinite; }
+  @keyframes sp { to { transform:rotate(360deg); } }
+  .done { text-align:center; padding:18px 0 6px; }
+  .done .ok { width:64px; height:64px; margin:0 auto 18px; border-radius:50%; display:grid; place-items:center; background:linear-gradient(140deg,rgba(88,101,242,.8),rgba(88,101,242,.4)); box-shadow:0 0 0 8px rgba(88,101,242,.18); }
+  .done .ok svg { width:30px; height:30px; }
+  .done h2 { text-align:center; } .done p { color:var(--muted); margin:10px auto 24px; max-width:360px; }
+  @media (max-width:980px) { .plans { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  @media (max-width:560px) {
+    .plans { grid-template-columns:minmax(0,1fr); } .sheet { padding:30px 18px 22px; border-radius:24px; }
+    .sheet h2 { font-size:26px; padding:0 34px; } .sheet .sub { margin-bottom:22px; } .modal { padding:12px; }
+    .top { grid-template-columns:auto 1fr; padding:0 12px; } .logo { font-size:17px; gap:8px; } .logo svg { width:24px; height:24px; }
+    .topr { gap:6px; } .btn.sm { padding:0 12px; } .fmt { display:none; } .split #dl { gap:6px; }
+    .stage { padding:4px 12px 10px; } .dock { padding:0 12px; } .card { padding:10px 16px; gap:10px 20px; } input[type=range] { width:120px; }
+  }
 </style>
 </head>
 <body>
@@ -191,7 +259,7 @@
       Film it
     </div>
     <nav class="nav"><button class="navbtn" id="adjtab" disabled>Adjust</button><button class="navbtn" id="cropbtn" disabled>Crop</button></nav>
-    <div class="topr"><div class="split">
+    <div class="topr"><button class="btn blurple sm" id="planbtn">Upgrade</button><div class="split">
       <button class="btn white sm" id="dl" disabled>
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8.5M4.5 7.5L8 11l3.5-3.5M2.5 13.5h11"/></svg>Download <span class="fmt" id="dlfmt">PNG</span></button>
       <button class="btn white sm caret" id="dlcaret" disabled aria-label="Choose download format" aria-haspopup="true">
@@ -213,7 +281,7 @@
         <i class="h se" data-h="se"></i><i class="h s" data-h="s"></i><i class="h sw" data-h="sw"></i><i class="h w" data-h="w"></i>
       </div></div>
       <button class="replace" id="replace">Replace image</button>
-      <div class="caption"><span id="filmpill">Original</span><i></i><span id="fdim"></span></div>
+      <div class="caption"><span id="filmpill">Original</span><span class="protag" id="protag">PRO</span><i></i><span id="fdim"></span></div>
       <span class="tag" id="tag"></span>
     </div>
   </main>
@@ -233,6 +301,7 @@
   </div>
 
   <div class="shelf"><div class="strip" id="strip"></div></div>
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Plans"><div class="sheet" id="sheet"></div></div>
   <div class="toast" id="toast" role="status"></div>
   <div class="hidden"><span id="filmname"></span><span id="filmmeta"></span><span id="fname"></span><span id="docname"></span></div>
   <input type="file" id="file" accept="image/*,.heic,.heif,.hif,.tif,.tiff,.avif,.webp,.bmp,.gif,.jfif,.png,.jpg,.jpeg">
@@ -257,6 +326,20 @@ const FILMS = [
   { id:'ACRS', label:'ACROS 100',    iso:'100', body:'#161616', band:'#e8e8e8', ink:'#000',    lut:'acros-100' },
   { id:'POLA', label:'POLAROID 690', iso:'600', body:'#e8e4d8', band:'#d8362b', ink:'#111',    lut:'polaroid-690' },
 ];
+
+// ---------- Plans (MOCK: nothing is charged; swap startCheckout() for Razorpay later) ----------
+const PLANS = {
+  free:     { id:'free',     name:'Free',        price:'₹0',     per:'forever',  note:'Try every look on your own photo' },
+  monthly:  { id:'monthly',  name:'Pro Monthly', price:'₹249',   per:'/ month',  amount:249,  note:'Cancel anytime',              term:'Billed monthly · renews until cancelled', cta:'Monthly' },
+  yearly:   { id:'yearly',   name:'Pro Yearly',  price:'₹1,499', per:'/ year',   amount:1499, note:'₹125 a month · save 50%',     term:'Billed yearly · renews until cancelled',  cta:'Yearly', badge:'Best value' },
+  lifetime: { id:'lifetime', name:'Lifetime',    price:'₹2,999', per:'once',     amount:2999, note:'One payment, yours forever',  term:'One-time payment',                        cta:'Lifetime' },
+};
+const FREE_LOOKS = ['ORIG', 'PROV', 'VELV', 'REAL', 'S400', 'ACRS', 'POLA'];   // everything else is Pro
+const FREE_MAX_PX = 2048, FREE_FORMATS = ['png', 'jpeg'];
+let plan = 'free'; try { const p = localStorage.getItem('filmit.plan'); if (p && PLANS[p]) plan = p; } catch (e) {}
+const isPro = () => plan !== 'free';
+const lookLocked = f => !isPro() && !FREE_LOOKS.includes(f.id);
+const LOCK_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="7" width="9.6" height="6.6" rx="2"/><path d="M5.4 7V5.2a2.6 2.6 0 0 1 5.2 0V7"/></svg>';
 
 // ---------- 35mm cartridge icon (steel barrel, crimped caps, spool, wrapped label, DX code, film leader) ----------
 function canisterSVG(f, i) {
@@ -419,7 +502,7 @@ FILMS.forEach((f, i) => {
   const b = document.createElement('button');
   b.className = 'film' + (i === 0 ? ' active' : '');
   b.title = f.label;
-  b.innerHTML = canisterSVG(f, i) + `<span>${f.label}</span>`;
+  b.innerHTML = canisterSVG(f, i) + `<span>${f.label}</span>` + (FREE_LOOKS.includes(f.id) ? '' : `<i class="lockbadge" title="Pro look">${LOCK_SVG}</i>`);
   b.onclick = () => select(f, b);
   strip.appendChild(b);
 });
@@ -434,7 +517,7 @@ async function render() {
   if (!hasImage) return;
   const my = ++token;
   tag.textContent = current.label;
-  $('filmpill').textContent = $('filmname').textContent = current.label;
+  $('filmpill').textContent = $('filmname').textContent = current.label; updateProTag();
   $('filmmeta').textContent = current.lut ? `ISO ${current.iso} · colour lookup from real film` : 'No film look applied';
   let t = null;
   if (current.lut) { t = await getLut(current.lut); if (my !== token) return; }
@@ -728,21 +811,30 @@ let selFmt = 'orig', quality = 95, origKey = null, origLabel = '';
 ['webp', 'avif'].forEach(k => { const c = document.createElement('canvas'); c.width = c.height = 1;
   c.toBlob(b => { supported[k] = !!b && b.type === FORMATS[k].mime; buildMenu(); }, FORMATS[k].mime); });
 function resolveFmt() {
-  if (selFmt !== 'orig') return selFmt;
-  if (origKey && supported[origKey]) return origKey;
-  return origKey === 'heic' ? 'jpeg' : 'png';       // browsers can't write HEIC, so a photo goes to JPEG
+  let k;
+  if (selFmt !== 'orig') k = selFmt;
+  else if (origKey && supported[origKey]) k = origKey;
+  else k = origKey === 'heic' ? 'jpeg' : 'png';       // browsers can't write HEIC, so a photo goes to JPEG
+  if (!isPro() && !FREE_FORMATS.includes(k)) k = (k === 'tiff' || k === 'bmp') ? 'png' : 'jpeg';   // Free: JPEG and PNG only
+  return k;
 }
 const CHECK = '<svg class="ck" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3L13 4.5"/></svg>';
 function buildMenu() {
   const m = $('dlmenu'), r = resolveFmt(), f = FORMATS[r];
-  const item = (key, name, desc) => `<button class="mi${selFmt === key ? ' sel' : ''}" role="menuitem" data-f="${key}"><span class="t"><div class="n">${name}</div><div class="d">${desc}</div></span>${CHECK}</button>`;
-  const origDesc = origLabel ? (origKey && supported[origKey] ? `Your file is ${origLabel} · saves as ${f.label}` : `Your file is ${origLabel} · saves as ${f.label} (can't write ${origLabel})`) : 'Keeps the format you opened';
+  const item = (key, name, desc, locked) => `<button class="mi${selFmt === key ? ' sel' : ''}${locked ? ' locked' : ''}" role="menuitem" data-f="${key}"${locked ? ' data-lock="1"' : ''}><span class="t"><div class="n">${name}${locked ? '<span class="prochip">PRO</span>' : ''}</div><div class="d">${desc}</div></span>${CHECK}</button>`;
+  const cut = origKey && supported[origKey] && r !== origKey;
+  const origDesc = origLabel ? (cut ? `Your file is ${origLabel} · saves as ${f.label}${isPro() ? '' : ' on Free'}` : origKey && supported[origKey] ? `Your file is ${origLabel} · saves as ${f.label}` : `Your file is ${origLabel} · saves as ${f.label} (can't write ${origLabel})`) : 'Keeps the format you opened';
   m.innerHTML = item('orig', 'Same as original', origDesc) +
-    Object.keys(FORMATS).filter(k => supported[k]).map(k => item(k, FORMATS[k].label, FORMATS[k].note)).join('') +
+    Object.keys(FORMATS).filter(k => supported[k]).map(k => item(k, FORMATS[k].label, FORMATS[k].note, !isPro() && !FREE_FORMATS.includes(k))).join('') +
+    (isPro() ? '' : `<button class="mi promo" role="menuitem" data-promo="1"><span class="t"><div class="n">Unlock full resolution &amp; all formats</div><div class="d">Free exports are capped at ${FREE_MAX_PX}px</div></span></button>`) +
     `<div class="mq${f.lossy ? ' on' : ''}"><label class="ctl">Quality<input type="range" id="q" min="40" max="100" value="${quality}"><output id="qv">${quality}%</output></label></div>`;
   const q = $('q'); q.style.setProperty('--p', (quality - 40) / 60 * 100 + '%');
   q.oninput = () => { quality = +q.value; $('qv').textContent = quality + '%'; q.style.setProperty('--p', (quality - 40) / 60 * 100 + '%'); };
-  m.querySelectorAll('.mi').forEach(b => b.onclick = () => { selFmt = b.dataset.f; buildMenu(); });
+  m.querySelectorAll('.mi').forEach(b => b.onclick = () => {
+    if (b.dataset.promo) { closeMenu(); openPlans(); return; }
+    if (b.dataset.lock) { closeMenu(); openPlans({ reason:`${FORMATS[b.dataset.f].label} export is a Pro feature` }); return; }
+    selFmt = b.dataset.f; buildMenu();
+  });
   $('dlfmt').textContent = f.label;
 }
 const closeMenu = () => $('dlmenu').classList.remove('open');
@@ -750,9 +842,16 @@ $('dlcaret').onclick = e => { e.stopPropagation(); $('dlmenu').classList.toggle(
 document.addEventListener('click', e => { if (!e.target.closest('.split')) closeMenu(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
 
-function pixels() {
-  const t = document.createElement('canvas'); t.width = cv.width; t.height = cv.height;
-  const x = t.getContext('2d', { willReadFrequently:true }); x.drawImage(cv, 0, 0); return x.getImageData(0, 0, t.width, t.height);
+function pixels(src = cv) {
+  const t = document.createElement('canvas'); t.width = src.width; t.height = src.height;
+  const x = t.getContext('2d', { willReadFrequently:true }); x.drawImage(src, 0, 0); return x.getImageData(0, 0, t.width, t.height);
+}
+function exportSource() {                               // Free exports are capped at FREE_MAX_PX on the long side
+  const mx = Math.max(cv.width, cv.height);
+  if (isPro() || mx <= FREE_MAX_PX) return { c:cv, capped:false };
+  const k = FREE_MAX_PX / mx, c = document.createElement('canvas'); c.width = Math.round(cv.width * k); c.height = Math.round(cv.height * k);
+  const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(cv, 0, 0, c.width, c.height);
+  return { c, capped:true };
 }
 function encodeBMP({ width:w, height:h, data }) {                // 24-bit, bottom-up
   const row = (w * 3 + 3) & ~3, buf = new ArrayBuffer(54 + row * h), dv = new DataView(buf);
@@ -777,15 +876,16 @@ function encodeTIFF({ width:w, height:h, data }) {               // baseline unc
 dl.onclick = async () => {
   if (!hasImage) return;
   closeMenu();
+  if (lookLocked(current)) { openPlans({ reason:`${current.label} is a Pro look` }); return; }
   if (editing) await exitCrop(true);
   await render();
-  const key = resolveFmt(), f = FORMATS[key];
+  const key = resolveFmt(), f = FORMATS[key], { c:out, capped } = exportSource();
   toast('Preparing ' + f.label + '…', 0);
   await new Promise(r => setTimeout(r, 30));
   let blob;
   try {
-    blob = key === 'tiff' ? encodeTIFF(pixels()) : key === 'bmp' ? encodeBMP(pixels())
-      : await new Promise(r => cv.toBlob(r, f.mime, f.lossy ? quality / 100 : undefined));
+    blob = key === 'tiff' ? encodeTIFF(pixels(out)) : key === 'bmp' ? encodeBMP(pixels(out))
+      : await new Promise(r => out.toBlob(r, f.mime, f.lossy ? quality / 100 : undefined));
   } catch (e) { blob = null; }
   if (!blob) { toast(`Couldn't create a ${f.label} file for an image this large. Try PNG or JPEG.`, 4500); return; }
   const a = document.createElement('a');
@@ -793,9 +893,77 @@ dl.onclick = async () => {
   a.download = `${fileName}-${current.id.toLowerCase()}.${f.ext}`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-  toast(`Saved as ${f.label}`, 1800);
+  toast(capped ? `Saved as ${f.label} at ${out.width} × ${out.height}. Upgrade for full resolution.` : `Saved as ${f.label}`, capped ? 4200 : 1800);
 };
-buildMenu();
+// ---------- Pricing UI (mock) ----------
+const TICK = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3L13 4.5"/></svg>';
+const FEATURES = {
+  free: ['6 film looks, preview all 14', `Export up to ${FREE_MAX_PX}px`, 'JPEG & PNG export', 'Crop, straighten & grain'],
+  pro:  ['All 14 film looks', 'Full-resolution export', 'JPEG, PNG, WebP, TIFF & BMP', 'Crop, straighten & grain', 'New film drops'],
+};
+let lastOpts = {}, checkoutPlan = null;
+const sheet = $('sheet');
+const XBTN = '<button class="x" data-close aria-label="Close"><svg width="14" height="14" viewBox="0 0 14 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l10 10M12 2L2 12"/></svg></button>';
+function openModal() { $('modal').classList.add('open'); document.body.classList.add('modal-open'); const x = sheet.querySelector('.x'); if (x) x.focus({ preventScroll:true }); }
+function closeModal() { $('modal').classList.remove('open'); document.body.classList.remove('modal-open'); }
+function openPlans(opts = {}) { renderPlans(opts); openModal(); }
+function setPlan(p) { plan = p; try { localStorage.setItem('filmit.plan', p); } catch (e) {} refreshPlanUI(); }
+function updateProTag() { $('protag').classList.toggle('on', hasImage && lookLocked(current)); }
+function refreshPlanUI() {
+  document.body.classList.toggle('is-pro', isPro());
+  const b = $('planbtn');
+  if (isPro()) { b.className = 'btn sm pro'; b.innerHTML = `<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1l2.2 4.6 5 .7-3.6 3.5.9 5L8 12.4 3.5 14.8l.9-5L.8 6.3l5-.7z"/></svg>${PLANS[plan].name}`; }
+  else { b.className = 'btn blurple sm'; b.textContent = 'Upgrade'; }
+  buildMenu(); updateProTag();
+}
+function planCard(id) {
+  const p = PLANS[id], cur = plan === id, hot = id === 'yearly', pro = id !== 'free';
+  const cta = cur ? '<button class="btn glass" disabled>Current plan</button>'
+    : id === 'free' ? '<button class="btn glass" data-free="1">Switch to Free</button>'
+    : `<button class="btn ${hot ? 'white' : 'blurple'}" data-plan="${id}">${isPro() ? 'Switch to' : 'Get'} ${p.cta}</button>`;
+  return `<div class="plan${hot ? ' hot' : ''}">${p.badge ? `<div class="badge">${p.badge}</div>` : ''}
+    <h3>${p.name}</h3><div class="price"><b>${p.price}</b><span>${p.per}</span></div><div class="pn">${p.note}</div>${cta}
+    <ul>${FEATURES[pro ? 'pro' : 'free'].map(t => `<li>${TICK}<span>${t}</span></li>`).join('')}</ul></div>`;
+}
+function renderPlans(opts = {}) {
+  lastOpts = opts;
+  sheet.innerHTML = XBTN + (opts.reason ? `<div class="reason">${LOCK_SVG}${opts.reason}</div>` : '') +
+    `<h2>${isPro() ? 'Your plan' : 'Choose your plan'}</h2><p class="sub">Start free. Upgrade when you want every look and full-resolution exports.</p>
+    <div class="plans">${['free', 'monthly', 'yearly', 'lifetime'].map(planCard).join('')}</div>
+    <p class="foot">Prices are in ₹ and include GST. <b>Demo mode:</b> no payment is taken.${isPro() ? ' <a data-free="1">Switch back to Free</a>' : ''}</p>`;
+}
+// INTEGRATION POINT: open Razorpay Checkout here (create an order/subscription server-side, then verify the payment
+// before calling setPlan). For now this just shows a mock order screen.
+function startCheckout(id) {
+  checkoutPlan = id; const p = PLANS[id], gst = Math.round(p.amount - p.amount / 1.18), fmt = n => '₹' + n.toLocaleString('en-IN');
+  sheet.innerHTML = XBTN + `<div class="co"><button class="back" data-back="1">← All plans</button><h2>Complete your order</h2>
+    <div class="sum"><div><b>${p.name}</b><span>${p.term}</span></div><strong>${fmt(p.amount)}</strong></div>
+    <div class="rowl"><span>GST included (18%)</span><span>${fmt(gst)}</span></div>
+    <div class="rowl total"><span>Total today</span><span>${fmt(p.amount)}</span></div>
+    <div class="methods"><button class="chip active" data-method="1">UPI</button><button class="chip" data-method="1">Card</button><button class="chip" data-method="1">Netbanking</button></div>
+    <button class="btn white pay" id="pay" data-pay="1">Pay ${fmt(p.amount)}</button>
+    <p class="demo">Demo mode: nothing is charged. Razorpay checkout will open here.</p></div>`;
+}
+function renderSuccess(id) {
+  const p = PLANS[id];
+  sheet.innerHTML = XBTN + `<div class="done"><div class="ok">${TICK}</div><h2>You're on ${p.name}</h2>
+    <p>All 14 film looks, full-resolution export and every format are unlocked.</p><button class="btn white" data-close="1">Start filming</button></div>`;
+}
+$('modal').addEventListener('click', e => {
+  const t = e.target;
+  if (t === $('modal') || t.closest('[data-close]')) return closeModal();
+  const pb = t.closest('[data-plan]'); if (pb) return startCheckout(pb.dataset.plan);
+  if (t.closest('[data-back]')) return renderPlans(lastOpts);
+  if (t.closest('[data-free]')) { setPlan('free'); toast('Switched to Free (demo)'); return renderPlans(lastOpts); }
+  const m = t.closest('[data-method]'); if (m) { sheet.querySelectorAll('[data-method]').forEach(x => x.classList.toggle('active', x === m)); return; }
+  if (t.closest('[data-pay]')) {
+    const b = $('pay'); b.disabled = true; b.innerHTML = '<span class="spin"></span>Processing…';
+    setTimeout(() => { setPlan(checkoutPlan); renderSuccess(checkoutPlan); }, 1100);
+  }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('modal').classList.contains('open')) closeModal(); });
+$('planbtn').onclick = () => openPlans();
+refreshPlanUI();
 [[amt, 'amtv'], [grn, 'grnv']].forEach(([el, out]) => {
   const paint = () => el.style.setProperty('--p', (el.value - el.min) / (el.max - el.min) * 100 + '%'); paint();
   el.addEventListener('input', () => { $(out).textContent = el.value + '%'; paint(); render(); });

@@ -16,6 +16,18 @@ Give any photo the look of classic Fujifilm and Polaroid film stocks, add grain,
 - **Any format out:** the same format as the original, or PNG, JPEG, WebP, TIFF and BMP (AVIF where the browser supports it). Browsers can't write HEIC, so those photos save as JPEG.
 - **Full resolution:** processing happens on the GPU at the photo's original size.
 
+## Plans (mock for now)
+
+Pricing is built into the UI, but **no payments are processed**. Plan state is kept in the browser's `localStorage`, and the checkout screen is a demo.
+
+| | Free | Pro Monthly | Pro Yearly | Lifetime |
+|---|---|---|---|---|
+| Price (₹, incl. GST) | 0 | 249 / month | 1,499 / year | 2,999 once |
+| Film looks | 6 (all 14 can be previewed) | All 14 | All 14 | All 14 |
+| Export | up to 2048px, JPEG and PNG | Full resolution, JPEG, PNG, WebP, TIFF, BMP | Same | Same |
+
+Locked looks show a lock on their cartridge, and trying to download one (or a Pro format) opens the plan picker. To wire up real payments, replace `startCheckout()` in `index.html`: create the order or subscription on a server, verify the payment, then call `setPlan()`.
+
 ## How it works
 
 The film looks are 3D colour lookup tables (Hald CLUTs) applied in a WebGL2 shader with trilinear interpolation. Cropping and rotation happen in the same shader, so an unrotated crop is a pixel-exact cut-out. The film cartridges on the shelf are modelled and rendered with three.js.
