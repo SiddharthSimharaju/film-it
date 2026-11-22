@@ -2,101 +2,152 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><title>Filmroom poster</title>
-<!-- Social poster for Filmroom. ?layout=portrait (1080x1350, Instagram) or ?layout=landscape (1600x900, X / LinkedIn). -->
+<!--
+  Social poster for Filmroom.
+    ?layout=portrait   1080 x 1350  (Instagram)
+    ?layout=landscape  1600 x 900   (X, LinkedIn)
+  Concept: one scene, shot on different films, laid out as a tilted 35mm strip over a warm light-leak sky, with every film roll fanned below.
+  Frames come from the real app (poster/art/frame-*.jpg); cartridges are the 3D renders in poster/art/*.webp.
+-->
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,100..900&family=Google+Sans:wght@400..700&display=swap" rel="stylesheet">
 <style>
-  :root { --ink:#060607; --blurple:#5865f2; --muted:rgba(255,255,255,.72); }
+  :root { --ink:#06061c; --cream:#fbe9c8; --amber:#f2a65a; --orange:#ff7a3d; --pink:#ff4f8b; --violet:#8a63ff; }
   * { box-sizing:border-box; margin:0; }
   html,body { background:#000; }
   body { font-family:"Google Sans",system-ui,sans-serif; color:#fff; -webkit-font-smoothing:antialiased; }
-  .poster { position:relative; overflow:hidden; background:
-      radial-gradient(70% 45% at 78% 58%, rgba(70,60,220,.38), transparent 70%),
-      radial-gradient(60% 40% at 10% 100%, rgba(40,50,190,.35), transparent 70%),
-      linear-gradient(180deg,#00000a 0%,#03031f 30%,#07073a 62%,#0d0d62 100%); }
-  .stars { position:absolute; inset:0; } .stars i { position:absolute; border-radius:50%; background:#aab2ff; opacity:.35; }
-  .stars i.plus { background:none; border-radius:0; } .stars i.plus::before,.stars i.plus::after { content:''; position:absolute; background:#aab2ff; left:50%; top:50%; transform:translate(-50%,-50%); }
-  .stars i.plus::before { width:100%; height:2px; } .stars i.plus::after { width:2px; height:100%; }
-  .brand { position:absolute; display:flex; align-items:center; gap:14px; font:900 30px/1 Archivo,sans-serif; font-stretch:125%; letter-spacing:-.015em; text-transform:uppercase; }
-  .brand svg { width:40px; height:40px; }
-  h1 { position:absolute; font:900 120px/.92 Archivo,sans-serif; font-stretch:125%; letter-spacing:-.025em; text-transform:uppercase; }
-  h1 em { font-style:normal; background:linear-gradient(90deg,#fff,#a9b4ff 70%,#d6a8ff); -webkit-background-clip:text; background-clip:text; color:transparent; }
-  .sub { position:absolute; font-size:32px; line-height:1.4; color:var(--muted); font-weight:400; }
+  .poster { position:relative; overflow:hidden; isolation:isolate; background:
+      radial-gradient(62% 46% at 100% 0%, rgba(255,122,61,.62), transparent 64%),
+      radial-gradient(52% 38% at 0% 58%, rgba(255,79,139,.34), transparent 66%),
+      radial-gradient(75% 52% at 72% 102%, rgba(78,64,240,.6), transparent 70%),
+      linear-gradient(180deg,#05051a 0%,#07072e 52%,#0c0c52 100%); }
+  .abs { position:absolute; }
+  /* light leaks and film-light streaks */
+  .leak { position:absolute; filter:blur(38px); mix-blend-mode:screen; pointer-events:none; }
+  .leak.a { background:linear-gradient(100deg,rgba(255,150,70,.0),rgba(255,120,60,.75) 40%,rgba(255,60,120,.0)); transform:rotate(-24deg); }
+  .leak.b { background:radial-gradient(closest-side,rgba(255,200,130,.55),transparent); }
+  .stars i { position:absolute; border-radius:50%; background:#fff; }
+  /* brand */
+  .brand { position:absolute; display:flex; align-items:center; gap:14px; font:900 28px/1 Archivo,sans-serif; font-stretch:125%; text-transform:uppercase; letter-spacing:-.01em; z-index:6; }
+  .brand svg { width:38px; height:38px; }
+  /* headline */
+  h1 { position:absolute; font-family:Archivo,sans-serif; font-stretch:125%; font-weight:900; text-transform:uppercase; letter-spacing:-.03em; line-height:.86; z-index:6; text-shadow:0 10px 50px rgba(0,0,30,.55); }
+  h1 .l1 { display:block; color:#fff; }
+  h1 .l2 { display:block; background:linear-gradient(96deg,#fff1cf 0%,#ffb066 30%,#ff5c8d 66%,#b98aff 100%); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 8px 34px rgba(255,100,90,.35)); }
+  .sub { position:absolute; font-size:29px; line-height:1.38; color:rgba(255,255,255,.86); z-index:6; text-shadow:0 2px 24px rgba(0,0,30,.6); text-wrap:balance; }
   .sub b { color:#fff; font-weight:600; }
-  .soon { position:absolute; display:inline-flex; align-items:center; gap:14px; height:64px; padding:0 30px 0 24px; border-radius:999px; background:#fff; color:var(--ink);
-    font-weight:700; font-size:26px; letter-spacing:.14em; text-transform:uppercase; box-shadow:0 0 0 8px rgba(255,255,255,.12), 0 18px 50px rgba(88,101,242,.55); }
-  .soon i { width:14px; height:14px; border-radius:50%; background:var(--blurple); box-shadow:0 0 0 5px rgba(88,101,242,.28); }
-  /* the app preview card */
-  .card { position:absolute; border-radius:36px; padding:16px; background:linear-gradient(140deg,rgba(255,255,255,.17),rgba(255,255,255,.05) 45%,rgba(255,255,255,.1));
-    border:1.5px solid rgba(255,255,255,.24); box-shadow:inset 0 2px 0 rgba(255,255,255,.34), 0 40px 90px rgba(0,0,25,.6); display:flex; flex-direction:column; gap:14px; }
-  .bar { display:flex; align-items:center; justify-content:space-between; height:40px; padding:0 4px; }
-  .tabs { display:flex; gap:6px; } .tabs span { padding:8px 16px; border-radius:12px; font-weight:600; font-size:20px; color:rgba(255,255,255,.7); }
-  .tabs span.on { background:rgba(255,255,255,.2); color:#fff; box-shadow:inset 0 1px 0 rgba(255,255,255,.3); }
-  .dlp { height:38px; padding:0 18px; border-radius:12px; background:#fff; color:var(--ink); font-weight:600; font-size:19px; display:flex; align-items:center; gap:8px; }
-  .ba { position:relative; flex:1; border-radius:22px; overflow:hidden; background:#000; }
-  .ba img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
-  .ba .after { clip-path:inset(0 0 0 54%); }
-  .ba .hd { position:absolute; top:0; bottom:0; left:54%; width:4px; margin-left:-2px; background:#fff; box-shadow:0 0 24px rgba(255,255,255,.7); }
-  .ba .hd::after { content:'↔'; position:absolute; top:50%; left:50%; width:56px; height:56px; transform:translate(-50%,-50%); border-radius:50%; background:#fff; color:var(--ink); display:grid; place-items:center; font-size:26px; font-weight:700; box-shadow:0 8px 30px rgba(0,0,0,.45); }
-  .chip { position:absolute; top:18px; padding:9px 16px; border-radius:12px; font-weight:700; font-size:19px; letter-spacing:.08em; background:rgba(0,0,15,.5); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,.28); }
-  .chip.l { left:18px; } .chip.r { right:18px; }
-  .ctl { display:flex; align-items:center; justify-content:center; gap:36px; height:34px; font-weight:600; font-size:20px; }
-  .ctl div { display:flex; align-items:center; gap:14px; } .ctl i { display:block; width:170px; height:6px; border-radius:3px; background:linear-gradient(90deg,#fff var(--p),rgba(255,255,255,.25) var(--p)); position:relative; }
-  .ctl i::after { content:''; position:absolute; left:var(--p); top:50%; width:20px; height:20px; margin:-10px 0 0 -10px; border-radius:50%; background:#fff; box-shadow:0 2px 10px rgba(0,0,0,.4); }
-  .ctl span { color:var(--muted); font-weight:500; }
-  /* shelf of all 15 films */
-  .shelf { position:absolute; display:flex; flex-wrap:wrap; }
-  .shelf img { display:block; width:var(--cw); height:auto; filter:drop-shadow(0 14px 12px rgba(0,0,20,.55)); }
-  .floor { position:absolute; left:0; right:0; bottom:0; background:linear-gradient(180deg,transparent,rgba(0,0,20,.55)); }
+  /* edge print running up the left side, like the margin of a film roll */
+  .edgeprint { position:absolute; left:20px; top:50%; transform:translateY(-50%) rotate(-90deg); transform-origin:left top; font-size:13px; letter-spacing:.34em; color:var(--amber); opacity:.55; font-weight:600; white-space:nowrap; z-index:2; }
+  /* the film strip */
+  .stripwrap { position:absolute; left:50%; z-index:3; }
+  .strip { position:relative; display:flex; flex-direction:column; background:#110e0c; border-radius:16px; box-shadow:0 50px 100px rgba(0,0,25,.75), 0 0 0 1px rgba(255,255,255,.07), inset 0 0 0 2px rgba(255,255,255,.03); }
+  .glowbehind { position:absolute; inset:-30px -10px; background:radial-gradient(60% 60% at 50% 50%,rgba(255,160,80,.55),transparent 70%); filter:blur(30px); z-index:-1; }
+  .holes { height:36px; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='46' height='36'><rect x='10' y='8' width='26' height='20' rx='5.5' fill='%23fbe9c8'/></svg>"); background-repeat:repeat-x; background-position:20px 0; }
+  .frames { display:flex; gap:22px; padding:6px 22px; }
+  .fr { width:var(--fw); height:var(--fh); flex:none; border-radius:6px; overflow:hidden; position:relative; box-shadow:inset 0 0 0 2px rgba(0,0,0,.55); background:#000; }
+  .fr img { width:100%; height:100%; object-fit:cover; display:block; }
+  .fr::after { content:''; position:absolute; inset:0; background:linear-gradient(130deg,rgba(255,255,255,.2),transparent 36%,transparent 70%,rgba(255,200,140,.12)); pointer-events:none; }
+  .edge { display:flex; gap:22px; padding:2px 22px 4px; height:28px; font-size:13px; font-weight:700; letter-spacing:.16em; color:var(--amber); text-transform:uppercase; }
+  .edge span { width:var(--fw); flex:none; display:flex; justify-content:space-between; align-items:center; }
+  .stripwrap.back { opacity:.26; filter:blur(5px); z-index:2; }
+  /* cartridges */
+  .arc img { position:absolute; display:block; height:auto; transform-origin:50% 100%; }
+  .tagline { position:absolute; left:0; right:0; text-align:center; font-size:21px; font-weight:600; letter-spacing:.34em; text-transform:uppercase; color:var(--cream); opacity:.85; z-index:7; }
+  .tagline i { font-style:normal; color:var(--pink); padding:0 .4em; }
+  /* coming soon sticker */
+  .sticker { position:absolute; z-index:8; width:210px; height:210px; filter:drop-shadow(0 16px 36px rgba(255,90,100,.45)) drop-shadow(0 4px 12px rgba(0,0,20,.5)); transform:rotate(13deg); }
+  /* film grain, vignette */
+  .grain { position:absolute; inset:0; z-index:9; pointer-events:none; mix-blend-mode:overlay; opacity:.34;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='320' height='320'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+  .vig { position:absolute; inset:0; z-index:9; pointer-events:none; background:radial-gradient(120% 90% at 50% 45%,transparent 55%,rgba(0,0,14,.55) 100%); }
 
   /* ===== portrait 1080 x 1350 ===== */
-  .portrait { width:1080px; height:1350px; --cw:135px; }
-  .portrait .brand { left:70px; top:56px; }
-  .portrait h1 { left:70px; top:150px; font-size:124px; }
-  .portrait .sub { left:70px; top:410px; width:920px; }
-  .portrait .soon { right:70px; top:44px; }
-  .portrait .card { left:70px; top:540px; width:940px; height:500px; }
-  .portrait .ba img { object-position:50% 33%; }
-  .portrait .shelf { left:0; top:1044px; width:1080px; }
-  .portrait .shelf img:nth-child(n+9) { margin-top:-38px; } .portrait .shelf img:nth-child(9) { margin-left:67px; }
-  .portrait .floor { height:160px; }
+  .portrait { width:1080px; height:1350px; --fw:360px; --fh:248px; }
+  .portrait .brand { left:64px; top:58px; }
+  .portrait h1 .l1 { font-size:112px; } .portrait h1 .l2 { font-size:208px; margin-top:8px; }
+  .portrait h1 { left:60px; top:112px; }
+  .portrait .sub { left:64px; top:430px; width:640px; }
+  .portrait .stripwrap { top:610px; transform:translateX(-50%) rotate(-7deg); }
+  .portrait .stripwrap.back { top:760px; transform:translateX(-46%) rotate(5deg) scale(.9); }
+  .portrait .sticker { right:46px; top:52px; }
+  .portrait .tagline { top:1298px; }
+  .portrait .leak.a { width:900px; height:210px; right:-260px; top:240px; }
+  .portrait .leak.b { width:700px; height:700px; left:-300px; top:700px; }
   /* ===== landscape 1600 x 900 ===== */
-  .landscape { width:1600px; height:900px; --cw:104px; }
-  .landscape .brand { left:80px; top:60px; font-size:28px; }
-  .landscape h1 { left:80px; top:132px; font-size:104px; }
-  .landscape .sub { left:80px; top:352px; width:640px; font-size:30px; }
-  .landscape .soon { left:80px; top:566px; }
-  .landscape .card { left:800px; top:60px; width:720px; height:640px; }
-  .landscape .ba img { object-position:50% 38%; }
-  .landscape .shelf { left:20px; top:724px; width:1560px; flex-wrap:nowrap; justify-content:space-between; }
-  .landscape .floor { height:120px; }
+  .landscape { width:1600px; height:900px; --fw:326px; --fh:224px; }
+  .landscape .brand { left:80px; top:60px; }
+  .landscape h1 .l1 { font-size:96px; } .landscape h1 .l2 { font-size:178px; margin-top:6px; }
+  .landscape h1 { left:76px; top:124px; }
+  .landscape .sub { left:80px; top:398px; width:560px; font-size:27px; }
+  .landscape .stripwrap { top:150px; left:1250px; transform:translateX(-50%) rotate(-9deg); }
+  .landscape .stripwrap.back { top:300px; left:1290px; transform:translateX(-50%) rotate(4deg) scale(.9); }
+  .landscape .sticker { left:84px; top:540px; width:164px; height:164px; }
+  .landscape .tagline { top:850px; font-size:18px; }
+  .landscape .leak.a { width:900px; height:200px; right:-220px; top:120px; }
+  .landscape .leak.b { width:640px; height:640px; left:-240px; top:420px; }
 </style>
 </head>
 <body>
 <div class="poster" id="poster">
-  <div class="stars" id="stars"></div>
+  <div class="leak a"></div><div class="leak b"></div>
+  <div class="stars abs" id="stars" style="inset:0"></div>
+  <div class="edgeprint" id="edgeprint"></div>
+
   <div class="brand"><svg viewBox="0 0 30 30"><rect x="2" y="5" width="26" height="20" rx="6" fill="none" stroke="#fff" stroke-width="2.6"/><circle cx="15" cy="15" r="4.6" fill="#fff"/><rect x="5.5" y="2.5" width="6" height="3.5" rx="1.5" fill="#fff"/></svg>Filmroom</div>
-  <h1>Edit like<br><em>film.</em></h1>
+  <h1><span class="l1">Edit like</span><span class="l2">film.</span></h1>
   <p class="sub">Give any photo the look of classic film. Pick a roll, add grain, crop and straighten. <b>Editing, made easier.</b></p>
-  <div class="soon"><i></i>Coming soon</div>
-  <div class="card">
-    <div class="bar"><div class="tabs"><span class="on">Film</span><span>Crop</span><span>Adjustments</span></div><div class="dlp">↓ Download</div></div>
-    <div class="ba"><img src="art/before.jpg" alt=""><img class="after" src="art/after.jpg" alt=""><div class="hd"></div><div class="chip l">BEFORE</div><div class="chip r">AFTER · PRO 400H</div></div>
-    <div class="ctl"><div>Filter<i style="--p:100%"></i><span>100%</span></div><div>Grain<i style="--p:55%"></i><span>55%</span></div></div>
+
+  <div class="stripwrap back" id="back"></div>
+  <div class="stripwrap" id="front"></div>
+  <div class="arc" id="arc"></div>
+  <div class="tagline" id="tagline">Pick a roll<i>/</i>Add grain<i>/</i>Done</div>
+
+  <div class="sticker">
+    <svg viewBox="0 0 210 210">
+      <defs><path id="ring" d="M105,105 m-80,0 a80,80 0 1,1 160,0 a80,80 0 1,1 -160,0"/></defs>
+      <circle cx="105" cy="105" r="102" fill="#fff"/>
+      <circle cx="105" cy="105" r="96" fill="none" stroke="#06061c" stroke-width="1.6" stroke-dasharray="3 5"/>
+      <text font-family="Google Sans, sans-serif" font-weight="700" font-size="16.5" letter-spacing="5.2" fill="#06061c"><textPath href="#ring">FILMROOM · FILM LOOKS · FILMROOM · FILM LOOKS ·</textPath></text>
+      <circle cx="105" cy="105" r="62" fill="#06061c"/>
+      <text x="105" y="102" text-anchor="middle" font-family="Archivo, sans-serif" font-weight="900" font-stretch="125%" font-size="19" fill="#fff" letter-spacing="-.2">COMING</text>
+      <text x="105" y="127" text-anchor="middle" font-family="Archivo, sans-serif" font-weight="900" font-stretch="125%" font-size="25" fill="#ff9a52" letter-spacing="-.4">SOON</text>
+    </svg>
   </div>
-  <div class="floor"></div>
-  <div class="shelf" id="shelf"></div>
+  <div class="vig"></div><div class="grain"></div>
 </div>
 <script>
 const layout = new URLSearchParams(location.search).get('layout') === 'landscape' ? 'landscape' : 'portrait';
-document.getElementById('poster').classList.add(layout);
-// every film roll: free looks first, then the Pro ones (same order as the app's shelf)
-['orig','prov','velv','real','s400','acrs','asti','sens','p4x','xtra','400h','xpro','fp','fpn','pola'].forEach(id => {
-  const im = new Image(); im.src = `art/${id}.webp`; im.alt = ''; document.getElementById('shelf').appendChild(im);
-});
-let seed = 9; const r = () => (seed = (seed * 16807) % 2147483647) / 2147483647, st = document.getElementById('stars');
+const poster = document.getElementById('poster'); poster.classList.add(layout);
 const W = layout === 'portrait' ? 1080 : 1600, H = layout === 'portrait' ? 1350 : 900;
-for (let i = 0; i < 70; i++) { const n = document.createElement('i'), big = r() < .15, s = big ? 18 + r() * 12 : 3 + r() * 4; if (big) n.className = 'plus';
-  n.style.cssText = `left:${r()*W}px;top:${r()*H}px;width:${s}px;height:${s}px;opacity:${.2 + r() * .45}`; st.appendChild(n); }
+
+// ---- the film strip: the same scene on five different films ----
+const FRAMES = [['orig', 'Original', '4'], ['prov', 'Provia 100F', '5'], ['velv', 'Velvia 50', '6'], ['400h', 'Pro 400H', '7'], ['xpro', 'Superia XPRO', '8']];
+function strip(el, order, glow) {
+  el.innerHTML = `<div class="strip">${glow ? '<div class="glowbehind"></div>' : ''}<div class="holes"></div>
+    <div class="frames">${order.map(([id]) => `<div class="fr"><img src="art/frame-${id}.jpg" alt=""></div>`).join('')}</div>
+    <div class="edge">${order.map(([, name, n]) => `<span><b>&#9654; ${n}A</b><b>${name}</b></span>`).join('')}</div><div class="holes"></div></div>`;
+}
+const SHOWN = layout === 'portrait' ? FRAMES : [FRAMES[0], FRAMES[2], FRAMES[3]];   // landscape: a shorter strip that stays clear of the headline
+strip(document.getElementById('front'), SHOWN, true);
+strip(document.getElementById('back'), [...SHOWN].reverse(), false);
+document.getElementById('edgeprint').textContent = 'FILMROOM 400   ▶ 12   ▶ 12A   ▶ 13   ▶ 13A   ▶ 14   ▶ 14A   ▶ 15';
+
+// ---- every film roll, fanned in an arc ----
+const IDS = ['orig', 'prov', 'velv', 'real', 's400', 'acrs', 'asti', 'sens', 'p4x', 'xtra', '400h', 'xpro', 'fp', 'fpn', 'pola'];
+// Portrait: two staggered, gently curved rows (8 + 7). Landscape: one curved row. No roll covers another, so every label is readable.
+const arc = document.getElementById('arc');
+const rows = layout === 'portrait'
+  ? [{ ids:IDS.slice(0, 8), cx:540, step:131, top:984, drop:40, w:126, z:1 }, { ids:IDS.slice(8), cx:540, step:131, top:1088, drop:40, w:126, z:2 }]
+  : [{ ids:IDS, cx:800, step:104, top:698, drop:40, w:100, z:1 }];
+rows.forEach(row => row.ids.forEach((id, k) => {
+  const mid = (row.ids.length - 1) / 2, t = (k - mid) / mid, im = new Image(); im.src = `art/${id}.webp`; im.alt = '';
+  const x = row.cx + (k - mid) * row.step, y = row.top + row.drop * t * t;
+  im.style.cssText = `width:${row.w}px;left:${(x - row.w / 2).toFixed(1)}px;top:${y.toFixed(1)}px;transform:rotate(${(t * 9).toFixed(1)}deg);z-index:${10 + row.z};filter:drop-shadow(0 18px 16px rgba(0,0,25,.7));`;
+  arc.appendChild(im);
+}));
+
+// ---- a few stars ----
+let seed = 5; const r = () => (seed = (seed * 16807) % 2147483647) / 2147483647, st = document.getElementById('stars');
+for (let i = 0; i < 56; i++) { const n = document.createElement('i'), s = 2 + r() * 3.5; n.style.cssText = `left:${r() * W}px;top:${r() * H}px;width:${s}px;height:${s}px;opacity:${.18 + r() * .5}`; st.appendChild(n); }
 document.title = 'poster-ready';
 </script>
 </body>
