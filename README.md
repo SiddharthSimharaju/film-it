@@ -30,9 +30,21 @@ Pricing is built into the UI, but **no payments are processed**. Plan state is k
 
 Locked looks show a lock on their cartridge, and trying to download one (or a Pro format) opens the plan picker. To wire up real payments, replace `startCheckout()` in `index.html`: create the order or subscription on a server, verify the payment, then call `setPlan()`.
 
+## Accounts (Google sign-in)
+
+Plans belong to an account. Buying a plan needs a sign-in, and the account page lets people change plan, cancel or resume, see their payment method and invoices (with downloadable receipts), and sign out.
+
+Sign-in is a **demo** until you add a Google OAuth client ID:
+
+1. In Google Cloud Console, create an **OAuth client ID** of type *Web application*.
+2. Add your site (for example `https://siddharthsimharaju.github.io`) and `http://localhost:8731` under *Authorized JavaScript origins*.
+3. Paste the client ID into `GOOGLE_CLIENT_ID` near the top of the accounts code in `index.html`. "Continue with Google" then becomes Google's real button.
+
+For now account and plan data is stored in the browser. Before real payments, move it to a server: verify the Google ID token there and store the plan against the verified account.
+
 ## How it works
 
-The film looks are 3D colour lookup tables (Hald CLUTs) applied in a WebGL2 shader with trilinear interpolation. Cropping and rotation happen in the same shader, so an unrotated crop is a pixel-exact cut-out. The film cartridges on the shelf are modelled and rendered with three.js.
+The film looks are 3D colour lookup tables (Hald CLUTs) applied in a WebGL2 shader with trilinear interpolation. Cropping and rotation happen in the same shader, so an unrotated crop is a pixel-exact cut-out. The film cartridges on the shelf are 3D models rendered once with three.js (`tools/render-cartridges.html`) and shipped as small images in `assets/films/`, so the page never loads three.js.
 
 It is a single `index.html` with no build step. To run it locally, serve the folder over HTTP (the lookup tables can't load from `file://`):
 

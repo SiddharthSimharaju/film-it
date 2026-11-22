@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Render cartridges</title>
+<!--
+  Renders the 3D film cartridges with three.js. The app ships the results as images (assets/films/*.webp) so the page
+  never has to load three.js. Re-run this when the cartridge art changes:
+    open tools/render-cartridges.html?w=640            (preview; w = pixel width of each render)
+    ...?w=640&save=http://localhost:8732               (also POST every PNG to a local receiver)
+-->
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400..700&display=swap" rel="stylesheet">
+<style>body{margin:16px;background:#111;color:#ccc;font:14px system-ui}#grid{display:flex;flex-wrap:wrap;gap:8px}</style></head>
+<body><p>Rendering…</p><div id="grid"></div>
+<script>
+const FILMS = [
+  { id:'ORIG', label:'ORIGINAL',     iso:'--',  body:'#8a8a8a', band:'#ddd',    ink:'#222' },
+  { id:'PROV', label:'PROVIA 100F',  iso:'100', body:'#1f5fb4', band:'#f3ead0', ink:'#102a55', lut:'provia-100f' },
+  { id:'VELV', label:'VELVIA 50',    iso:'50',  body:'#c8202a', band:'#f6e8c8', ink:'#4a0a0e', lut:'velvia-50' },
+  { id:'ASTI', label:'ASTIA 100F',   iso:'100', body:'#e0a21b', band:'#fff2cf', ink:'#4a3200', lut:'astia-100f' },
+  { id:'REAL', label:'REALA 100',    iso:'100', body:'#2f9e6a', band:'#f4f0d8', ink:'#0d3322', lut:'reala-100' },
+  { id:'SENS', label:'SENSIA 100',   iso:'100', body:'#7a4fb0', band:'#efe6f6', ink:'#2a1745', lut:'sensia-100' },
+  { id:'P4X',  label:'PROVIA 400X',  iso:'400', body:'#14407f', band:'#e8eef7', ink:'#0a1d3a', lut:'provia-400x' },
+  { id:'S400', label:'SUPERIA 400',  iso:'400', body:'#3f8a3a', band:'#eef0c8', ink:'#173614', lut:'superia-400' },
+  { id:'XTRA', label:'X-TRA 800',    iso:'800', body:'#2a6b3a', band:'#f4e3b0', ink:'#0f2a16', lut:'xtra-800' },
+  { id:'400H', label:'PRO 400H',     iso:'400', body:'#2d8c8c', band:'#eef3ee', ink:'#0f3838', lut:'pro-400h' },
+  { id:'XPRO', label:'SUPERIA XPRO', iso:'200', body:'#b9632b', band:'#f7e6c2', ink:'#4a2208', lut:'superia-xpro' },
+  { id:'FP', label:'FP-100C',        iso:'100', body:'#5a5a5a', band:'#f1e9d6', ink:'#111',    lut:'fp-100c' },
+  { id:'FPN', label:'FP-100C NEG',   iso:'100', body:'#3a3a3a', band:'#e8dcc0', ink:'#111',    lut:'fp-100c-neg' },
+  { id:'ACRS', label:'ACROS 100',    iso:'100', body:'#161616', band:'#e8e8e8', ink:'#000',    lut:'acros-100' },
+  { id:'POLA', label:'POLAROID 690', iso:'600', body:'#e8e4d8', band:'#d8362b', ink:'#111',    lut:'polaroid-690' },
+];
+</script>
+<script type="module">
+// Real 3D film cartridges, rendered once each with three.js and dropped into the shelf as images.
+// (If three.js can't load, the SVG cartridges built earlier stay in place.)
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+(async () => {
+  try {
+    await Promise.all(['500', '600', '700'].map(w => document.fonts.load(`${w} 64px "Google Sans"`)));
+    const Q = new URLSearchParams(location.search), W = +Q.get('w') || 640, H = +Q.get('h') || Math.round(W * 474 / 440), R = 12.5;
+    const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true, preserveDrawingBuffer:true });
+    renderer.setPixelRatio(1); renderer.setSize(W, H);
+    renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.1;
+    const scene = new THREE.Scene();
+    scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.03).texture;
+    const key = new THREE.DirectionalLight(0xffffff, 2.6); key.position.set(-70, 55, 60); scene.add(key);
+    const rim = new THREE.DirectionalLight(0x8fa0ff, .9); rim.position.set(60, 20, -40); scene.add(rim);
+    const cam = new THREE.PerspectiveCamera(17, W / H, 1, 600);
+    const target = new THREE.Vector3(11, 3, 0), dist = 232, el = 17 * Math.PI / 180;
+    cam.position.set(target.x, target.y + Math.sin(el) * dist, Math.cos(el) * dist); cam.lookAt(target);
+
+    const metal = (rough = .3, col = 0xeceff3) => new THREE.MeshStandardMaterial({ color:col, metalness:.88, roughness:rough, envMapIntensity:1.5 });
+    const lathe = pts => new THREE.LatheGeometry(pts.map(p => new THREE.Vector2(p[0], p[1])), 160);
+    const g = new THREE.Group(); scene.add(g);
+
+    // steel barrel
+    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 36, 128, 1, true), metal(.34)); g.add(barrel);
+    // crimped end cap: rolled bead, shallow groove, raised collar for the spool
+    const cap = [[0, 0], [12.2, 0]];
+    for (let a = -90; a <= 90; a += 15) cap.push([12.55 + Math.cos(a * Math.PI / 180) * .95, .95 + Math.sin(a * Math.PI / 180) * .95]);
+    cap.push([11.9, 1.9], [11.4, 1.5], [10.8, 1.5], [10.2, 1.9], [5.2, 2.6], [4.3, 2.75], [4.3, 3.0], [0, 3.0]);
+    const capGeo = lathe(cap);
+    const top = new THREE.Mesh(capGeo, metal(.26)); top.position.y = 18; g.add(top);
+    const bot = new THREE.Mesh(capGeo, metal(.3)); bot.scale.y = -1; bot.position.y = -18; g.add(bot);
+    // spool stem with collar + notched tip, and the small rewind stub underneath
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(3.1, 3.1, 8.5, 64), metal(.22)); stem.position.y = 18 + 3 + 4.25; g.add(stem);
+    const tip = new THREE.Mesh(new THREE.CylinderGeometry(3.1, 3.1, .5, 64), metal(.4, 0xbfc3ca)); tip.position.y = 18 + 3 + 8.7; g.add(tip);
+    const slot = new THREE.Mesh(new THREE.BoxGeometry(1.1, .45, 6.4), new THREE.MeshStandardMaterial({ color:0x15161a, roughness:.7 })); slot.position.y = 18 + 3 + 8.75; g.add(slot);
+    const stub = new THREE.Mesh(new THREE.CylinderGeometry(3.0, 3.0, 2.6, 48), metal(.35)); stub.position.y = -18 - 1.3; g.add(stub);
+
+    // film leader: perforated, tapered tip, gently curled, leaving through a felt-lined slit at the back right
+    const LW = 36, LH = 29, PXMM = 28;
+    const lc = document.createElement('canvas'); lc.width = LW * PXMM; lc.height = LH * PXMM; const lg = lc.getContext('2d');
+    const grad = lg.createLinearGradient(0, 0, 0, lc.height); grad.addColorStop(0, '#92572b'); grad.addColorStop(.5, '#7d4623'); grad.addColorStop(1, '#6c3b1c');
+    lg.fillStyle = grad; lg.fillRect(0, 0, lc.width, lc.height);
+    const lh = lg.createLinearGradient(0, 0, lc.width, 0); lh.addColorStop(0, 'rgba(0,0,0,.25)'); lh.addColorStop(.3, 'rgba(255,220,170,.10)'); lh.addColorStop(1, 'rgba(255,230,190,.18)');
+    lg.fillStyle = lh; lg.fillRect(0, 0, lc.width, lc.height);
+    const leaderMap = new THREE.CanvasTexture(lc); leaderMap.colorSpace = THREE.SRGBColorSpace; leaderMap.anisotropy = 8;
+    const ac = document.createElement('canvas'); ac.width = lc.width; ac.height = lc.height; const ag = ac.getContext('2d');
+    ag.fillStyle = '#000'; ag.fillRect(0, 0, ac.width, ac.height);
+    const cw = ac.width, ch = ac.height;
+    ag.fillStyle = '#fff'; ag.beginPath(); ag.moveTo(0, 0); ag.lineTo(cw - 190, 0); ag.lineTo(cw, 150); ag.lineTo(cw, ch - 150); ag.lineTo(cw - 190, ch); ag.lineTo(0, ch); ag.closePath(); ag.fill();
+    ag.fillStyle = '#000'; const pw = 2.8 * PXMM, ph = 2.0 * PXMM, pitch = 4.75 * PXMM;
+    for (let x = 4 * PXMM; x < cw - 250; x += pitch) for (const y of [1.1 * PXMM, ch - 1.1 * PXMM - ph]) { ag.beginPath(); ag.roundRect(x, y, pw, ph, 9); ag.fill(); }
+    const leaderAlpha = new THREE.CanvasTexture(ac);
+    const lgeo = new THREE.PlaneGeometry(LW, LH, 36, 1); lgeo.translate(LW / 2 - 3, 0, 0);
+    const pos = lgeo.attributes.position; for (let i = 0; i < pos.count; i++) { const x = pos.getX(i) + 3; pos.setZ(i, .012 * x * x * (x > 0 ? 1 : 0)); } lgeo.computeVertexNormals();
+    const leader = new THREE.Mesh(lgeo, new THREE.MeshStandardMaterial({ map:leaderMap, alphaMap:leaderAlpha, transparent:true, alphaTest:.5, side:THREE.DoubleSide, roughness:.42, metalness:0 }));
+    const slotA = 160 * Math.PI / 180, runY = (slotA + Math.PI), sx = Math.sin(slotA) * (R - .4), sz = Math.cos(slotA) * (R - .4);
+    leader.position.set(sx, 0, sz); leader.rotation.y = runY; g.add(leader);
+    const felt = new THREE.Mesh(new THREE.BoxGeometry(2.6, 31, 1.5), new THREE.MeshStandardMaterial({ color:0x0c0c0e, roughness:1 }));
+    felt.position.set(Math.sin(slotA) * R, 0, Math.cos(slotA) * R); felt.rotation.y = runY; g.add(felt);
+
+    // soft contact shadow
+    const sc = document.createElement('canvas'); sc.width = sc.height = 256; const sg = sc.getContext('2d');
+    const rg = sg.createRadialGradient(128, 128, 8, 128, 128, 126); rg.addColorStop(0, 'rgba(0,0,10,.62)'); rg.addColorStop(.55, 'rgba(0,0,10,.28)'); rg.addColorStop(1, 'rgba(0,0,10,0)');
+    sg.fillStyle = rg; sg.fillRect(0, 0, 256, 256);
+    const shadow = new THREE.Mesh(new THREE.PlaneGeometry(64, 64), new THREE.MeshBasicMaterial({ map:new THREE.CanvasTexture(sc), transparent:true, depthWrite:false }));
+    shadow.rotation.x = -Math.PI / 2; shadow.position.set(10, -21.2, 0); scene.add(shadow);
+
+    // wrapped paper label, drawn flat then wrapped around the barrel (front = centre of the canvas)
+    const LBW = 2048, LBH = 752;
+    function labelTexture(f) {
+      const c = document.createElement('canvas'); c.width = LBW; c.height = LBH; const x = c.getContext('2d');
+      const name = f.id === 'POLA' ? '690' : f.label.replace(/\s+\d+[A-Z]?$/, '');
+      const brand = f.id === 'POLA' ? 'POLAROID' : f.lut ? 'FUJIFILM' : '';
+      x.fillStyle = f.body; x.fillRect(0, 0, LBW, LBH);
+      const y1 = LBH * .37, y2 = LBH * .71, cx = LBW / 2;
+      const top = x.createLinearGradient(0, 0, 0, y1); top.addColorStop(0, 'rgba(255,255,255,.14)'); top.addColorStop(1, 'rgba(0,0,0,.18)'); x.fillStyle = top; x.fillRect(0, 0, LBW, y1);
+      x.fillStyle = f.band; x.fillRect(0, y1, LBW, y2 - y1);
+      x.fillStyle = 'rgba(255,255,255,.7)'; x.fillRect(0, y1 - 5, LBW, 5); x.fillRect(0, y2, LBW, 4);
+      const bot = x.createLinearGradient(0, y2, 0, LBH); bot.addColorStop(0, 'rgba(0,0,0,.30)'); bot.addColorStop(1, 'rgba(0,0,0,.52)'); x.fillStyle = bot; x.fillRect(0, y2 + 4, LBW, LBH - y2);
+      x.textAlign = 'center'; x.textBaseline = 'alphabetic';
+      const fit = (t, size, maxW, w = 700) => { let s = size; do { x.font = `${w} ${s}px "Google Sans"`; s -= 4; } while (x.measureText(t).width > maxW && s > 20); };
+      if (brand) { x.fillStyle = 'rgba(255,255,255,.92)'; x.font = '700 50px "Google Sans"'; x.letterSpacing = '16px'; x.fillText(brand, cx + 8, LBH * .115); x.letterSpacing = '0px'; }
+      x.fillStyle = '#fff'; fit(name, 132, 560); x.fillText(name, cx, LBH * .30);
+      x.fillStyle = f.ink; fit(f.iso, 230, 400); x.fillText(f.iso, cx, y2 - (y2 - y1) * .17);
+      x.fillStyle = f.ink; x.globalAlpha = .75; x.font = '600 42px "Google Sans"'; x.letterSpacing = '8px';
+      x.textAlign = 'right'; x.fillText('ISO', cx - 250, y2 - (y2 - y1) * .22); x.textAlign = 'left'; x.fillText('EXP·36', cx + 250, y2 - (y2 - y1) * .22);
+      x.letterSpacing = '0px'; x.globalAlpha = 1; x.textAlign = 'center';
+      // DX-style checker code
+      const dxw = 40, n = 14, x0 = cx - n * dxw / 2, ty = y2 + 44;
+      for (let r = 0; r < 2; r++) for (let j = 0; j < n; j++) { const on = ((f.id.charCodeAt(0) + j * 3 + r * 7) % 3) !== 0; x.fillStyle = on ? '#0d0d0d' : '#d6d8dc'; x.fillRect(x0 + j * dxw, ty + r * 34, dxw - 3, 31); }
+      x.fillStyle = 'rgba(255,255,255,.6)'; x.font = '600 30px "Google Sans"'; x.letterSpacing = '6px'; x.fillText('135 · DX CODED', cx, LBH - 38); x.letterSpacing = '0px';
+      // repeat the brand around the wrap so the sides never look blank
+      x.fillStyle = 'rgba(255,255,255,.55)'; x.font = '700 76px "Google Sans"';
+      [cx - 760, cx + 760].forEach(px => { x.fillText(name, px, LBH * .30); });
+      const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+    }
+    const labelGeo = new THREE.CylinderGeometry(R + .12, R + .12, 28, 160, 1, true);
+    const label = new THREE.Mesh(labelGeo, null); label.rotation.y = Math.PI; g.add(label);
+
+    g.rotation.y = -.14;                    // turn slightly so the label reads and the leader shows on the right
+    const imgs = [];
+    for (const f of FILMS) {
+      const tex = labelTexture(f);
+      label.material = new THREE.MeshPhysicalMaterial({ map:tex, roughness:.55, metalness:0, clearcoat:.55, clearcoatRoughness:.28, envMapIntensity:.55 });
+      renderer.render(scene, cam);
+      imgs.push(renderer.domElement.toDataURL('image/png'));
+      tex.dispose(); label.material.dispose();
+      await new Promise(r => setTimeout(r, 0));
+    }
+    window.__imgs = imgs.map((url, i) => ({ id:FILMS[i].id, url }));
+    const grid = document.getElementById('grid');
+    window.__imgs.forEach(o => { const im = new Image(); im.src = o.url; im.title = o.id; im.style.cssText = 'width:150px;background:#0b0b40'; grid.appendChild(im); });
+    const save = Q.get('save');                          // optional: POST every render to a local receiver (used to produce the shipped files)
+    if (save) for (const o of window.__imgs) await fetch(`${save}/${o.id.toLowerCase()}.png`, { method:'POST', headers:{ 'Content-Type':'image/png' }, body:await (await fetch(o.url)).blob() });
+    document.title = 'done';
+  } catch (e) { console.error('render failed', e); document.title = 'failed: ' + e.message; }
+})();
+</script>
+</body></html>
