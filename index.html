@@ -37,8 +37,6 @@
   .nav { display:flex; gap:6px; }
   .navbtn { background:none; border:0; color:#fff; font-weight:600; font-size:16px; padding:9px 16px; border-radius:14px; cursor:pointer; transition:background .15s, opacity .15s; }
   .navbtn:hover:not(:disabled) { background:rgba(255,255,255,.1); } .navbtn:disabled { opacity:.4; cursor:default; }
-  #adjtab, #cropbtn.on { background:rgba(255,255,255,.14); }
-  .nav:has(#cropbtn.on) #adjtab { background:none; }
   .topr { justify-self:end; }
 
   .btn { border:0; cursor:pointer; font-weight:600; border-radius:16px; display:inline-flex; align-items:center; justify-content:center; gap:10px;
@@ -113,6 +111,14 @@
     background:rgba(255,255,255,.95); color:var(--ink); font-weight:600; font-size:14px; transition:opacity .2s, transform .2s; max-width:80vw; text-align:center; }
   .toast.on { opacity:1; transform:translate(-50%,0); }
 
+  /* adjustments tab */
+  .adjpanel { display:none; }
+  .adjpanel.on { display:grid; grid-template-columns:repeat(4,minmax(150px,210px)) auto; gap:12px 30px; align-items:center; }
+  .adj .ah { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:9px; font-weight:600; font-size:14px; }
+  .adj .ah output { color:var(--muted); font-weight:500; font-variant-numeric:tabular-nums; }
+  .adj input[type=range] { width:100%; height:4px; background:linear-gradient(to right, rgba(255,255,255,.2) var(--a,50%), #fff var(--a,50%), #fff var(--b,50%), rgba(255,255,255,.2) var(--b,50%)); }
+  @media (max-width:900px) { .adjpanel.on { grid-template-columns:repeat(2,minmax(0,1fr)); } .adjpanel .btn { grid-column:1 / -1; } }
+
   /* crop overlay */
   .overlay { position:absolute; display:none; overflow:hidden; pointer-events:none; touch-action:none; }
   .overlay.on { display:block; }
@@ -139,7 +145,7 @@
   .film.active::after { content:''; width:5px; height:5px; border-radius:50%; background:#fff; position:absolute; bottom:-10px; }
   input[type=file] { display:none; }
   @media (max-width:900px) {
-    .stage { padding:4px 16px 12px; } .nav { display:none; } .top { padding:0 20px; }
+    .stage { padding:4px 16px 12px; } .top { padding:0 20px; }
   }
 
   /* glass: translucent fill, frosted blur, bright top edge */
@@ -158,8 +164,7 @@
   .replace:hover { background:linear-gradient(140deg,rgba(255,255,255,.3),rgba(255,255,255,.12)); }
   .menu { background:linear-gradient(140deg,rgba(255,255,255,.17),rgba(255,255,255,.05)), rgba(8,8,44,.72); border:1px solid var(--glass-edge);
     box-shadow:var(--glass-shadow); -webkit-backdrop-filter:blur(30px) saturate(170%); backdrop-filter:blur(30px) saturate(170%); }
-  #adjtab, #cropbtn.on { background:linear-gradient(140deg,rgba(255,255,255,.22),rgba(255,255,255,.08)); box-shadow:inset 0 1px 0 rgba(255,255,255,.3); }
-  .nav:has(#cropbtn.on) #adjtab { background:none; box-shadow:none; }
+  .navbtn.on { background:linear-gradient(140deg,rgba(255,255,255,.22),rgba(255,255,255,.08)); box-shadow:inset 0 1px 0 rgba(255,255,255,.3); }
 
   /* plans, paywall and mock checkout */
   .topr { display:flex; align-items:center; gap:10px; }
@@ -222,6 +227,12 @@
   .done .ok svg { width:30px; height:30px; }
   .done h2 { text-align:center; } .done p { color:var(--muted); margin:10px auto 24px; max-width:360px; }
   @media (max-width:980px) { .plans { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  @media (max-width:900px) {
+    .app { grid-template-rows:auto minmax(0,1fr) auto auto; }
+    .top { grid-template-columns:auto 1fr; grid-template-areas:'logo actions' 'nav nav'; row-gap:8px; padding:10px 14px 6px; height:auto; }
+    .logo { grid-area:logo; } .topr { grid-area:actions; } .nav { grid-area:nav; justify-content:center; }
+    .navbtn { padding:8px 14px; font-size:15px; }
+  }
   @media (max-width:560px) {
     .plans { grid-template-columns:minmax(0,1fr); } .sheet { padding:30px 18px 22px; border-radius:24px; }
     .sheet h2 { font-size:26px; padding:0 34px; } .sheet .sub { margin-bottom:22px; } .modal { padding:12px; }
@@ -259,7 +270,7 @@
       <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><rect x="2" y="5" width="26" height="20" rx="6" fill="none" stroke="#fff" stroke-width="2.6"/><circle cx="15" cy="15" r="4.6" fill="#fff"/><rect x="5.5" y="2.5" width="6" height="3.5" rx="1.5" fill="#fff"/></svg>
       Filmroom
     </div>
-    <nav class="nav"><button class="navbtn" id="adjtab" disabled>Adjust</button><button class="navbtn" id="cropbtn" disabled>Crop</button></nav>
+    <nav class="nav"><button class="navbtn" id="adjtab" disabled>Film</button><button class="navbtn" id="cropbtn" disabled>Crop</button><button class="navbtn" id="adjstab" disabled>Adjustments</button></nav>
     <div class="topr"><button class="btn blurple sm" id="planbtn">Upgrade</button><div class="split">
       <button class="btn white sm" id="dl" disabled>
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8.5M4.5 7.5L8 11l3.5-3.5M2.5 13.5h11"/></svg>Download <span class="fmt" id="dlfmt">PNG</span></button>
@@ -291,6 +302,13 @@
     <div class="card controls off" id="controls">
       <label class="ctl">Filter<input type="range" id="amt" min="0" max="100" value="100"><output id="amtv">100%</output></label>
       <label class="ctl">Grain<input type="range" id="grn" min="0" max="100" value="40"><output id="grnv">40%</output></label>
+    </div>
+    <div class="card adjpanel" id="adjpanel">
+      <div class="adj"><div class="ah"><span>Exposure</span><output id="av-exposure">0</output></div><input type="range" id="adj-exposure" data-k="exposure" min="-100" max="100" value="0"></div>
+      <div class="adj"><div class="ah"><span>Contrast</span><output id="av-contrast">0</output></div><input type="range" id="adj-contrast" data-k="contrast" min="-100" max="100" value="0"></div>
+      <div class="adj"><div class="ah"><span>Highlights</span><output id="av-highlights">0</output></div><input type="range" id="adj-highlights" data-k="highlights" min="-100" max="100" value="0"></div>
+      <div class="adj"><div class="ah"><span>Shadows</span><output id="av-shadows">0</output></div><input type="range" id="adj-shadows" data-k="shadows" min="-100" max="100" value="0"></div>
+      <button class="btn glass sm" id="adjreset">Reset</button>
     </div>
     <div class="card croppanel" id="croppanel">
       <div class="chips" id="chips"></div>
@@ -418,7 +436,7 @@ const VS = `#version 300 es
 in vec2 p; void main(){ gl_Position = vec4(p,0.,1.); }`;
 const FS = `#version 300 es
 precision highp float; precision highp int; precision highp sampler2D;
-uniform sampler2D img; uniform sampler2D lut; uniform int useLut; uniform float uMix; uniform float uGrain; uniform float uSize;
+uniform sampler2D img; uniform sampler2D lut; uniform int useLut; uniform float uMix; uniform float uGrain; uniform float uSize; uniform vec4 uAdj;   // exposure, contrast, highlights, shadows in -1..1
 uniform vec2 uSrc, uReg, uCen, uRot; uniform float uScale, uOutH; uniform int uEdit;
 out vec4 o;
 const int N = 144;       // Hald level 12 -> 144^3 cube
@@ -433,8 +451,20 @@ float vnoise(vec2 p){
   return mix(mix(hash(i),hash(i+vec2(1,0)),f.x), mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x), f.y);
 }
 float grainAt(vec2 p){ return (vnoise(p) + .6*vnoise(p*1.9+37.) + .3*vnoise(p*3.7+11.)) / 1.9 - .5; }
+vec3 adjust(vec3 c){
+  if(uAdj == vec4(0.)) return c;
+  c = pow(max(c, 0.), vec3(2.2)) * exp2(uAdj.x * 2.);                 // exposure: +-2 stops, in linear light
+  c = pow(clamp(c, 0., 1.), vec3(1. / 2.2));
+  if(uAdj.y > 0.) c = mix(c, c*c*(3. - 2.*c), uAdj.y);                // contrast: S-curve up, flatten toward mid-grey down
+  else c = mix(c, vec3(.5), -uAdj.y * .7);
+  float l = dot(c, vec3(.2126, .7152, .0722));
+  float wh = smoothstep(.4, 1., l), ws = 1. - smoothstep(0., .6, l);  // how much a pixel counts as highlight / shadow
+  c *= 1. + uAdj.z * wh * .5;
+  c = pow(max(c, 0.), vec3(1. - uAdj.w * ws * .55));
+  return clamp(c, 0., 1.);
+}
 vec3 finish(vec3 base, vec3 graded){
-  vec3 col = mix(base, graded, uMix);
+  vec3 col = adjust(mix(base, graded, uMix));
   if(uGrain > 0.){
     vec2 p = gl_FragCoord.xy / uSize;
     float n = grainAt(p) * 2.;
@@ -478,7 +508,7 @@ function initGL() {
   gl.uniform1i(gl.getUniformLocation(prog, 'img'), 0); gl.uniform1i(gl.getUniformLocation(prog, 'lut'), 1);
   uUseLut = gl.getUniformLocation(prog, 'useLut'); uMix = gl.getUniformLocation(prog, 'uMix');
   uGrain = gl.getUniformLocation(prog, 'uGrain'); uSize = gl.getUniformLocation(prog, 'uSize');
-  ['uSrc','uReg','uCen','uRot','uScale','uOutH','uEdit'].forEach(n => U[n] = gl.getUniformLocation(prog, n));
+  ['uSrc','uReg','uCen','uRot','uScale','uOutH','uEdit','uAdj'].forEach(n => U[n] = gl.getUniformLocation(prog, n));
   gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE);
   gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
 }
@@ -538,6 +568,7 @@ async function render() {
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, imgTex);
   gl.uniform1i(uUseLut, current.lut ? 1 : 0);
   gl.uniform1f(uMix, amt.value / 100);
+  gl.uniform4f(U.uAdj, adj.exposure / 100, adj.contrast / 100, adj.highlights / 100, adj.shadows / 100);
   gl.uniform1f(uGrain, grn.value / 100);
   gl.uniform1f(uSize, Math.max(1.2, Math.max(reg.w, reg.h) / 1600) * reg.scale);  // grain scales with resolution
   gl.uniform2f(U.uSrc, src.w, src.h); gl.uniform2f(U.uReg, reg.w, reg.h); gl.uniform2f(U.uCen, reg.cx, reg.cy);
@@ -727,15 +758,38 @@ async function exitCrop(commit) {
     const left = Math.round(c.cx - w/2 + src.w/2) - src.w/2, top = Math.round(c.cy - h/2 + src.h/2) - src.h/2;
     geo.crop = { cx:left + w/2, cy:top + h/2, w, h };
   }
-  editing = false; ov.classList.remove('on'); croppanel.classList.remove('on'); controls.classList.remove('hide'); cropbtn.classList.remove('on');
+  editing = false; ov.classList.remove('on'); croppanel.classList.remove('on'); cropbtn.classList.remove('on');
+  if (tab === 'crop') tab = 'film';
+  applyTab();
   await render();
 }
 function resetCrop() {
   geo = { angle:0, crop:{ cx:0, cy:0, w:src.w, h:src.h } }; chipKey = 'free'; flip = false; autoFit = true;
   ang.value = 0; $('angv').textContent = '0.0°'; cropmsg.textContent = ''; renderChips(); render();
 }
-cropbtn.onclick = () => { if (!editing) enterCrop(); };
-$('adjtab').onclick = () => { if (editing) exitCrop(true); };
+// ---------- Tabs: Film | Crop | Adjustments ----------
+let tab = 'film';
+const adj = { exposure:0, contrast:0, highlights:0, shadows:0 };
+function applyTab() {
+  controls.classList.toggle('hide', tab !== 'film');
+  $('adjpanel').classList.toggle('on', tab === 'adjust');
+  $('adjtab').classList.toggle('on', tab === 'film'); cropbtn.classList.toggle('on', tab === 'crop'); $('adjstab').classList.toggle('on', tab === 'adjust');
+}
+cropbtn.onclick = () => { if (!editing) enterCrop(); tab = 'crop'; applyTab(); };
+$('adjtab').onclick = async () => { if (editing) await exitCrop(true); tab = 'film'; applyTab(); };
+$('adjstab').onclick = async () => { if (editing) await exitCrop(true); tab = 'adjust'; applyTab(); };
+const fmtAdj = v => (v > 0 ? '+' : v < 0 ? '\u2212' : '') + Math.abs(v);
+function paintAdj(el) { const p = (+el.value + 100) / 2; el.style.setProperty('--a', Math.min(p, 50) + '%'); el.style.setProperty('--b', Math.max(p, 50) + '%'); }
+document.querySelectorAll('#adjpanel input[type=range]').forEach(el => {
+  paintAdj(el);
+  el.addEventListener('input', () => { adj[el.dataset.k] = +el.value; $('av-' + el.dataset.k).textContent = fmtAdj(+el.value); paintAdj(el); render(); });
+  el.addEventListener('dblclick', () => { el.value = 0; el.dispatchEvent(new Event('input')); });
+});
+function resetAdj() {
+  document.querySelectorAll('#adjpanel input[type=range]').forEach(el => { el.value = 0; adj[el.dataset.k] = 0; $('av-' + el.dataset.k).textContent = '0'; paintAdj(el); });
+}
+$('adjreset').onclick = () => { resetAdj(); render(); };
+applyTab();
 $('upbtn').onclick = () => file.click();
 
 $('cdone').onclick = () => exitCrop(true);
@@ -788,7 +842,7 @@ async function load(blob) {
   if (editing) { editing = false; ov.classList.remove('on'); croppanel.classList.remove('on'); controls.classList.remove('hide'); cropbtn.classList.remove('on'); }
   if (imgTex) gl.deleteTexture(imgTex);
   imgTex = upload(0, bmp, true);
-  hasImage = true; drop.classList.add('has'); dl.disabled = false; $('dlcaret').disabled = false; cropbtn.disabled = false; $('adjtab').disabled = false; document.body.classList.add('has'); controls.classList.remove('off');
+  hasImage = true; drop.classList.add('has'); dl.disabled = false; $('dlcaret').disabled = false; cropbtn.disabled = false; $('adjtab').disabled = false; $('adjstab').disabled = false; resetAdj(); tab = 'film'; applyTab(); document.body.classList.add('has'); controls.classList.remove('off');
   render();
 }
 

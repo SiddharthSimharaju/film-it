@@ -11,6 +11,7 @@ Give any photo the look of classic Fujifilm and Polaroid film stocks, add grain,
 - **Film looks:** Provia 100F, Provia 400X, Velvia 50, Astia 100F, Reala 100, Sensia 100, Superia 400, X-Tra 800, Pro 400H, Superia XPRO, FP-100C (and Neg), Acros 100 and Polaroid 690.
 - **Filter strength:** blend each look from 0 to 100%.
 - **Film grain:** adjustable, scaled to the photo's resolution.
+- **Adjustments:** exposure, contrast, highlights and shadows sliders (−100 to +100) that sit on top of the film look.
 - **Crop and straighten:** aspect-ratio presets, a manual straighten slider, and auto-straighten that finds the horizon or vertical lines.
 - **Any format in:** JPG, PNG, WebP, AVIF, BMP, GIF, HEIC and TIFF.
 - **Any format out:** the same format as the original, or PNG, JPEG, WebP, TIFF and BMP (AVIF where the browser supports it). Browsers can't write HEIC, so those photos save as JPEG.
