@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><title>Filmroom poster</title>
+<!-- Social poster for Filmroom. ?layout=portrait (1080x1350, Instagram) or ?layout=landscape (1600x900, X / LinkedIn). -->
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,100..900&family=Google+Sans:wght@400..700&display=swap" rel="stylesheet">
+<style>
+  :root { --ink:#060607; --blurple:#5865f2; --muted:rgba(255,255,255,.72); }
+  * { box-sizing:border-box; margin:0; }
+  html,body { background:#000; }
+  body { font-family:"Google Sans",system-ui,sans-serif; color:#fff; -webkit-font-smoothing:antialiased; }
+  .poster { position:relative; overflow:hidden; background:
+      radial-gradient(70% 45% at 78% 58%, rgba(70,60,220,.38), transparent 70%),
+      radial-gradient(60% 40% at 10% 100%, rgba(40,50,190,.35), transparent 70%),
+      linear-gradient(180deg,#00000a 0%,#03031f 30%,#07073a 62%,#0d0d62 100%); }
+  .stars { position:absolute; inset:0; } .stars i { position:absolute; border-radius:50%; background:#aab2ff; opacity:.35; }
+  .stars i.plus { background:none; border-radius:0; } .stars i.plus::before,.stars i.plus::after { content:''; position:absolute; background:#aab2ff; left:50%; top:50%; transform:translate(-50%,-50%); }
+  .stars i.plus::before { width:100%; height:2px; } .stars i.plus::after { width:2px; height:100%; }
+  .brand { position:absolute; display:flex; align-items:center; gap:14px; font:900 30px/1 Archivo,sans-serif; font-stretch:125%; letter-spacing:-.015em; text-transform:uppercase; }
+  .brand svg { width:40px; height:40px; }
+  h1 { position:absolute; font:900 120px/.92 Archivo,sans-serif; font-stretch:125%; letter-spacing:-.025em; text-transform:uppercase; }
+  h1 em { font-style:normal; background:linear-gradient(90deg,#fff,#a9b4ff 70%,#d6a8ff); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .sub { position:absolute; font-size:32px; line-height:1.4; color:var(--muted); font-weight:400; }
+  .sub b { color:#fff; font-weight:600; }
+  .soon { position:absolute; display:inline-flex; align-items:center; gap:14px; height:64px; padding:0 30px 0 24px; border-radius:999px; background:#fff; color:var(--ink);
+    font-weight:700; font-size:26px; letter-spacing:.14em; text-transform:uppercase; box-shadow:0 0 0 8px rgba(255,255,255,.12), 0 18px 50px rgba(88,101,242,.55); }
+  .soon i { width:14px; height:14px; border-radius:50%; background:var(--blurple); box-shadow:0 0 0 5px rgba(88,101,242,.28); }
+  /* the app preview card */
+  .card { position:absolute; border-radius:36px; padding:16px; background:linear-gradient(140deg,rgba(255,255,255,.17),rgba(255,255,255,.05) 45%,rgba(255,255,255,.1));
+    border:1.5px solid rgba(255,255,255,.24); box-shadow:inset 0 2px 0 rgba(255,255,255,.34), 0 40px 90px rgba(0,0,25,.6); display:flex; flex-direction:column; gap:14px; }
+  .bar { display:flex; align-items:center; justify-content:space-between; height:40px; padding:0 4px; }
+  .tabs { display:flex; gap:6px; } .tabs span { padding:8px 16px; border-radius:12px; font-weight:600; font-size:20px; color:rgba(255,255,255,.7); }
+  .tabs span.on { background:rgba(255,255,255,.2); color:#fff; box-shadow:inset 0 1px 0 rgba(255,255,255,.3); }
+  .dlp { height:38px; padding:0 18px; border-radius:12px; background:#fff; color:var(--ink); font-weight:600; font-size:19px; display:flex; align-items:center; gap:8px; }
+  .ba { position:relative; flex:1; border-radius:22px; overflow:hidden; background:#000; }
+  .ba img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .ba .after { clip-path:inset(0 0 0 54%); }
+  .ba .hd { position:absolute; top:0; bottom:0; left:54%; width:4px; margin-left:-2px; background:#fff; box-shadow:0 0 24px rgba(255,255,255,.7); }
+  .ba .hd::after { content:'↔'; position:absolute; top:50%; left:50%; width:56px; height:56px; transform:translate(-50%,-50%); border-radius:50%; background:#fff; color:var(--ink); display:grid; place-items:center; font-size:26px; font-weight:700; box-shadow:0 8px 30px rgba(0,0,0,.45); }
+  .chip { position:absolute; top:18px; padding:9px 16px; border-radius:12px; font-weight:700; font-size:19px; letter-spacing:.08em; background:rgba(0,0,15,.5); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,.28); }
+  .chip.l { left:18px; } .chip.r { right:18px; }
+  .ctl { display:flex; align-items:center; justify-content:center; gap:36px; height:34px; font-weight:600; font-size:20px; }
+  .ctl div { display:flex; align-items:center; gap:14px; } .ctl i { display:block; width:170px; height:6px; border-radius:3px; background:linear-gradient(90deg,#fff var(--p),rgba(255,255,255,.25) var(--p)); position:relative; }
+  .ctl i::after { content:''; position:absolute; left:var(--p); top:50%; width:20px; height:20px; margin:-10px 0 0 -10px; border-radius:50%; background:#fff; box-shadow:0 2px 10px rgba(0,0,0,.4); }
+  .ctl span { color:var(--muted); font-weight:500; }
+  /* shelf of all 15 films */
+  .shelf { position:absolute; display:flex; flex-wrap:wrap; }
+  .shelf img { display:block; width:var(--cw); height:auto; filter:drop-shadow(0 14px 12px rgba(0,0,20,.55)); }
+  .floor { position:absolute; left:0; right:0; bottom:0; background:linear-gradient(180deg,transparent,rgba(0,0,20,.55)); }
+
+  /* ===== portrait 1080 x 1350 ===== */
+  .portrait { width:1080px; height:1350px; --cw:135px; }
+  .portrait .brand { left:70px; top:56px; }
+  .portrait h1 { left:70px; top:150px; font-size:124px; }
+  .portrait .sub { left:70px; top:410px; width:920px; }
+  .portrait .soon { right:70px; top:44px; }
+  .portrait .card { left:70px; top:540px; width:940px; height:500px; }
+  .portrait .ba img { object-position:50% 33%; }
+  .portrait .shelf { left:0; top:1044px; width:1080px; }
+  .portrait .shelf img:nth-child(n+9) { margin-top:-38px; } .portrait .shelf img:nth-child(9) { margin-left:67px; }
+  .portrait .floor { height:160px; }
+  /* ===== landscape 1600 x 900 ===== */
+  .landscape { width:1600px; height:900px; --cw:104px; }
+  .landscape .brand { left:80px; top:60px; font-size:28px; }
+  .landscape h1 { left:80px; top:132px; font-size:104px; }
+  .landscape .sub { left:80px; top:352px; width:640px; font-size:30px; }
+  .landscape .soon { left:80px; top:566px; }
+  .landscape .card { left:800px; top:60px; width:720px; height:640px; }
+  .landscape .ba img { object-position:50% 38%; }
+  .landscape .shelf { left:20px; top:724px; width:1560px; flex-wrap:nowrap; justify-content:space-between; }
+  .landscape .floor { height:120px; }
+</style>
+</head>
+<body>
+<div class="poster" id="poster">
+  <div class="stars" id="stars"></div>
+  <div class="brand"><svg viewBox="0 0 30 30"><rect x="2" y="5" width="26" height="20" rx="6" fill="none" stroke="#fff" stroke-width="2.6"/><circle cx="15" cy="15" r="4.6" fill="#fff"/><rect x="5.5" y="2.5" width="6" height="3.5" rx="1.5" fill="#fff"/></svg>Filmroom</div>
+  <h1>Edit like<br><em>film.</em></h1>
+  <p class="sub">Give any photo the look of classic film. Pick a roll, add grain, crop and straighten. <b>Editing, made easier.</b></p>
+  <div class="soon"><i></i>Coming soon</div>
+  <div class="card">
+    <div class="bar"><div class="tabs"><span class="on">Film</span><span>Crop</span><span>Adjustments</span></div><div class="dlp">↓ Download</div></div>
+    <div class="ba"><img src="art/before.jpg" alt=""><img class="after" src="art/after.jpg" alt=""><div class="hd"></div><div class="chip l">BEFORE</div><div class="chip r">AFTER · PRO 400H</div></div>
+    <div class="ctl"><div>Filter<i style="--p:100%"></i><span>100%</span></div><div>Grain<i style="--p:55%"></i><span>55%</span></div></div>
+  </div>
+  <div class="floor"></div>
+  <div class="shelf" id="shelf"></div>
+</div>
+<script>
+const layout = new URLSearchParams(location.search).get('layout') === 'landscape' ? 'landscape' : 'portrait';
+document.getElementById('poster').classList.add(layout);
+// every film roll: free looks first, then the Pro ones (same order as the app's shelf)
+['orig','prov','velv','real','s400','acrs','asti','sens','p4x','xtra','400h','xpro','fp','fpn','pola'].forEach(id => {
+  const im = new Image(); im.src = `art/${id}.webp`; im.alt = ''; document.getElementById('shelf').appendChild(im);
+});
+let seed = 9; const r = () => (seed = (seed * 16807) % 2147483647) / 2147483647, st = document.getElementById('stars');
+const W = layout === 'portrait' ? 1080 : 1600, H = layout === 'portrait' ? 1350 : 900;
+for (let i = 0; i < 70; i++) { const n = document.createElement('i'), big = r() < .15, s = big ? 18 + r() * 12 : 3 + r() * 4; if (big) n.className = 'plus';
+  n.style.cssText = `left:${r()*W}px;top:${r()*H}px;width:${s}px;height:${s}px;opacity:${.2 + r() * .45}`; st.appendChild(n); }
+document.title = 'poster-ready';
+</script>
+</body>
+</html>
