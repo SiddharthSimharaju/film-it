@@ -25,14 +25,24 @@ Pricing is built into the UI, but **no payments are processed**. Plan state is k
 | | Free | Pro Monthly | Pro Yearly | Lifetime |
 |---|---|---|---|---|
 | Price (₹, incl. GST) | 0 | 199 / month | 1,999 / year | 3,999 once |
-| Film looks | 5 (all 14 can be previewed) | All 14 | All 14 | All 14 |
-| Export | up to 2048px, JPEG and PNG | Full resolution, JPEG, PNG, WebP, TIFF, BMP | Same | Same |
+| Film looks to download | Original + 5 (all 14 can be previewed) | All 14 | All 14 | All 14 |
+| Photos open at once | 5 | 25 | 50 | 100 |
+| Largest file / resolution | 20 MB / 24 MP | 60 MB / 60 MP | 100 MB / 100 MP | 150 MB / 120 MP |
+| Uploads / downloads per day | 10 / 5 | 100 / 100 | 250 / 250 | 500 / 500 |
+| Export size and formats | 2048 px, JPEG and PNG | Original size, all formats | Same | Same |
+| "Download all" ZIP | not included | up to 25 photos | up to 50 | up to 100 |
 
-Locked looks show a lock on their cartridge, and trying to download one (or a Pro format) opens the plan picker. To wire up real payments, replace `startCheckout()` in `index.html`: create the order or subscription on a server, verify the payment, then call `setPlan()`.
+Every rule, where it is enforced and the test that proves it is in [docs/BUSINESS_RULES.md](docs/BUSINESS_RULES.md). The numbers live in one table (`LIMITS` in `index.html`). Locked looks show a lock on their cartridge, and hitting any limit opens the plan picker (Free) or shows a plain message (paid). To wire up real payments, replace `startCheckout()` in `index.html`: create the order or subscription on a server, verify the payment, then call `activatePlan()`.
+
+## Security and tests
+
+The app is client-side only, so plans and limits behave correctly for honest users but **can be bypassed by a determined one** until a server owns them. [SECURITY.md](SECURITY.md) has the full penetration-test and verification report, what was fixed, and what to build before taking real payments.
+
+To run the 42 automated tests (business rules and security): `python3 -m http.server 8731`, then open <http://localhost:8731/tests/run.html>. After editing any inline script, run `python3 tools/update-csp.py` to refresh the content-security policy's script hashes.
 
 ## Accounts (Google sign-in)
 
-Plans belong to an account. Buying a plan needs a sign-in, and the account page lets people change plan, cancel or resume, see their payment method and invoices (with downloadable receipts), and sign out.
+Plans belong to an account. Buying a plan needs a sign-in. The account dialog has three tabs: **General** (profile, sign-in method, delete account), **Plan & billing** (change plan, cancel or resume, payment method, invoices with downloadable receipts) and **Usage** (today's uploads and downloads against the plan's limits).
 
 Sign-in is a **demo** until you add a Google OAuth client ID:
 

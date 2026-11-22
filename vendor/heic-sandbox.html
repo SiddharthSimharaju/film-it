@@ -1,0 +1,10 @@
+<!doctype html>
+<meta charset="utf-8">
+<!--
+  HEIC converter, loaded by the app in an <iframe sandbox="allow-scripts"> (no same-origin access: it cannot read the app's
+  storage, DOM or account data). heic2any needs eval inside a worker, so this page, and only this page, allows 'unsafe-eval'.
+  The main app keeps a strict policy without it.
+-->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-eval'; worker-src blob:; connect-src blob:; img-src blob: data:">
+<script src="heic2any.min.js"></script>
+<script src="heic-sandbox.js"></script>

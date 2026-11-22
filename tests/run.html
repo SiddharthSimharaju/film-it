@@ -1,0 +1,264 @@
+<!doctype html>
+<meta charset="utf-8"><title>Filmroom tests</title>
+<!--
+  Black-box tests (IV&V): drive the real app in a same-origin iframe through its UI and check
+    BR-*  the business rules (docs/BUSINESS_RULES.md): what each plan allows
+    SEC-* the security controls and the attacks found in the VAPT (SECURITY.md)
+  Run:   python3 -m http.server 8731     then open  http://localhost:8731/tests/run.html
+  Result: the table below; document.title becomes "tests: N/M passed" (and window.__out has the details).
+-->
+<style>body{font:14px/1.5 system-ui;background:#0b0b1e;color:#e8e8f5;margin:16px}table{border-collapse:collapse;width:100%}td{border-bottom:1px solid #26264a;padding:5px 8px;vertical-align:top}
+.ok{color:#4ade80}.no{color:#f87171;font-weight:700}iframe{width:1280px;height:800px;border:1px solid #333;position:absolute;left:-3000px}code{color:#9aa;word-break:break-all}</style>
+<h2>Filmroom tests</h2><p id="sum">running…</p><table id="t"></table><div id="host"></div>
+<script>
+const MB = 1048576, results = [], sleep = ms => new Promise(r => setTimeout(r, ms));
+let win, doc;
+const until = async (fn, ms = 8000, step = 60) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { try { const v = fn(); if (v) return v; } catch (e) {} await sleep(step); } return false; };
+function record(id, name, pass, detail) {
+  results.push({ id, name, pass: !!pass, detail: detail === undefined ? '' : String(detail) });
+  const tr = document.createElement('tr'); tr.innerHTML = `<td>${id}</td><td></td><td class="${pass ? 'ok' : 'no'}">${pass ? 'PASS' : 'FAIL'}</td><td><code></code></td>`;
+  tr.children[1].textContent = name; tr.querySelector('code').textContent = detail === undefined ? '' : String(detail); document.getElementById('t').appendChild(tr);
+}
+const check = async (id, name, fn) => { try { const r = await fn(); record(id, name, r === true || (r && r.pass), r && r.detail); } catch (e) { record(id, name, false, 'threw: ' + e.message); } };
+
+// ---------- harness helpers ----------
+async function boot(setup) {                                // fresh app; optional storage set-up first
+  document.getElementById('host').innerHTML = ''; localStorage.clear(); if (setup) setup();
+  const f = document.createElement('iframe'); f.src = '../index.html?t=' + Date.now(); document.getElementById('host').appendChild(f);
+  await new Promise(r => f.onload = r); win = f.contentWindow; doc = win.document;
+  await until(() => doc.querySelectorAll('#strip .film img').length === 15, 8000);
+  win.__dl = []; win.__blobs = [];
+  win.HTMLAnchorElement.prototype.click = function () { win.__dl.push({ name: this.download, href: this.href }); };
+  const oc = win.URL.createObjectURL.bind(win.URL); win.URL.createObjectURL = b => { win.__blobs.push(b); return oc(b); };
+  return f;
+}
+const $$ = s => doc.querySelector(s), $all = s => [...doc.querySelectorAll(s)];
+const png = (w, h, name = 'p.png', color = '#c85a28') => new Promise(r => { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.fillStyle = color; x.fillRect(0, 0, w, h); x.fillStyle = '#fff'; x.fillRect(w / 4, h / 4, w / 2, h / 2); c.toBlob(b => r(new File([b], name, { type: 'image/png' }))); });
+const pngHeader = (w, h, name) => { const b = new Uint8Array(33); b.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52]); const dv = new DataView(b.buffer); dv.setUint32(16, w); dv.setUint32(20, h); b[24] = 8; return new File([b], name, { type: 'image/png' }); };
+async function upload(files) {
+  const dt = new DataTransfer(); files.forEach(f => dt.items.add(f)); const inp = $$('#file'); inp.files = dt.files; inp.dispatchEvent(new Event('change'));
+  let last = '', still = 0; for (let i = 0; i < 500 && still < 6; i++) { await sleep(120); const n = $all('#thumbs .pt').length + '|' + ($$('#toast') || {}).textContent + '|' + $$('#busy').classList.contains('on'); still = n === last ? still + 1 : 0; last = n; }
+}
+const nPhotos = () => $all('#thumbs .pt').length;
+const modalOpen = () => $$('#modal').classList.contains('open');
+const reason = () => (($$('.reason') || {}).textContent || '').trim();
+const toastText = () => ($$('#toast') || {}).textContent;
+const closeAll = () => { if (modalOpen()) $$('[data-close]').click(); };
+async function signIn() { $$('#acctbtn').click(); await until(() => $$('[data-demo-signin]'), 2000); $$('[data-demo-signin]').click(); await until(() => !modalOpen() || $$('.plan'), 3000); await sleep(200); closeAll(); await sleep(100); }
+async function openAcct(tab = 'general') { $$('#acctbtn').click(); await until(() => $$('.acctwrap'), 2000); if (tab !== 'general') { $$(`[data-atab=${tab}]`).click(); await sleep(120); } }
+async function buy(id) { await openAcct('plan'); await until(() => $$('[data-changeplan]'), 2000); $$('[data-changeplan]').click(); await until(() => $$(`[data-plan=${id}]`), 2000); $$(`[data-plan=${id}]`).click(); await until(() => $$('#pay'), 2000); $$('#pay').click(); await until(() => $$('.done'), 4000); closeAll(); await sleep(150); }
+async function download() { const n = win.__dl.length; $$('#dl').click(); await until(() => win.__dl.length > n || modalOpen() || /Couldn|used all/.test(toastText()), 8000); await sleep(150); return win.__dl.length > n; }
+async function blobDims(b) { const bm = await createImageBitmap(b); const r = [bm.width, bm.height]; bm.close(); return r; }
+const IDS = ['ORIG', 'PROV', 'VELV', 'REAL', 'S400', 'ACRS', 'ASTI', 'SENS', 'P4X', 'XTRA', '400H', 'XPRO', 'FP', 'FPN', 'POLA'];
+const lookBtn = id => $all('#strip .film')[IDS.indexOf(id)];
+const unzipNames = async b => { const u = new Uint8Array(await b.arrayBuffer()), dv = new DataView(u.buffer), n = []; for (let i = 0; i < u.length - 30;) { if (dv.getUint32(i, true) === 0x04034b50) { const nl = dv.getUint16(i + 26, true), el = dv.getUint16(i + 28, true), cs = dv.getUint32(i + 18, true); n.push(new TextDecoder().decode(u.subarray(i + 30, i + 30 + nl))); i += 30 + nl + el + cs; } else i++; } return n; };
+const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(await crypto.subtle.digest(algo, buf))));
+const leftToday = () => +$$('#dlmenu .usage b').textContent.split(' ')[0];
+
+(async () => {
+  /* ===================== BUSINESS RULES: FREE ===================== */
+  await boot();
+  await check('BR-F1', 'Free: at most 5 photos open at once; the 6th triggers the upgrade nudge', async () => {
+    await upload(await Promise.all([1, 2, 3, 4, 5, 6, 7].map(i => png(8, 8, `f${i}.png`))));
+    const r = reason(), ok = nPhotos() === 5 && /Free allows 5 photos at once/.test(r) && /5 of 5 photos/.test($$('#pcount').textContent); closeAll(); return { pass: ok, detail: `${nPhotos()} photos; ${r}` };
+  });
+  await boot();
+  await check('BR-F2', 'Free: a file over 20 MB is refused before decoding', async () => {
+    await upload([new File([new Uint8Array(21 * MB)], 'huge.jpg', { type: 'image/jpeg' })]); const t = toastText(); return { pass: nPhotos() === 0 && /over 20 MB/.test(t), detail: t };
+  });
+  await check('BR-F3', 'Free: more than 24 megapixels is refused from the file header (6001 x 4001)', async () => {
+    await upload([pngHeader(6001, 4001, 'big.png')]); const t = toastText(); return { pass: nPhotos() === 0 && /over 24 megapixels/.test(t), detail: t };
+  });
+  await check('BR-F4', 'Free: 24 megapixels exactly (6000 x 4000) is not refused for size', async () => {
+    await upload([pngHeader(6000, 4000, 'edge.png')]); const t = toastText(); return { pass: !/over 24 megapixels/.test(t), detail: t };
+  });
+  await boot();
+  await check('BR-F5', 'Free: 10 uploads a day; the 11th is refused even after removing photos', async () => {
+    for (let i = 0; i < 10; i++) { await upload([await png(8, 8, `u${i}.png`)]); if (nPhotos() >= 4) { $$('#thumbs .pt .rm').click(); await until(() => $$('#cyes'), 1500); $$('#cyes').click(); await sleep(500); } }
+    await upload([await png(8, 8, 'u11.png')]); const r = reason(), ok = /used all 10 uploads/.test(r); closeAll(); return { pass: ok, detail: r };
+  });
+  await boot();
+  await check('BR-F6', 'Free: 5 downloads a day; the 6th is refused', async () => {
+    await upload([await png(64, 48, 'd.png')]); let done = 0; for (let i = 0; i < 5; i++) if (await download()) done++;
+    $$('#dlcaret').click(); await sleep(150); const left = $$('#dlmenu .usage b').textContent; $$('#dlcaret').click(); await download(); const r = reason(), ok = done === 5 && /used all 5 downloads/.test(r) && win.__dl.length === 5; closeAll();
+    return { pass: ok, detail: `${done} downloads, left: ${left}; ${r}` };
+  });
+  await boot();
+  await check('BR-F7', 'Free: exports are capped at 2048px (3000 x 2000 becomes 2048 x 1365)', async () => {
+    await upload([await png(3000, 2000, 'big.png')]); await download(); const [w, h] = await blobDims(win.__blobs.at(-1)); return { pass: w === 2048 && h === 1365, detail: `${w} x ${h}` };
+  });
+  await check('BR-F8', 'Free: only JPEG and PNG; TIFF and BMP are Pro items that open the upgrade nudge', async () => {
+    $$('#dlcaret').click(); await sleep(150); const locked = $all('#dlmenu .mi.locked[data-f]').map(b => b.dataset.f).sort().join(',');
+    $$('#dlmenu .mi[data-f=tiff]').click(); await sleep(250); const r = reason(); closeAll(); return { pass: /tiff/.test(locked) && /bmp/.test(locked) && /TIFF export is a Pro feature/.test(r), detail: `locked: ${locked}; ${r}` };
+  });
+  await check('BR-F9', 'Free: a Pro look can be previewed but not downloaded', async () => {
+    lookBtn('ASTI').click(); await sleep(500); const before = win.__dl.length; $$('#dl').click(); await sleep(400); const r = reason(); closeAll();
+    return { pass: win.__dl.length === before && /ASTIA 100F is a Pro look/.test(r), detail: r };
+  });
+  await check('BR-F10', 'Free: "Download all" (ZIP) is a Pro feature', async () => {
+    lookBtn('ORIG').click(); await upload([await png(8, 8, 'z2.png')]); $$('#dlcaret').click(); await sleep(200); const it = $$('#dlmenu .mi.all'), locked = it && it.classList.contains('locked'); it.click(); await sleep(300);
+    const r = reason(); closeAll(); return { pass: locked && /Download all is a Pro feature/.test(r), detail: r };
+  });
+
+  /* ===================== BUSINESS RULES: PAID PLANS ===================== */
+  const PLAN_SPEC = { monthly: { photos: 25, label: 'Pro Monthly' }, yearly: { photos: 50, label: 'Pro Yearly' }, lifetime: { photos: 100, label: 'Lifetime' } };
+  for (const [id, sp] of Object.entries(PLAN_SPEC)) {
+    await boot(); await signIn(); await buy(id);
+    await check(`BR-${id[0].toUpperCase()}1`, `${sp.label}: ${sp.photos} photos open at once`, async () => {
+      const batch = []; for (let i = 0; i < sp.photos + 1; i++) batch.push(await png(8, 8, `m${i}.png`)); await upload(batch);
+      const t = toastText(); return { pass: nPhotos() === sp.photos && new RegExp(`allows ${sp.photos} photos at once`).test(t) && !modalOpen(), detail: `${nPhotos()} photos; ${t}` };
+    });
+    await check(`BR-${id[0].toUpperCase()}2`, `${sp.label}: all 14 looks unlocked and every export format available`, async () => {
+      const locks = $all('.lockbadge').filter(e => getComputedStyle(e).display !== 'none').length; $$('#dlcaret').click(); await sleep(150); const lockedFormats = $all('#dlmenu .mi.locked[data-f]').length; $$('#dlcaret').click(); await sleep(100);
+      return { pass: locks === 0 && lockedFormats === 0, detail: `visible locks ${locks}, locked formats ${lockedFormats}` };
+    });
+  }
+  await boot(); await signIn(); await buy('monthly');
+  await check('BR-M3', 'Pro Monthly: full-resolution export (3000 x 2000 stays 3000 x 2000)', async () => {
+    await upload([await png(3000, 2000, 'full.png')]); lookBtn('ASTI').click(); await sleep(500); await download(); const [w, h] = await blobDims(win.__blobs.at(-1)); return { pass: w === 3000 && h === 2000, detail: `${w} x ${h}` };
+  });
+  await check('BR-M4', 'Pro Monthly: "Download all" makes one ZIP; each photo counts as one download', async () => {
+    await upload([await png(40, 30, 'a.png'), await png(40, 30, 'b.png')]); lookBtn('ORIG').click(); await sleep(300);
+    $$('#dlcaret').click(); await sleep(150); const before = leftToday(); $$('#dlmenu .mi.all').click(); await until(() => win.__dl.some(d => /\.zip$/.test(d.name)), 20000); await sleep(500);
+    const names = await unzipNames(win.__blobs.at(-1)); $$('#dlcaret').click(); await sleep(150); const after = leftToday();
+    return { pass: names.length === nPhotos() && before - after === names.length, detail: `${names.length} files in ZIP, downloads left ${before} -> ${after}` };
+  });
+  await check('BR-M5', 'Pro Monthly: 100 downloads a day (shown in the menu)', async () => { const t = $$('#dlmenu .usage b').textContent; return { pass: /of 100$/.test(t), detail: t }; });
+
+  /* ===================== ACCOUNT AND BILLING RULES ===================== */
+  await boot(); await signIn(); await buy('monthly');
+  await check('BR-B1', 'Cancelling keeps Pro until the period ends (access is not cut immediately)', async () => {
+    await openAcct('plan'); await until(() => $$('[data-cancelsub]'), 1500); $$('[data-cancelsub]').click(); await sleep(150); $$('[data-confirmcancel]').click(); await sleep(250);
+    const kept = /Pro stays until/.test($$('.sheet').textContent), stillBig = true; closeAll();
+    const batch = []; for (let i = 0; i < 8; i++) batch.push(await png(8, 8, `k${i}.png`)); await upload(batch); return { pass: kept && nPhotos() === 8, detail: `${nPhotos()} photos accepted while cancelled-but-active` };
+  });
+  const now = Date.now(), lapsed = JSON.stringify({ 'demo-google-user': { plan: 'monthly', renewsAt: now - 86400000, canceled: true, invoices: [], profile: { name: 'D', email: 'd@example.com', picture: '' } } });
+  await boot(() => { localStorage.setItem('filmroom.accounts', lapsed); localStorage.setItem('filmroom.session', 'demo-google-user'); });
+  await check('BR-B2', 'A lapsed cancelled subscription is Free again (the 5-photo limit applies)', async () => {
+    await upload(await Promise.all([1, 2, 3, 4, 5, 6].map(i => png(8, 8, `l${i}.png`)))); const ok = nPhotos() === 5; closeAll(); return { pass: ok, detail: `${nPhotos()} photos` };
+  });
+  await boot();
+  await check('BR-B3', 'Daily counters cannot be reset by winding the clock back (up to 2 days; beyond that only a server can know)', async () => {
+    await upload([await png(8, 8, 'c1.png')]); const used = JSON.parse(localStorage.getItem('filmroom.usage')).device.up;
+    const real = win.Date.now; win.Date.now = () => real() - 30 * 3600000; await upload([await png(8, 8, 'c2.png')]);
+    const after = JSON.parse(localStorage.getItem('filmroom.usage')).device.up; win.Date.now = real; return { pass: used === 1 && after === 2, detail: `uploads counted ${used} -> ${after}` };
+  });
+  await boot();
+  await check('BR-B4', 'Signing in does not reset the daily counters (one shared device counter)', async () => {
+    await upload([await png(8, 8, 'x1.png')]); await signIn(); const up = JSON.parse(localStorage.getItem('filmroom.usage')).device.up; return { pass: up === 1, detail: `uploads counted: ${up}` };
+  });
+
+  /* ===================== ACCOUNT DIALOG ===================== */
+  await boot(); await signIn();
+  await check('ACC-1', 'Account dialog has General, Plan & billing and Usage tabs; each shows its own content', async () => {
+    await openAcct(); const tabs = $all('.anav [data-atab]').map(b => b.textContent.trim()), sel = () => $all('.anav [aria-selected=true]').map(b => b.textContent.trim()).join();
+    const g = $$('.apane h2').textContent + '|' + sel() + '|' + /Sign-in method/.test($$('.apane').textContent);
+    $$('[data-atab=plan]').click(); await sleep(100); const p = $$('.apane h2').textContent + '|' + sel() + '|' + /Payment method/.test($$('.apane').textContent) + /Invoices/.test($$('.apane').textContent);
+    $$('[data-atab=usage]').click(); await sleep(100); const u = $$('.apane h2').textContent + '|' + sel() + '|' + /Uploads/.test($$('.apane').textContent) + /What your Free plan allows/.test($$('.apane').textContent);
+    const twoColumn = $$('.sheet').classList.contains('acctsheet'); closeAll();
+    return { pass: tabs.join() === 'General,Plan & billing,Usage' && /^General\|General\|true$/.test(g) && /^Plan & billing\|Plan & billing\|truetrue$/.test(p) && /^Usage\|Usage\|truetrue$/.test(u) && twoColumn, detail: `${tabs.join(' / ')}; general:${g}; plan:${p}; usage:${u}` };
+  });
+  await check('ACC-2', 'Other dialogs (plans, sign-in) do not keep the two-column account layout', async () => {
+    await openAcct('plan'); $$('[data-changeplan]').click(); await sleep(200); const plansView = !$$('.sheet').classList.contains('acctsheet') && !!$$('.plan'); closeAll();
+    return { pass: plansView, detail: `plans view single-column: ${plansView}` };
+  });
+  await boot(); await signIn();
+  await check('ACC-3', 'Usage tab shows the real counts (2 uploads, 2 photos open) and this plan\'s limits', async () => {
+    await upload([await png(8, 8, 'a.png'), await png(8, 8, 'b.png')]); await openAcct('usage'); const t = $$('.apane').textContent.replace(/\s+/g, ' '); closeAll();
+    return { pass: /Uploads\s*2 \/ 10/.test(t) && /Downloads\s*0 \/ 5/.test(t) && /Photos open\s*2 \/ 5/.test(t) && /File size\s*up to 20 MB/.test(t) && /Export size\s*up to 2048px/.test(t) && /Download all \(ZIP\)\s*Not included/.test(t), detail: t.slice(0, 220) };
+  });
+  await boot(); await signIn(); await buy('monthly');
+  await check('ACC-4', 'Account removal: refused while a subscription is active; allowed after cancelling; clears the saved data and signs out', async () => {
+    await openAcct(); $$('[data-delete]').click(); await sleep(150); const blockedMsg = /Cancel it first/.test($$('.sheet').textContent) && !$$('[data-confirmdelete]'); closeAll();
+    await openAcct('plan'); $$('[data-cancelsub]').click(); await sleep(150); $$('[data-confirmcancel]').click(); await sleep(250);
+    $$('[data-atab=general]').click(); await sleep(100); $$('[data-delete]').click(); await sleep(150); const allowed = !!$$('[data-confirmdelete]'); $$('[data-confirmdelete]').click(); await sleep(400);
+    const stored = Object.keys(JSON.parse(localStorage.getItem('filmroom.accounts') || '{}')).length, signedOut = $$('#acctbtn').classList.contains('out');
+    return { pass: blockedMsg && allowed && stored === 0 && signedOut, detail: `blocked while active: ${blockedMsg}; allowed after cancel: ${allowed}; records left: ${stored}; signed out: ${signedOut}` };
+  });
+  await boot(); await signIn();
+  await check('ACC-5', 'Account removal on a Free account: confirm, then the record and session are gone and you are signed out', async () => {
+    await openAcct(); $$('[data-delete]').click(); await sleep(120); $$('[data-confirmdelete]').click(); await sleep(400);
+    return { pass: Object.keys(JSON.parse(localStorage.getItem('filmroom.accounts') || '{}')).length === 0 && !localStorage.getItem('filmroom.session') && $$('#acctbtn').classList.contains('out'), detail: 'record and session cleared; signed out' };
+  });
+
+  /* ===================== SECURITY ===================== */
+  await boot();
+  await check('SEC-1', 'XSS via file name: markup in a name never runs or becomes HTML', async () => {
+    await upload([await png(8, 8, '"><img src=x onerror=window.__x=1>.png'), await png(8, 8, "q';window.__y=1;.png")]); await sleep(300);
+    $$('#thumbs .pt .rm').click(); await until(() => $$('#cyes'), 1500); const html = $$('#csheet .ctext b').innerHTML; $$('#cno').click();
+    return { pass: win.__x === undefined && win.__y === undefined && !doc.querySelector('img[onerror]') && /&lt;img/.test(html), detail: html };
+  });
+  await boot();
+  await check('SEC-2', 'Malicious or broken files are rejected: SVG with script, HTML as an image, empty, truncated', async () => {
+    const svg = new File(['<svg xmlns="http://www.w3.org/2000/svg"><script>window.__s=1<\/script></svg>'], 'e.svg', { type: 'image/svg+xml' });
+    await upload([svg, new File(['<html><script>window.__h=1<\/script>'], 'fake.jpg', { type: 'image/jpeg' }), new File([], 'empty.png', { type: 'image/png' }), new File([new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 16])], 'trunc.jpg', { type: 'image/jpeg' })]);
+    return { pass: nPhotos() === 0 && win.__s === undefined && win.__h === undefined, detail: `${nPhotos()} photos accepted; ${toastText()}` };
+  });
+  await check('SEC-3', 'Extreme aspect ratio (30000 x 2) is rejected as "not a photo"', async () => {
+    await upload([pngHeader(30000, 2, 'strip.png')]); return { pass: nPhotos() === 0 && /unusual shape/.test(toastText()), detail: toastText() };
+  });
+  await boot();
+  await check('SEC-4', 'An image wider than the GPU texture limit (20000 x 1000) is clamped, not broken', async () => {
+    await upload([await png(20000, 1000, 'pano.png')]); await sleep(800); const c = $$('#cv'), max = document.createElement('canvas').getContext('webgl2').getParameter(0x0D33);
+    return { pass: nPhotos() === 1 && c.width <= max && c.width > 0, detail: `canvas ${c.width} x ${c.height}, GPU max ${max}` };
+  });
+  const evil = '{"t1":{"plan":"platinum","invoices":"zzz","renewsAt":"abc","method":{"type":"<img src=x onerror=window.__m=1>","label":1},"profile":{"name":"<img src=x onerror=window.__n=1>","email":"e@e.test","picture":"javascript:window.__p=1"}},"__proto__":{"plan":"lifetime"},"constructor":{"plan":"lifetime"}}';
+  await boot(() => { localStorage.setItem('filmroom.accounts', evil); localStorage.setItem('filmroom.session', 't1'); });
+  await check('SEC-5', 'Tampered saved account data cannot crash the app, grant Pro, or inject markup', async () => {
+    await openAcct('general'); const rendered = modalOpen() && !!$$('.prof'); await openAcct('plan'); const clean = !doc.querySelector('.sheet img[onerror]') && win.__m === undefined && win.__n === undefined && win.__p === undefined;
+    const avatar = doc.querySelector('#acctbtn img'), free = /Free plan/.test($$('.sheet').textContent); closeAll();
+    return { pass: rendered && clean && !avatar && free && ({}).plan === undefined, detail: `page rendered: ${rendered}; no injected markup: ${clean}; unsafe avatar URL dropped: ${!avatar}; plan stayed Free: ${free}` };
+  });
+  await boot(() => { localStorage.setItem('filmroom.accounts', JSON.stringify({ t2: { plan: 'monthly', renewsAt: -1e300, profile: { name: 'T', email: 't@t.test' } } })); localStorage.setItem('filmroom.session', 't2'); });
+  await check('SEC-6', 'A poisoned renewal date (-1e300) cannot freeze the page or keep Pro', async () => {
+    const t0 = performance.now(); await openAcct('plan'); const ms = performance.now() - t0, txt = $$('.sheet').textContent; closeAll();
+    return { pass: ms < 2500 && /Free plan/.test(txt), detail: `${Math.round(ms)} ms; ${/Free plan/.test(txt) ? 'Free plan shown' : 'Pro shown'}` };
+  });
+  await boot();
+  await check('SEC-7', 'Sign-in refuses reserved or malformed account ids (__proto__, constructor, too long, spaces, paths)', async () => {
+    const bad = ['__proto__', 'constructor', 'a'.repeat(200), 'x y', '../../etc', '', null, 42], accepted = bad.filter(sub => win.completeSignIn({ sub, name: 'x', email: 'x@x.test' }) === true);
+    return { pass: !accepted.length && $$('#acctbtn').classList.contains('out') && ({}).sub === undefined, detail: `accepted: ${JSON.stringify(accepted)}` };
+  });
+  await check('SEC-8', 'Content-Security-Policy is present, hash-based, no unsafe-eval, no unsafe-inline scripts', async () => {
+    const csp = doc.querySelector('meta[http-equiv="Content-Security-Policy"]').content, script = (csp.match(/script-src ([^;]*)/) || [])[1] || '';
+    const inline = [...doc.querySelectorAll('script:not([src])')].map(s => s.textContent), want = [];
+    for (const s of inline) want.push(`'sha256-${await hash('SHA-256', new TextEncoder().encode(s))}'`);
+    const covered = want.every(h => script.includes(h));
+    return { pass: covered && !/unsafe-eval|unsafe-inline/.test(script) && /object-src 'none'/.test(csp) && /base-uri 'none'/.test(csp) && /default-src 'none'/.test(csp), detail: `${inline.length} inline scripts, all hashed: ${covered}` };
+  });
+  await check('SEC-9', 'Third-party code is vendored and matches its pinned SHA-384', async () => {
+    const want = { 'heic2any.min.js': 'OTofQ0MEeiSgh62havBcemCIK0gqj809wX6UA0uPISNMRnR6NZyCdGzX3SbLrgwL', 'UTIF.js': 'RyBmXHdfZ/Uon+ud+/AqSyWpUWnKYt2tkRG/P4gWoRUGDU+qIAV3tGBPNlYTBZEF' }, bad = [];
+    for (const [f, h] of Object.entries(want)) if (await hash('SHA-384', await (await fetch('../vendor/' + f)).arrayBuffer()) !== h) bad.push(f);
+    return { pass: !bad.length, detail: bad.length ? 'MISMATCH ' + bad : 'both match' };
+  });
+  await check('SEC-10', 'The app only talks to its own origin, Google Fonts and Google sign-in', async () => {
+    const origins = new Set(win.performance.getEntriesByType('resource').map(r => new URL(r.name).origin)), allowed = [location.origin, 'https://fonts.googleapis.com', 'https://fonts.gstatic.com', 'https://accounts.google.com'];
+    const stray = [...origins].filter(o => !allowed.includes(o)); return { pass: !stray.length, detail: [...origins].join(' ') };
+  });
+  await boot();
+  await check('SEC-11', 'HEIC converts inside a sandboxed frame that has no access to the app', async () => {
+    const heic = new File([await (await fetch('fixtures/sample.heic')).blob()], 'sample.heic', { type: '' }); await upload([heic]); await until(() => nPhotos() === 1, 40000);
+    const fr = doc.querySelector('iframe[src*="heic-sandbox"]'), sb = fr && fr.getAttribute('sandbox'); let blocked = false; try { void fr.contentWindow.document.title; } catch (e) { blocked = true; }
+    return { pass: nPhotos() === 1 && /allow-scripts/.test(sb) && !/allow-same-origin/.test(sb) && blocked, detail: `photos ${nPhotos()}, sandbox="${sb}", app cannot read the frame: ${blocked}` };
+  });
+  await boot();
+  await check('SEC-12', 'TIFF opens (vendored decoder; size is read from the header first)', async () => {
+    const tif = new File([await (await fetch('fixtures/tiny.tif')).blob()], 'tiny.tif', { type: 'image/tiff' }); await upload([tif]); return { pass: nPhotos() === 1, detail: `photos ${nPhotos()} ${toastText()}` };
+  });
+  await boot();
+  await check('SEC-13', 'ZIP entry names are sanitised (no path tricks, no markup characters)', async () => {
+    await signIn(); await buy('monthly'); await upload([await png(8, 8, '..<x>:evil|name?.png'), await png(8, 8, 'b?.png')]); $$('#dlcaret').click(); await sleep(150); $$('#dlmenu .mi.all').click();
+    await until(() => win.__dl.some(d => /\.zip$/.test(d.name)), 20000); await sleep(300); const names = await unzipNames(win.__blobs.at(-1));
+    return { pass: names.length === 2 && names.every(n => !/[<>:"\/\\|?*]/.test(n) && !n.startsWith('.')), detail: names.join(' , ') };
+  });
+  await boot();
+  await check('SEC-14', 'Double-clicking Download exports once and counts once', async () => {
+    await upload([await png(64, 48, 'dc.png')]); $$('#dl').click(); $$('#dl').click(); await sleep(2500);
+    const c = JSON.parse(localStorage.getItem('filmroom.usage')).device.down; return { pass: win.__dl.length === 1 && c === 1, detail: `${win.__dl.length} download(s), counted ${c}` };
+  });
+
+  const passed = results.filter(r => r.pass).length;
+  document.getElementById('sum').textContent = `${passed} / ${results.length} passed`; document.title = `tests: ${passed}/${results.length} passed`;
+  window.__out = results; window.__done = true;
+})();
+</script>

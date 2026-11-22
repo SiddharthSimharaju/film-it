@@ -2,6 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-O2SFyUGiZnglg33jFMkamm5HSGwTMrYHrSx4xDGHphw=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://accounts.google.com/gsi/; frame-src 'self' https://accounts.google.com/gsi/; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="strict-origin">
+<!-- Clickjacking guard: the page stays hidden unless it is the top window or framed by our own origin. -->
+<style id="antiframe">html{display:none!important}</style>
+<script>(function(){var h=document.getElementById('antiframe');function show(){h.remove()}if(self===top){show();return}try{if(top.location.origin===location.origin){show();return}}catch(e){}try{top.location=self.location}catch(e){}})()</script>
+<noscript><style>html{display:block!important}body{padding:24px;font:16px system-ui;color:#fff;background:#05052b}</style></noscript>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Filmroom</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -35,7 +41,7 @@
   .logo { display:inline-flex; align-items:center; gap:10px; font-size:22px; justify-self:start; line-height:1; }
   .logo svg { display:block; }
   .nav { display:flex; gap:6px; }
-  .navbtn { background:none; border:0; color:#fff; font-weight:600; font-size:16px; padding:9px 16px; border-radius:14px; cursor:pointer; transition:background .15s, opacity .15s; }
+  .navbtn { background:none; border:0; color:#fff; font-weight:600; font-size:16px; padding:9px 16px; border-radius:13px; cursor:pointer; transition:background .15s, opacity .15s; }
   .navbtn:hover:not(:disabled) { background:rgba(255,255,255,.1); } .navbtn:disabled { opacity:.4; cursor:default; }
   .topr { justify-self:end; }
 
@@ -66,9 +72,9 @@
   canvas { max-width:100%; max-height:100%; display:none; }
   body.has canvas { display:block; }
   .replace { position:absolute; top:16px; right:16px; display:none; background:rgba(255,255,255,.14); backdrop-filter:blur(12px); color:#fff; border:0;
-    padding:9px 16px; border-radius:12px; font-size:13px; font-weight:600; cursor:pointer; }
+    padding:9px 16px; border-radius:13px; font-size:13px; font-weight:600; cursor:pointer; }
   .replace:hover { background:rgba(255,255,255,.22); } body.has .replace { display:block; }
-  .caption { position:absolute; left:16px; bottom:16px; display:none; align-items:center; gap:10px; padding:8px 14px; border-radius:12px;
+  .caption { position:absolute; left:16px; bottom:16px; display:none; align-items:center; gap:10px; padding:8px 14px; border-radius:13px;
     background:rgba(0,0,0,.45); backdrop-filter:blur(12px); font-size:13px; font-weight:600; }
   .caption i { width:3px; height:3px; border-radius:50%; background:var(--muted); } .caption #fdim { color:var(--muted); font-weight:500; }
   body.has .caption { display:flex; } .drop:has(.overlay.on) .caption { display:none; }
@@ -88,7 +94,7 @@
   #ang { background:rgba(255,255,255,.2); }
   .croppanel { display:none; } .croppanel.on { display:flex; }
   .chips { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; }
-  .chip { background:rgba(255,255,255,.1); border:0; color:#fff; font-weight:600; font-size:13px; padding:9px 14px; border-radius:12px; cursor:pointer; transition:background .15s; }
+  .chip { background:rgba(255,255,255,.1); border:0; color:#fff; font-weight:600; font-size:13px; padding:9px 14px; border-radius:13px; cursor:pointer; transition:background .15s; }
   .chip:hover { background:rgba(255,255,255,.18); } .chip.active { background:#fff; color:var(--ink); }
   .msg { font-size:12px; color:var(--muted); max-width:210px; min-height:16px; }
   .cropact { display:flex; gap:8px; }
@@ -211,14 +217,18 @@
   .prochip { margin-left:8px; padding:1px 6px; border-radius:5px; background:rgba(255,255,255,.16); font-size:10px; font-weight:700; letter-spacing:.05em; vertical-align:1px; }
   .mi.locked .n, .mi.locked .d { opacity:.75; }
   .mi.all { background:rgba(255,255,255,.1); } .mi.all:hover { background:rgba(255,255,255,.17); } .msep { height:1px; background:var(--glass-line); margin:6px 4px; }
+  .usage { display:flex; justify-content:space-between; padding:8px 12px 4px; font-size:12px; color:var(--muted); } .usage b { color:#fff; font-weight:600; font-variant-numeric:tabular-nums; }
   .mi.promo { margin-top:4px; background:linear-gradient(140deg,rgba(88,101,242,.4),rgba(88,101,242,.16)); }
   .mi.promo:hover { background:linear-gradient(140deg,rgba(88,101,242,.55),rgba(88,101,242,.24)); }
   body.modal-open { overflow:hidden; }
-  .modal { position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center; padding:24px; background:rgba(0,0,12,.62);
-    -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); }
+  .modal { position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center; padding:24px; background:rgba(0,0,10,.74);
+    -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px); }
   .modal.open { display:flex; }
   .sheet { position:relative; width:min(1040px,100%); max-height:calc(100vh - 48px); overflow:auto; border-radius:28px; padding:36px 34px 26px;
-    background:linear-gradient(140deg,rgba(255,255,255,.12),rgba(255,255,255,.04)), rgba(6,6,38,.86); border:1px solid var(--glass-edge); box-shadow:var(--glass-shadow); }
+    /* the same deep-navy gradient and glow as the app background, solid so nothing behind shows through the text */
+    background:radial-gradient(80% 55% at 85% 108%, rgba(52,52,200,.34), transparent 65%), radial-gradient(60% 40% at 5% 0%, rgba(70,60,220,.16), transparent 70%),
+      linear-gradient(180deg,#040424 0%,#06062f 45%,#0a0a4a 100%);
+    --muted:rgba(255,255,255,.76); border:1px solid var(--glass-edge); box-shadow:var(--glass-shadow), 0 30px 90px rgba(0,0,15,.7); }
   .sheet h2 { margin:0; font-size:32px; font-weight:600; letter-spacing:-.035em; text-align:center; }
   .sheet .sub { text-align:center; color:var(--muted); margin:8px 0 26px; }
   .reason { display:flex; width:max-content; max-width:100%; margin:0 auto 14px; align-items:center; gap:8px; padding:7px 14px; border-radius:999px;
@@ -264,6 +274,29 @@
   .acct.in.pro::after { content:'\2605'; position:absolute; right:-3px; bottom:-3px; width:17px; height:17px; border-radius:50%; display:grid; place-items:center; background:#ffd479; color:#4a3200; font-size:10px; box-shadow:0 0 0 2px #0a0a2e; }
   .acct.in:hover { box-shadow:0 0 0 2px rgba(255,255,255,.6); }
   .av { display:grid; place-items:center; border-radius:50%; object-fit:cover; flex:none; background:linear-gradient(140deg,#5865f2,#8b5cf6); color:#fff; font-weight:700; }
+  .sheet.acctsheet { padding:0; width:min(940px,100%); height:min(660px,calc(100vh - 48px)); overflow:hidden; }
+  .acctwrap { display:grid; grid-template-columns:250px minmax(0,1fr); height:100%; }
+  .anav { display:flex; flex-direction:column; gap:4px; padding:26px 14px 18px; border-right:1px solid rgba(255,255,255,.1); background:rgba(0,0,10,.18); min-height:0; }
+  .anav .who { display:flex; align-items:center; gap:12px; padding:0 10px 18px; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,.1); min-width:0; }
+  .anav .who b { display:block; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .anav .who > div span { display:block; color:var(--muted); font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .anav .who > div { min-width:0; }
+  .tabb { position:relative; display:flex; align-items:center; gap:12px; padding:11px 12px; border:0; border-radius:13px; background:none; color:#fff; font:600 15px inherit; font-family:inherit; text-align:left; cursor:pointer; transition:background .15s; }
+  .tabb svg { width:18px; height:18px; flex:none; opacity:.85; } .tabb:hover { background:rgba(255,255,255,.08); }
+  .tabb.on { background:rgba(255,255,255,.13); } .tabb.on::before { content:''; position:absolute; left:-14px; top:8px; bottom:8px; width:3px; border-radius:0 3px 3px 0; background:var(--blurple); }
+  .anav .spacer { flex:1; }
+  .apane { padding:30px 38px 34px; overflow:auto; min-height:0; }
+  .apane h2 { text-align:left; font-size:26px; padding-bottom:14px; margin-bottom:22px; border-bottom:1px solid rgba(255,255,255,.12); }
+  .prof { display:flex; align-items:center; gap:18px; margin-bottom:22px; } .prof b { display:block; font-size:20px; letter-spacing:-.03em; } .prof > div span { color:var(--muted); }
+  .fieldl { font-weight:600; font-size:14px; margin:14px 0 6px; } .field { padding:11px 14px; border-radius:13px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); color:rgba(255,255,255,.88); max-width:460px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .hint { color:var(--muted); font-size:12px; margin:10px 0 16px; line-height:1.5; }
+  .asec.first { border-top:0; padding-top:0; } .asec.danger { border-top:1px solid rgba(255,90,100,.35); } .asec.danger h4 { color:#ff8a94; }
+  .arow .r svg { width:16px; height:16px; }
+  .btn.danger.sm { background:#ff4d5e; }
+  @media (max-width:760px) {
+    .sheet.acctsheet { height:calc(100vh - 24px); } .acctwrap { grid-template-columns:minmax(0,1fr); grid-template-rows:auto minmax(0,1fr); }
+    .anav { flex-direction:row; align-items:center; overflow-x:auto; padding:58px 12px 10px; border-right:0; border-bottom:1px solid rgba(255,255,255,.1); } .anav .who, .anav .spacer { display:none; }
+    .tabb { flex:none; padding:9px 12px; font-size:14px; } .tabb.on::before { display:none; } .apane { padding:20px 18px 26px; }
+  }
   .co.wide { max-width:560px; }
   .signin { text-align:center; } .signin h2 { text-align:center; } .signin .sub { margin:10px auto 24px; max-width:340px; }
   .gbox { display:flex; justify-content:center; min-height:46px; } .gbtn { width:100%; max-width:320px; height:50px; gap:12px; }
@@ -275,6 +308,9 @@
   .arow { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:9px 2px; font-size:14px; } .arow span:first-child { color:var(--muted); }
   .arow .r { display:flex; align-items:center; gap:12px; text-align:right; } .inv { border-top:1px solid rgba(255,255,255,.08); }
   .btns { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+  .meter { margin:0 0 12px; } .meter .mh { display:flex; justify-content:space-between; font-size:14px; margin-bottom:6px; } .meter .mh span { color:var(--muted); } .meter .mh b { font-weight:600; font-variant-numeric:tabular-nums; }
+  .meter i { display:block; height:6px; border-radius:3px; background:rgba(255,255,255,.14); overflow:hidden; } .meter u { display:block; height:100%; background:#fff; border-radius:3px; }
+  .lim { color:var(--muted); font-size:12px; line-height:1.5; margin-top:4px; }
   .linkbtn { background:none; border:0; color:#fff; font:inherit; font-size:13px; font-weight:600; text-decoration:underline; cursor:pointer; padding:0; opacity:.85; } .linkbtn:hover { opacity:1; }
   .afoot { display:flex; justify-content:space-between; align-items:center; gap:12px; padding-top:18px; border-top:1px solid rgba(255,255,255,.12); }
   @media (max-width:980px) { .plans { grid-template-columns:repeat(2,minmax(0,1fr)); } }
@@ -294,6 +330,7 @@
 </style>
 </head>
 <body>
+<noscript>Filmroom needs JavaScript to edit photos in your browser.</noscript>
 <!-- shared gradients / clips for the film cartridges -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <linearGradient id="fc-steelH" x1="0" x2="1">
@@ -413,11 +450,49 @@ const PLANS = {
   lifetime: { id:'lifetime', name:'Lifetime',    price:'₹3,999', per:'once',     amount:3999, note:'One payment, yours forever',  term:'One-time payment',                        cta:'Lifetime' },
 };
 const FREE_LOOKS = ['ORIG', 'PROV', 'VELV', 'REAL', 'S400', 'ACRS'];   // Original + the first 5 looks are free; everything else is Pro
-const FREE_MAX_PX = 2048, FREE_FORMATS = ['png', 'jpeg'];
 let plan = 'free';                                 // comes from the signed-in account (see Accounts below)
 FILMS.sort((a, b) => FREE_LOOKS.includes(b.id) - FREE_LOOKS.includes(a.id));
 const isPro = () => plan !== 'free';
-const lookLocked = f => !isPro() && !FREE_LOOKS.includes(f.id);
+
+// ---------- Business rules: what every plan allows (the single source of truth; docs/BUSINESS_RULES.md explains each rule) ----------
+const MB = 1048576, ALL_FORMATS = ['png', 'jpeg', 'webp', 'avif', 'tiff', 'bmp'];
+const LIMITS = {
+  //            photos open at once | max size of one file | max megapixels | uploads/day | downloads/day | photos per "Download all" ZIP | export size cap (px, 0 = original size)
+  free:     { photos:5,   fileMB:20,  megapixels:24,  uploadsPerDay:10,  downloadsPerDay:5,   zipMax:0,   exportPx:2048, formats:['png', 'jpeg'], allLooks:false },
+  monthly:  { photos:25,  fileMB:60,  megapixels:60,  uploadsPerDay:100, downloadsPerDay:100, zipMax:25,  exportPx:0,    formats:ALL_FORMATS,     allLooks:true },
+  yearly:   { photos:50,  fileMB:100, megapixels:100, uploadsPerDay:250, downloadsPerDay:250, zipMax:50,  exportPx:0,    formats:ALL_FORMATS,     allLooks:true },
+  lifetime: { photos:100, fileMB:150, megapixels:120, uploadsPerDay:500, downloadsPerDay:500, zipMax:100, exportPx:0,    formats:ALL_FORMATS,     allLooks:true },
+};
+// Safety ceilings no plan can exceed, whatever the table above says (they protect the browser tab, they are not pricing rules).
+const HARD = { fileMB:150, megapixels:120, photos:100, zipBytes:1.5e9, decodeMs:45000 };
+const limits = () => LIMITS[Object.hasOwn(LIMITS, plan) ? plan : 'free'];
+const lookLocked = f => !limits().allLooks && !FREE_LOOKS.includes(f.id);
+const nf = n => Number(n).toLocaleString('en-IN');
+// Daily counters. They live in this browser for now; a server has to own them before real payments (see SECURITY.md).
+// One shared "device" counter, so signing out and in (or signing in as someone else) can't double the allowance.
+const USAGE_KEY = 'filmroom.usage';
+const readUsage = () => { try { const o = JSON.parse(localStorage.getItem(USAGE_KEY) || '{}'); return o && typeof o === 'object' && !Array.isArray(o) ? o : {}; } catch (e) { return {}; } };
+const cleanInt = v => (Number.isFinite(+v) && +v >= 0 && +v < 1e7 ? Math.floor(+v) : 0);
+function usageNow() {                                     // the "day" never moves backwards, so winding the clock back can't reset the counters
+  const all = readUsage(), prev = Number(all.seen), now = Date.now(), seen = Math.max(now, Number.isFinite(prev) && prev > 0 && prev < now + 2 * 86400000 ? prev : 0); all.seen = seen;   // a timestamp, so not cleanInt()
+  const day = new Date(seen).toLocaleDateString('en-CA'), r = all.device && all.device.day === day ? all.device : { day, up:0, down:0 };
+  r.up = cleanInt(r.up); r.down = cleanInt(r.down); all.device = r; return { all, r };
+}
+function remaining(kind) { const { r } = usageNow(); return Math.max(0, (kind === 'up' ? limits().uploadsPerDay : limits().downloadsPerDay) - r[kind]); }
+function addUsage(kind, n = 1) {
+  const { all, r } = usageNow(); r[kind] += n;
+  try { localStorage.setItem(USAGE_KEY, JSON.stringify(all)); } catch (e) {}
+  refreshUsageUI();
+}
+function refreshUsageUI() {
+  if (typeof buildMenu === 'function' && typeof FORMATS !== 'undefined') buildMenu();
+  const pc = document.getElementById('pcount'); if (pc && photos.length) pc.textContent = `${photos.length} of ${limits().photos} photos`;
+}
+// Hitting a limit: Free (and signed-out) users get the upgrade nudge, paid users a plain message.
+function blocked(why) { if (!isPro()) openPlans({ reason:why }); else toast(why, 5000); }
+const whyPhotos = () => isPro() ? `Your ${PLANS[plan].name} plan allows ${limits().photos} photos at once. Remove one to add more.` : `Free allows ${limits().photos} photos at once`;
+const whyUploads = () => `You've used all ${limits().uploadsPerDay} uploads for today. The count resets at midnight.`;
+const whyDownloads = (need = 1) => remaining('down') > 0 && need > 1 ? `You have ${remaining('down')} download${remaining('down') > 1 ? 's' : ''} left today, but this needs ${need}. The count resets at midnight.` : `You've used all ${limits().downloadsPerDay} downloads for today. The count resets at midnight.`;
 const LOCK_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="7" width="9.6" height="6.6" rx="2"/><path d="M5.4 7V5.2a2.6 2.6 0 0 1 5.2 0V7"/></svg>';
 
 // ---------- 35mm cartridge icon (steel barrel, crimped caps, spool, wrapped label, DX code, film leader) ----------
@@ -871,19 +946,41 @@ const isImageLike = b => !!b && ((b.type || '').startsWith('image/') || (EXT(b.n
 const loadScript = src => new Promise((ok, no) => { const e = document.createElement('script'); e.src = src; e.onload = ok; e.onerror = () => no(new Error('Could not load ' + src)); document.head.appendChild(e); });
 let toastT; function toast(msg, ms = 2600) { const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); if (ms) toastT = setTimeout(() => t.classList.remove('on'), ms); }
 const BMPOPT = { imageOrientation:'from-image', premultiplyAlpha:'none' };
-async function decode(blob) {                        // -> { bmp, blob }  (blob is always something the browser can decode natively)
-  try { return { bmp: await createImageBitmap(blob, BMPOPT), blob }; } catch (e) { /* not natively supported: fall through */ }
+let heicFrame = null, heicReady = null, heicId = 0; const heicWait = new Map();
+window.addEventListener('message', e => {                 // only the HEIC converter frame is listened to, and only for its own message shapes
+  if (!heicFrame || e.source !== heicFrame.contentWindow || !e.data || typeof e.data !== 'object') return;
+  const m = e.data;
+  if (m.type === 'ready') { if (heicReady) heicReady.ok(); return; }
+  const w = heicWait.get(m.id); if (!w) return; heicWait.delete(m.id);
+  if (m.type === 'done' && m.buffer instanceof ArrayBuffer) w.ok(new Blob([m.buffer], { type:'image/png' })); else w.no(new Error('HEIC conversion failed'));
+});
+function resetHeicFrame() { if (heicFrame) heicFrame.remove(); heicFrame = null; heicReady = null; heicWait.clear(); }
+async function heicToPng(blob) {                          // the converter library runs in <iframe sandbox="allow-scripts">: no access to this app's storage or accounts
+  if (!heicFrame) {
+    let ok; heicReady = new Promise(r => { ok = r; }); heicReady.ok = ok;
+    heicFrame = document.createElement('iframe'); heicFrame.setAttribute('sandbox', 'allow-scripts'); heicFrame.setAttribute('aria-hidden', 'true'); heicFrame.tabIndex = -1;
+    heicFrame.style.cssText = 'position:absolute;width:0;height:0;border:0;visibility:hidden'; heicFrame.src = 'vendor/heic-sandbox.html'; document.body.appendChild(heicFrame);
+  }
+  try {
+    await withTimeout(heicReady, 15000, 'HEIC converter did not start');
+    const buf = await blob.arrayBuffer(), id = ++heicId;
+    return await withTimeout(new Promise((ok, no) => { heicWait.set(id, { ok, no }); heicFrame.contentWindow.postMessage({ type:'convert', id, buffer:buf }, '*', [buf]); }), HARD.decodeMs, 'HEIC conversion timed out');
+  } catch (e) { resetHeicFrame(); throw e; }               // a stuck converter is thrown away, not left running
+}
+async function decode(blob, maxPx = HARD.megapixels * 1e6) {     // -> { bmp, blob }  (blob is always something the browser can decode natively)
+  try { return { bmp: await withTimeout(createImageBitmap(blob, BMPOPT), HARD.decodeMs, 'Decoding timed out'), blob }; } catch (e) { if (/timed out/.test(e.message)) throw e; /* not natively supported: fall through */ }
   const key = KEYS[EXT(blob.name)] || MIMEKEY[blob.type];
   if (key === 'heic') {                                    // HEIC / HEIF (iPhone photos)
     toast('Opening HEIC photo…', 0);
-    await loadScript('https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js');
-    const out = await window.heic2any({ blob, toType:'image/png' }), png = Array.isArray(out) ? out[0] : out;
+    const png = await heicToPng(blob);
     return { bmp: await createImageBitmap(png, BMPOPT), blob: png };
   }
   if (key === 'tiff') {                                    // TIFF
     toast('Opening TIFF…', 0);
-    await loadScript('https://cdn.jsdelivr.net/npm/utif@3.1.0/UTIF.js');
-    const buf = await blob.arrayBuffer(), ifds = UTIF.decode(buf); UTIF.decodeImage(buf, ifds[0]);
+    await loadScript('vendor/UTIF.js');
+    const buf = await blob.arrayBuffer(), ifds = UTIF.decode(buf), W0 = ifds[0] && ifds[0].t256 && ifds[0].t256[0], H0 = ifds[0] && ifds[0].t257 && ifds[0].t257[0];
+    if (!W0 || !H0 || W0 * H0 > maxPx) throw new Error('TIFF too large');   // checked from the header, before any pixels are allocated
+    UTIF.decodeImage(buf, ifds[0]);
     const rgba = UTIF.toRGBA8(ifds[0]), id = new ImageData(new Uint8ClampedArray(rgba.buffer, rgba.byteOffset, rgba.length), ifds[0].width, ifds[0].height);
     const c = document.createElement('canvas'); c.width = id.width; c.height = id.height; c.getContext('2d').putImageData(id, 0, 0);
     const png = await new Promise(r => c.toBlob(r, 'image/png'));
@@ -923,26 +1020,24 @@ function renderPhotos() {
     const rm = document.createElement('button'); rm.className = 'rm'; rm.dataset.rm = i; rm.type = 'button'; rm.title = 'Remove'; rm.setAttribute('aria-label', 'Remove ' + p.name); rm.textContent = '×';
     d.append(im, rm); el.appendChild(d);
   });
-  $('pcount').textContent = photos.length ? (photos.length > 1 ? `${cur + 1} of ${photos.length}` : '1 photo') : '';
+  $('pcount').textContent = photos.length ? `${photos.length} of ${limits().photos} photos` : '';
   $('applyall').style.display = photos.length > 1 ? '' : 'none';
   const on = el.children[cur]; if (on && on.scrollIntoView) on.scrollIntoView({ block:'nearest', inline:'nearest' });
   buildMenu();
 }
-async function getBitmap(p) {
-  let bmp = await createImageBitmap(p.blob, BMPOPT);
-  const max = gl.getParameter(gl.MAX_TEXTURE_SIZE);
-  if (Math.max(bmp.width, bmp.height) > max) {           // only if the GPU can't hold it
-    const k = max / Math.max(bmp.width, bmp.height);
-    bmp = await createImageBitmap(bmp, { resizeWidth:Math.floor(bmp.width * k), resizeHeight:Math.floor(bmp.height * k), resizeQuality:'high' });
-  }
-  return bmp;
+async function clampBitmap(bmp) {
+  const max = gl.getParameter(gl.MAX_TEXTURE_SIZE), m = Math.max(bmp.width, bmp.height);
+  if (m <= max) return bmp;                               // only if the GPU can't hold it
+  const k = max / m, nb = await createImageBitmap(bmp, { resizeWidth:Math.max(1, Math.floor(bmp.width * k)), resizeHeight:Math.max(1, Math.floor(bmp.height * k)), resizeQuality:'high' });
+  if (bmp.close) bmp.close(); return nb;
 }
+async function getBitmap(p) { return clampBitmap(await createImageBitmap(p.blob, BMPOPT)); }
 async function activate(i, o = {}) {
   const p = photos[i]; if (!p || (busy && !o.batch)) return;
   if (editing) await exitCrop(true);
   if (cur >= 0 && photos[cur]) photos[cur].state = snap();
   const my = ++actToken;
-  let bmp; try { bmp = o.bmp || await getBitmap(p); } catch (e) { toast(`Couldn't reopen ${p.name}.`, 3500); return; }
+  let bmp; try { bmp = o.bmp ? await clampBitmap(o.bmp) : await getBitmap(p); } catch (e) { toast(`Couldn't reopen ${p.name}.`, 3500); return; }
   if (my !== actToken) { if (bmp.close) bmp.close(); return; }
   src = { w:bmp.width, h:bmp.height }; if (srcBmp && srcBmp !== bmp && srcBmp.close) srcBmp.close(); srcBmp = bmp;
   if (imgTex) gl.deleteTexture(imgTex);
@@ -954,25 +1049,73 @@ async function activate(i, o = {}) {
   applyTab(); renderPhotos();
   await render();
 }
+// ---------- Input hygiene ----------
+const cleanText = (t, n = 100) => String(t == null ? '' : t).replace(/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/g, ' ').trim().slice(0, n);   // no control chars or newlines
+const safeLabel = t => (String(t == null ? '' : t).replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 8).replace('JPEG', 'JPG')) || 'IMAGE';
+const safeName = n => String(n == null ? '' : n).replace(/[\u0000-\u001f\u007f<>:"\/\\|?*]/g, '_').replace(/^\.+/, '').slice(0, 120) || 'photo';   // safe as a download / ZIP entry name (no path tricks)
+const safePicture = u => { try { const x = new URL(String(u)); return x.protocol === 'https:' && /(^|\.)googleusercontent\.com$/.test(x.hostname) ? x.href : ''; } catch (e) { return ''; } };
+const isSvg = f => /svg/i.test(f.type || '') || EXT(f.name) === 'svg';
+const withTimeout = (p, ms, msg) => new Promise((ok, no) => { const t = setTimeout(() => no(new Error(msg)), ms); p.then(v => { clearTimeout(t); ok(v); }, e => { clearTimeout(t); no(e); }); });
+async function peekDims(file) {                           // read the size from the file header, so an oversized image is refused before it is decoded
+  try {
+    const b = new Uint8Array(await file.slice(0, 262144).arrayBuffer()), dv = new DataView(b.buffer), ascii = (o, n) => String.fromCharCode(...b.subarray(o, o + n));
+    if (b[0] === 0x89 && ascii(1, 3) === 'PNG') return { w:dv.getUint32(16), h:dv.getUint32(20) };
+    if (ascii(0, 3) === 'GIF') return { w:dv.getUint16(6, true), h:dv.getUint16(8, true) };
+    if (ascii(0, 2) === 'BM') return { w:Math.abs(dv.getInt32(18, true)), h:Math.abs(dv.getInt32(22, true)) };
+    if (ascii(0, 4) === 'RIFF' && ascii(8, 4) === 'WEBP') {
+      const t = ascii(12, 4);
+      if (t === 'VP8 ') return { w:dv.getUint16(26, true) & 0x3fff, h:dv.getUint16(28, true) & 0x3fff };
+      if (t === 'VP8L') return { w:1 + (((b[22] & 0x3f) << 8) | b[21]), h:1 + (((b[24] & 0xf) << 10) | (b[23] << 2) | ((b[22] & 0xc0) >> 6)) };
+      if (t === 'VP8X') return { w:1 + (b[24] | (b[25] << 8) | (b[26] << 16)), h:1 + (b[27] | (b[28] << 8) | (b[29] << 16)) };
+    }
+    if (b[0] === 0xff && b[1] === 0xd8) {                 // JPEG: walk the segments until the frame header
+      let i = 2;
+      while (i + 9 < b.length) {
+        if (b[i] !== 0xff) { i++; continue; }
+        const m = b[i + 1]; if (m === 0xff) { i++; continue; }
+        if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc) return { w:dv.getUint16(i + 7), h:dv.getUint16(i + 5) };
+        i += 2 + dv.getUint16(i + 2);
+      }
+    }
+  } catch (e) { /* unknown format: it is checked again after decoding */ }
+  return null;
+}
 async function addFiles(list) {
-  const all = [...list].filter(Boolean), files = all.filter(isImageLike);
-  if (!files.length) { if (all.length) toast('That doesn\'t look like an image file.'); return; }
-  if (busy) return;
-  const first = photos.length; let failed = 0, firstBmp = null;
+  const all = [...list].filter(Boolean); if (!all.length || busy) return;
+  const L = limits(), rejected = [], first = photos.length; let stop = null, firstBmp = null;
+  const files = all.filter(f => { if (isSvg(f)) { rejected.push([f, 'SVG files aren\'t supported']); return false; } if (!isImageLike(f)) { rejected.push([f, 'isn\'t an image']); return false; } return true; });
+  const maxMP = Math.min(L.megapixels, HARD.megapixels) * 1e6, maxBytes = Math.min(L.fileMB, HARD.fileMB) * MB;
   for (let k = 0; k < files.length; k++) {
-    const f = files[k]; if (files.length > 1) toast(`Opening ${k + 1} of ${files.length}…`, 0);
+    const f = files[k];
+    if (photos.length >= Math.min(L.photos, HARD.photos)) { stop = 'photos'; break; }          // rule: photos open at once
+    if (remaining('up') <= 0) { stop = 'uploads'; break; }                                      // rule: uploads per day
+    if (!f.size) { rejected.push([f, 'is empty']); continue; }
+    if (f.size > maxBytes) { rejected.push([f, `is over ${L.fileMB} MB`]); continue; }          // rule: file size
+    const pd = await peekDims(f);
+    if (pd && pd.w * pd.h > maxMP) { rejected.push([f, `is over ${L.megapixels} megapixels`]); continue; }   // rule: resolution
+    if (pd && pd.w && pd.h && Math.max(pd.w, pd.h) / Math.min(pd.w, pd.h) > 20) { rejected.push([f, 'has an unusual shape']); continue; }
+    if (files.length > 1) toast(`Opening ${k + 1} of ${files.length}…`, 0);
     try {
-      const { bmp, blob } = await decode(f);
+      const { bmp, blob } = await decode(f, maxMP);
+      if (bmp.width * bmp.height > maxMP) { if (bmp.close) bmp.close(); rejected.push([f, `is over ${L.megapixels} megapixels`]); continue; }
       photos.push({ name:f.name || 'pasted image', fileName:(f.name || 'filmroom').replace(/\.[^.]+$/, ''), blob,
-        origKey:KEYS[EXT(f.name)] || MIMEKEY[f.type] || null, origLabel:(EXT(f.name) || (f.type || '').replace('image/', '') || 'image').toUpperCase().replace('JPEG', 'JPG'),
+        origKey:KEYS[EXT(f.name)] || MIMEKEY[f.type] || null, origLabel:safeLabel(EXT(f.name) || (f.type || '').replace('image/', '') || 'image'),
         thumb:coverThumb(bmp, bmp.width, bmp.height), state:defaultState() });
+      addUsage('up', 1);
       if (!firstBmp) firstBmp = bmp; else if (bmp.close) bmp.close();
-    } catch (e) { failed++; }
+    } catch (e) { rejected.push([f, 'couldn\'t be opened']); }
   }
-  if (photos.length === first) { toast(`Couldn't open ${failed > 1 ? 'those files' : 'this file'}. Try JPG, PNG, HEIC, WebP, AVIF, TIFF or BMP.`, 4500); return; }
-  toast(failed ? `Added ${photos.length - first}. ${failed} couldn't be opened.` : files.length > 1 ? `Added ${files.length} photos` : '', failed || files.length > 1 ? 2800 : 1);
+  const added = photos.length - first;
+  const skipped = rejected.length ? `${rejected.length} skipped: ${rejected.slice(0, 2).map(([f, why]) => `${(f.name || 'file').slice(0, 28)} ${why}`).join('; ')}${rejected.length > 2 ? '…' : ''}.` : '';
+  if (!added) {
+    if (stop === 'photos') blocked(whyPhotos()); else if (stop === 'uploads') blocked(whyUploads());
+    else toast(skipped || 'Couldn\'t open that file. Try JPG, PNG, HEIC, WebP, AVIF, TIFF or BMP.', 5500);
+    return;
+  }
+  toast([added > 1 || skipped ? `Added ${added} photo${added > 1 ? 's' : ''}.` : '', skipped, stop ? (stop === 'photos' ? whyPhotos() : whyUploads()) : ''].filter(Boolean).join(' ') || '', skipped || stop ? 6000 : (added > 1 ? 2400 : 1));
   renderPhotos();
   await activate(first, { bmp:firstBmp });
+  if (stop && !isPro()) blocked(stop === 'photos' ? whyPhotos() : whyUploads());
 }
 async function removePhoto(i) {
   if (busy || !photos[i]) return;
@@ -1069,7 +1212,7 @@ function resolveFmt() {
   if (selFmt !== 'orig') k = selFmt;
   else if (origKey && supported[origKey]) k = origKey;
   else k = origKey === 'heic' ? 'jpeg' : 'png';       // browsers can't write HEIC, so a photo goes to JPEG
-  if (!isPro() && !FREE_FORMATS.includes(k)) k = (k === 'tiff' || k === 'bmp') ? 'png' : 'jpeg';   // Free: JPEG and PNG only
+  if (!limits().formats.includes(k)) k = (k === 'tiff' || k === 'bmp') ? 'png' : 'jpeg';   // formats the plan doesn't include fall back to PNG / JPEG
   return k;
 }
 const CHECK = '<svg class="ck" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3L13 4.5"/></svg>';
@@ -1078,10 +1221,11 @@ function buildMenu() {
   const item = (key, name, desc, locked) => `<button class="mi${selFmt === key ? ' sel' : ''}${locked ? ' locked' : ''}" role="menuitem" data-f="${key}"${locked ? ' data-lock="1"' : ''}><span class="t"><div class="n">${name}${locked ? '<span class="prochip">PRO</span>' : ''}</div><div class="d">${desc}</div></span>${CHECK}</button>`;
   const cut = origKey && supported[origKey] && r !== origKey;
   const origDesc = origLabel ? (cut ? `Your file is ${origLabel} · saves as ${f.label}${isPro() ? '' : ' on Free'}` : origKey && supported[origKey] ? `Your file is ${origLabel} · saves as ${f.label}` : `Your file is ${origLabel} · saves as ${f.label} (can't write ${origLabel})`) : 'Keeps the format you opened';
-  const all = photos.length > 1 ? `<button class="mi all" role="menuitem" data-all="1"><span class="t"><div class="n">Download all ${photos.length} photos</div><div class="d">One ZIP, each photo with its own edits</div></span></button><div class="msep"></div>` : '';
+  const left = remaining('down'), cap = limits().downloadsPerDay, zipOk = !!limits().zipMax;
+  const all = `<div class="usage"><span>Downloads left today</span><b>${left} of ${nf(cap)}</b></div>` + (photos.length > 1 ? `<button class="mi all${zipOk ? '' : ' locked'}" role="menuitem" data-all="1"><span class="t"><div class="n">Download all ${photos.length} photos${zipOk ? '' : '<span class="prochip">PRO</span>'}</div><div class="d">${zipOk ? `One ZIP, each photo with its own edits (up to ${limits().zipMax})` : 'One ZIP with every photo and its own edits'}</div></span></button><div class="msep"></div>` : '<div class="msep"></div>');
   m.innerHTML = all + item('orig', 'Same as original', origDesc) +
-    Object.keys(FORMATS).filter(k => supported[k]).map(k => item(k, FORMATS[k].label, FORMATS[k].note, !isPro() && !FREE_FORMATS.includes(k))).join('') +
-    (isPro() ? '' : `<button class="mi promo" role="menuitem" data-promo="1"><span class="t"><div class="n">Unlock full resolution &amp; all formats</div><div class="d">Free exports are capped at ${FREE_MAX_PX}px</div></span></button>`) +
+    Object.keys(FORMATS).filter(k => supported[k]).map(k => item(k, FORMATS[k].label, FORMATS[k].note, !limits().formats.includes(k))).join('') +
+    (isPro() ? '' : `<button class="mi promo" role="menuitem" data-promo="1"><span class="t"><div class="n">Unlock full resolution &amp; all formats</div><div class="d">Free exports are capped at ${limits().exportPx}px</div></span></button>`) +
     `<div class="mq${f.lossy ? ' on' : ''}"><label class="ctl">Quality<input type="range" id="q" min="40" max="100" value="${quality}"><output id="qv">${quality}%</output></label></div>`;
   const q = $('q'); q.style.setProperty('--p', (quality - 40) / 60 * 100 + '%');
   q.oninput = () => { quality = +q.value; $('qv').textContent = quality + '%'; q.style.setProperty('--p', (quality - 40) / 60 * 100 + '%'); };
@@ -1102,10 +1246,10 @@ function pixels(src = cv) {
   const t = document.createElement('canvas'); t.width = src.width; t.height = src.height;
   const x = t.getContext('2d', { willReadFrequently:true }); x.drawImage(src, 0, 0); return x.getImageData(0, 0, t.width, t.height);
 }
-function exportSource() {                               // Free exports are capped at FREE_MAX_PX on the long side
-  const mx = Math.max(cv.width, cv.height);
-  if (isPro() || mx <= FREE_MAX_PX) return { c:cv, capped:false };
-  const k = FREE_MAX_PX / mx, c = document.createElement('canvas'); c.width = Math.round(cv.width * k); c.height = Math.round(cv.height * k);
+function exportSource() {                               // some plans cap the export size (long side)
+  const mx = Math.max(cv.width, cv.height), cap = limits().exportPx;
+  if (!cap || mx <= cap) return { c:cv, capped:false };
+  const k = cap / mx, c = document.createElement('canvas'); c.width = Math.round(cv.width * k); c.height = Math.round(cv.height * k);
   const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(cv, 0, 0, c.width, c.height);
   return { c, capped:true };
 }
@@ -1160,44 +1304,61 @@ async function exportCurrent() {                         // encode whatever is o
     blob = key === 'tiff' ? encodeTIFF(pixels(out)) : key === 'bmp' ? encodeBMP(pixels(out))
       : await new Promise(r => out.toBlob(r, f.mime, f.lossy ? quality / 100 : undefined));
   } catch (e) { blob = null; }
-  return { blob, f, capped, out, name:`${fileName}-${current.id.toLowerCase()}.${f.ext}` };
+  return { blob, f, capped, out, name:`${safeName(fileName)}-${current.id.toLowerCase()}.${f.ext}` };
 }
+let exporting = false;
 dl.onclick = async () => {
-  if (!hasImage || busy) return;
+  if (!hasImage || busy || exporting) return;
   closeMenu();
-  if (lookLocked(current)) { openPlans({ reason:`${current.label} is a Pro look` }); return; }
-  if (editing) await exitCrop(true);
-  await render();
-  toast('Preparing ' + FORMATS[resolveFmt()].label + '…', 0);
-  await new Promise(r => setTimeout(r, 30));
-  const { blob, f, capped, out, name } = await exportCurrent();
-  if (!blob) { toast(`Couldn't create a ${f.label} file for an image this large. Try PNG or JPEG.`, 4500); return; }
-  saveBlob(blob, name);
-  toast(capped ? `Saved as ${f.label} at ${out.width} × ${out.height}. Upgrade for full resolution.` : `Saved as ${f.label}`, capped ? 4200 : 1800);
+  if (lookLocked(current)) { openPlans({ reason:`${current.label} is a Pro look` }); return; }       // rule: Pro looks
+  if (remaining('down') <= 0) { blocked(whyDownloads()); return; }                                  // rule: downloads per day
+  exporting = true;
+  try {
+    if (editing) await exitCrop(true);
+    await render();
+    toast('Preparing ' + FORMATS[resolveFmt()].label + '…', 0);
+    await new Promise(r => setTimeout(r, 30));
+    const { blob, f, capped, out, name } = await exportCurrent();
+    if (!blob) { toast(`Couldn't create a ${f.label} file for an image this large. Try PNG or JPEG.`, 4500); return; }
+    saveBlob(blob, name); addUsage('down', 1);
+    toast(capped ? `Saved as ${f.label} at ${out.width} × ${out.height}. Upgrade for full resolution.` : `Saved as ${f.label}`, capped ? 4200 : 1800);
+  } finally { exporting = false; }
 };
 async function downloadAll() {
-  if (!hasImage || busy || photos.length < 2) return;
+  if (!hasImage || busy || exporting || photos.length < 2) return;
   closeMenu(); if (editing) await exitCrop(true);
+  const L = limits();
+  if (!L.zipMax) { openPlans({ reason:'Download all is a Pro feature' }); return; }                // rule: ZIP downloads are Pro
+  if (photos.length > L.zipMax) { toast(`Your ${PLANS[plan].name} plan can download up to ${L.zipMax} photos at once. You have ${photos.length} open.`, 5500); return; }
+  if (remaining('down') < photos.length) { blocked(whyDownloads(photos.length)); return; }          // rule: each photo in a ZIP counts as one download
   photos[cur].state = snap();
   const locked = photos.filter(p => { const f = FILMS.find(x => x.id === p.state.film); return f && lookLocked(f); });
   if (locked.length) { openPlans({ reason:`${locked.length} of your photos ${locked.length > 1 ? 'use' : 'uses a'} Pro look${locked.length > 1 ? 's' : ''}` }); return; }
-  const files = [], used = new Set(); let capped = false, failed = 0;
-  await batch('Exporting photo', async () => {
-    const r = await exportCurrent(); if (!r.blob) { failed++; return; }
-    capped = capped || r.capped; let name = r.name, n = 2;
-    while (used.has(name.toLowerCase())) name = r.name.replace(/(\.[^.]+)$/, `-${n++}$1`);
-    used.add(name.toLowerCase()); files.push({ name, data:new Uint8Array(await r.blob.arrayBuffer()) });
-  });
-  if (!files.length) { toast('Couldn\'t export those photos. Try PNG or JPEG.', 4500); return; }
-  saveBlob(makeZip(files), 'filmroom-photos.zip');
-  toast(`Saved ${files.length} photo${files.length > 1 ? 's' : ''} as a ZIP${failed ? ` (${failed} failed)` : ''}${capped ? `. Free exports are capped at ${FREE_MAX_PX}px.` : ''}`, capped || failed ? 4500 : 2200);
+  exporting = true;
+  try {
+    const files = [], used = new Set(); let capped = false, failed = 0, bytes = 0, tooBig = false;
+    await batch('Exporting photo', async () => {
+      if (tooBig) return;
+      const r = await exportCurrent(); if (!r.blob) { failed++; return; }
+      bytes += r.blob.size; if (bytes > HARD.zipBytes) { tooBig = true; return; }                  // safety: don't build a ZIP that could crash the tab
+      capped = capped || r.capped; let name = r.name, n = 2;
+      while (used.has(name.toLowerCase())) name = r.name.replace(/(\.[^.]+)$/, `-${n++}$1`);
+      used.add(name.toLowerCase()); files.push({ name, data:new Uint8Array(await r.blob.arrayBuffer()) });
+    });
+    if (tooBig) { toast('That ZIP would be larger than 1.5 GB. Download fewer photos at a time.', 5500); return; }
+    if (!files.length) { toast('Couldn\'t export those photos. Try PNG or JPEG.', 4500); return; }
+    saveBlob(makeZip(files), 'filmroom-photos.zip'); addUsage('down', files.length);
+    toast(`Saved ${files.length} photo${files.length > 1 ? 's' : ''} as a ZIP${failed ? ` (${failed} failed)` : ''}${capped ? `. Exports are capped at ${limits().exportPx}px on your plan.` : ''}`, capped || failed ? 4500 : 2200);
+  } finally { exporting = false; }
 }
 // ---------- Pricing UI (mock) ----------
 const TICK = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3L13 4.5"/></svg>';
-const FEATURES = {
-  free: ['5 film looks, preview all 14', `Export up to ${FREE_MAX_PX}px`, 'JPEG & PNG export', 'Crop, straighten & grain'],
-  pro:  ['All 14 film looks', 'Full-resolution export', 'JPEG, PNG, WebP, TIFF & BMP', 'Crop, straighten & grain', 'New film drops'],
-};
+function featuresFor(id) {
+  const L = LIMITS[id];
+  return id === 'free'
+    ? ['5 film looks, preview all 14', `Export up to ${L.exportPx}px`, 'JPEG & PNG', `${L.photos} photos at once, ${L.fileMB} MB each`, `${L.uploadsPerDay} uploads and ${L.downloadsPerDay} downloads a day`, 'Crop, straighten & adjust']
+    : ['All 14 film looks', 'Full-resolution export', 'JPEG, PNG, WebP, TIFF & BMP', `${L.photos} photos at once, ${L.fileMB} MB each`, `${nf(L.uploadsPerDay)} uploads and ${nf(L.downloadsPerDay)} downloads a day`, `Download all as ZIP (up to ${L.zipMax})`, 'New film drops'];
+}
 let lastOpts = {}, checkoutPlan = null;
 const sheet = $('sheet');
 const XBTN = '<button class="x" data-close aria-label="Close"><svg width="14" height="14" viewBox="0 0 14 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l10 10M12 2L2 12"/></svg></button>';
@@ -1219,7 +1380,7 @@ function planCard(id) {
     : `<button class="btn ${hot ? 'white' : 'blurple'}" data-plan="${id}">${isPro() ? 'Switch to' : 'Get'} ${p.cta}</button>`;
   return `<div class="plan${hot ? ' hot' : ''}">${p.badge ? `<div class="badge">${p.badge}</div>` : ''}
     <h3>${p.name}</h3><div class="price"><b>${p.price}</b><span>${p.per}</span></div><div class="pn">${p.note}</div>${cta}
-    <ul>${FEATURES[pro ? 'pro' : 'free'].map(t => `<li>${TICK}<span>${t}</span></li>`).join('')}</ul></div>`;
+    <ul>${featuresFor(id).map(t => `<li>${TICK}<span>${esc(t)}</span></li>`).join('')}</ul></div>`;
 }
 function renderPlans(opts = {}) {
   lastOpts = opts;
@@ -1244,7 +1405,7 @@ function startCheckout(id) {
 function renderSuccess(id) {
   const p = PLANS[id];
   sheet.innerHTML = XBTN + `<div class="done"><div class="ok">${TICK}</div><h2>You're on ${p.name}</h2>
-    <p>All 14 film looks, full-resolution export and every format are unlocked. Manage billing any time from your account.</p><div class="cact" style="max-width:340px;margin:0 auto"><button class="btn glass" data-acc="1">View account</button><button class="btn white" data-close="1">Start filming</button></div></div>`;
+    <p>All 14 film looks, full-resolution export and every format are unlocked. Manage billing any time from your account.</p><div class="cact" style="max-width:340px;margin:0 auto"><button class="btn glass" data-acc="plan">View account</button><button class="btn white" data-close="1">Start filming</button></div></div>`;
 }
 // ---------- Accounts (Google sign-in) ----------
 // Sign-in is a DEMO until you paste a Google OAuth client ID here. With an ID, "Continue with Google" becomes Google's real
@@ -1257,24 +1418,43 @@ let user = null, signinNext = null, signinPlans = null;
 const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 const fmtINR = n => '₹' + Number(n).toLocaleString('en-IN');
 const fmtDate = ms => new Date(ms).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
-const readAcc = () => { try { return JSON.parse(localStorage.getItem('filmroom.accounts') || '{}'); } catch (e) { return {}; } };
-const writeAcc = o => { try { localStorage.setItem('filmroom.accounts', JSON.stringify(o)); } catch (e) {} };
-const newRecord = () => ({ plan:'free', since:null, renewsAt:null, canceled:false, method:null, invoices:[], profile:null });
+const SUB_RE = /^[A-Za-z0-9._-]{1,128}$/, RESERVED = new Set(['__proto__', 'constructor', 'prototype', 'toString', 'valueOf', 'hasOwnProperty']);
+const newRecord = () => ({ plan:'free', since:null, joined:null, renewsAt:null, canceled:false, method:null, invoices:[], profile:null });
+function cleanRecord(r) {                                 // anything read back from storage is untrusted: rebuild it field by field
+  r = r && typeof r === 'object' && !Array.isArray(r) ? r : {};
+  const now = Date.now(), okTime = v => Number.isFinite(v) && v > 0 && v < now + 20 * 365 * DAY;
+  let p = typeof r.plan === 'string' && Object.hasOwn(PLANS, r.plan) ? r.plan : 'free', renewsAt = okTime(+r.renewsAt) ? +r.renewsAt : null;
+  if ((p === 'monthly' || p === 'yearly') && !renewsAt) p = 'free';           // a subscription without a valid renewal date is not trusted
+  if (p === 'free' || p === 'lifetime') renewsAt = null;
+  const invoices = (Array.isArray(r.invoices) ? r.invoices : []).filter(i => i && typeof i === 'object' && typeof i.plan === 'string' && Object.hasOwn(PLANS, i.plan) && i.plan !== 'free' && okTime(+i.date)).slice(0, 50)
+    .map(i => ({ id:cleanText(i.id, 24).replace(/[^A-Za-z0-9-]/g, '') || 'FR-0', date:+i.date, plan:i.plan, name:PLANS[i.plan].name, amount:PLANS[i.plan].amount }));
+  const method = r.method && typeof r.method === 'object' && ['UPI', 'Card', 'Netbanking'].includes(r.method.type) ? { type:r.method.type, label:cleanText(r.method.label, 40) } : null;
+  const profile = r.profile && typeof r.profile === 'object' ? { name:cleanText(r.profile.name, 100), email:cleanText(r.profile.email, 200), picture:safePicture(r.profile.picture) } : null;
+  return { plan:p, since:okTime(+r.since) ? +r.since : null, joined:okTime(+r.joined) ? +r.joined : null, renewsAt, canceled:r.canceled === true, method, invoices, profile };
+}
+function readAcc() {
+  const out = Object.create(null);                        // no prototype, so odd keys can't touch Object.prototype
+  try { const o = JSON.parse(localStorage.getItem('filmroom.accounts') || '{}'); if (o && typeof o === 'object' && !Array.isArray(o)) for (const k of Object.keys(o)) if (SUB_RE.test(k) && !RESERVED.has(k)) out[k] = cleanRecord(o[k]); } catch (e) {}
+  return out;
+}
+const writeAcc = o => { try { localStorage.setItem('filmroom.accounts', JSON.stringify(Object.fromEntries(Object.entries(o)))); } catch (e) {} };
 const rec = () => (user ? readAcc()[user.sub] || newRecord() : null);
-function saveRec(r) { const a = readAcc(); a[user.sub] = r; writeAcc(a); }
+function saveRec(r) { const a = readAcc(); a[user.sub] = cleanRecord(r); writeAcc(a); }
 function avatarHTML(u, size) {
   const st = `width:${size}px;height:${size}px;font-size:${Math.round(size * .42)}px`;
-  return u.picture ? `<img class="av" style="${st}" src="${esc(u.picture)}" alt="" referrerpolicy="no-referrer">` : `<span class="av" style="${st}">${esc((u.name || u.email || '?').trim().charAt(0).toUpperCase())}</span>`;
+  const pic = safePicture(u.picture); return pic ? `<img class="av" style="${st}" src="${esc(pic)}" alt="" referrerpolicy="no-referrer" crossorigin="anonymous">` : `<span class="av" style="${st}">${esc((u.name || u.email || '?').trim().charAt(0).toUpperCase())}</span>`;
 }
 function syncPlan() {                                     // set the active plan from the account; handle renewals and expiry
   if (!user) { plan = 'free'; return; }
-  const r = rec(); let changed = false;
-  while ((r.plan === 'monthly' || r.plan === 'yearly') && r.renewsAt && Date.now() > r.renewsAt) {
+  const r = rec(), now = Date.now(); let changed = false;
+  if ((r.plan === 'monthly' || r.plan === 'yearly') && r.renewsAt && now > r.renewsAt) {
     changed = true;
-    if (r.canceled) { r.plan = 'free'; r.renewsAt = null; r.canceled = false; break; }
-    const p = PLANS[r.plan];                              // mock auto-renewal: Razorpay would charge the saved method here
-    r.invoices.unshift({ id:'FR-' + r.renewsAt.toString(36).toUpperCase(), date:r.renewsAt, plan:r.plan, name:p.name, amount:p.amount });
-    r.renewsAt += TERM_DAYS[r.plan] * DAY;
+    if (r.canceled) { r.plan = 'free'; r.renewsAt = null; r.canceled = false; }
+    else {                                                // mock auto-renewal: Razorpay would charge the saved method here
+      const per = TERM_DAYS[r.plan] * DAY, n = Math.floor((now - r.renewsAt) / per) + 1, p = PLANS[r.plan];
+      for (let i = Math.max(0, n - 24); i < n; i++) { const d = r.renewsAt + i * per; r.invoices.unshift({ id:'FR-' + d.toString(36).toUpperCase(), date:d, plan:r.plan, name:p.name, amount:p.amount }); }
+      r.invoices = r.invoices.slice(0, 50); r.renewsAt += n * per;
+    }
   }
   if (changed) saveRec(r);
   plan = r.plan;
@@ -1286,10 +1466,11 @@ function activatePlan(id, method) {
   saveRec(r); plan = id; refreshPlanUI();
 }
 function completeSignIn(u) {
-  user = { sub:u.sub, name:u.name || u.email, email:u.email, picture:u.picture || '' };
-  const a = readAcc(), r = a[u.sub] || newRecord(); r.profile = { name:user.name, email:user.email, picture:user.picture }; a[u.sub] = r; writeAcc(a);
+  if (!u || typeof u.sub !== 'string' || !SUB_RE.test(u.sub) || RESERVED.has(u.sub)) { toast('Sign-in failed. Please try again.', 3500); return false; }
+  user = { sub:u.sub, name:cleanText(u.name || u.email, 100), email:cleanText(u.email, 200), picture:safePicture(u.picture) };
+  const a = readAcc(), r = a[u.sub] || newRecord(); r.profile = { name:user.name, email:user.email, picture:user.picture }; if (!r.joined) r.joined = Date.now(); a[u.sub] = cleanRecord(r); writeAcc(a);
   try { localStorage.setItem('filmroom.session', u.sub); } catch (e) {}
-  syncPlan(); refreshPlanUI();
+  syncPlan(); refreshPlanUI(); return true;
 }
 function signOut() {
   user = null; plan = 'free';
@@ -1298,7 +1479,7 @@ function signOut() {
   refreshPlanUI();
 }
 function restoreSession() {
-  try { const sub = localStorage.getItem('filmroom.session'), r = sub && readAcc()[sub]; if (r && r.profile) user = { sub, ...r.profile }; } catch (e) {}
+  try { const sub = localStorage.getItem('filmroom.session'), r = typeof sub === 'string' && SUB_RE.test(sub) && !RESERVED.has(sub) ? readAcc()[sub] : null; if (r && r.profile) user = { sub, ...r.profile }; } catch (e) {}
   syncPlan();
 }
 function parseJwt(t) {                                    // Google returns a signed ID token; we only read the profile out of it here
@@ -1314,7 +1495,7 @@ async function mountGoogleButton(el, onUser) {
 const GLOGO = '<svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>';
 
 function onSignedIn(u) {
-  completeSignIn(u); const next = signinNext, plansAfter = signinPlans; signinNext = null; signinPlans = null;
+  if (!completeSignIn(u)) return; const next = signinNext, plansAfter = signinPlans; signinNext = null; signinPlans = null;
   if (next) { toast(`Signed in as ${user.email}`, 2200); startCheckout(next); }
   else if (plansAfter && !isPro()) { toast(`Signed in as ${user.email}`, 2200); renderPlans({ reason:plansAfter.reason }); }
   else if (plansAfter) { closeModal(); toast(`Welcome back. Your ${PLANS[plan].name} plan is active.`, 3000); }
@@ -1330,28 +1511,71 @@ function renderSignIn(opts = {}) {
   if (GOOGLE_CLIENT_ID) mountGoogleButton(box, onSignedIn).catch(() => { box.textContent = 'Couldn\'t load Google sign-in. Check your connection and try again.'; });
   else box.innerHTML = `<button class="btn white gbtn" data-demo-signin="1">${GLOGO}Continue with Google</button>`;
 }
-function renderAccount() {
-  if (!user) return renderSignIn();
-  const r = rec(), p = PLANS[r.plan], recurring = !!TERM_DAYS[r.plan], paid = r.plan !== 'free';
+const meter = (label, used, cap) => `<div class="meter"><div class="mh"><span>${label}</span><b>${nf(used)} / ${nf(cap)}</b></div><i><u style="width:${Math.min(100, cap ? used / cap * 100 : 0)}%"></u></i></div>`;
+const ICONS = {
+  general: '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="9" cy="6" r="3"/><path d="M3 15.5c.7-3 3-4.5 6-4.5s5.3 1.5 6 4.5"/></svg>',
+  plan: '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.8" y="3.5" width="14.4" height="11" rx="2.5"/><path d="M1.8 7.5h14.4M5 11.5h3"/></svg>',
+  usage: '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 15V9M9 15V3M15 15v-3.5"/></svg>',
+  out: '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3H4.5A1.5 1.5 0 0 0 3 4.5v9A1.5 1.5 0 0 0 4.5 15H7M11.5 12.5L15 9l-3.5-3.5M15 9H7"/></svg>',
+};
+const ACC_TABS = [['general', 'General'], ['plan', 'Plan & billing'], ['usage', 'Usage']];
+let acctTab = 'general';
+const row = (label, value) => `<div class="arow"><span>${label}</span><span class="r">${value}</span></div>`;
+function paneGeneral(r) {
+  return `<div class="prof">${avatarHTML(user, 72)}<div><b>${esc(user.name)}</b><span>${esc(user.email)}</span></div></div>
+    <div class="fieldl">Name</div><div class="field">${esc(user.name)}</div>
+    <div class="fieldl">Email</div><div class="field">${esc(user.email)}</div>
+    <p class="hint">These come from your Google account, so change them there.</p>
+    <div class="asec">${row('Sign-in method', `${GLOGO}<span>Google</span>`)}${row('Member since', r.joined ? fmtDate(r.joined) : '—')}${row('Current plan', esc(PLANS[r.plan].name))}</div>
+    <div class="asec danger"><h4>Danger zone</h4><div class="arow"><span>Delete your account and the plan details saved with it.</span><button class="btn danger sm" data-delete="1">Delete account</button></div></div>`;
+}
+function panePlan(r) {
+  const p = PLANS[r.plan], recurring = !!TERM_DAYS[r.plan], paid = r.plan !== 'free';
   const status = !paid ? 'You\'re on the Free plan.' : r.plan === 'lifetime' ? 'Lifetime access. It never expires.'
     : r.canceled ? `Cancelled. Pro stays until ${fmtDate(r.renewsAt)}.` : `Renews on ${fmtDate(r.renewsAt)} for ${fmtINR(p.amount)}.`;
   const inv = r.invoices.map(i => `<div class="arow inv"><span>${fmtDate(i.date)} · ${esc(i.name)}</span><span class="r">${fmtINR(i.amount)}<button class="linkbtn" data-receipt="${esc(i.id)}">Receipt</button></span></div>`).join('');
-  sheet.innerHTML = XBTN + `<div class="co wide"><div class="ahead">${avatarHTML(user, 56)}<div><b>${esc(user.name)}</b><span>${esc(user.email)}</span></div></div>
-    <div class="asec"><h4>Plan</h4><div class="acard"><div><b>${p.name}${paid ? `<span class="badge2${r.canceled ? ' warn' : ''}">${r.canceled ? 'ENDING' : 'ACTIVE'}</span>` : ''}</b><div class="st">${status}</div></div>
+  return `<div class="acard"><div><b>${p.name}${paid ? `<span class="badge2${r.canceled ? ' warn' : ''}">${r.canceled ? 'ENDING' : 'ACTIVE'}</span>` : ''}</b><div class="st">${status}</div></div>
       <button class="btn glass sm" data-changeplan="1">${paid ? 'Change plan' : 'Upgrade'}</button></div>
-      ${recurring ? `<div class="btns">${r.canceled ? '<button class="btn white sm" data-resume="1">Resume subscription</button>' : '<button class="btn glass sm" data-cancelsub="1">Cancel subscription</button>'}</div>` : ''}</div>
-    <div class="asec"><h4>Billing</h4>
-      <div class="arow"><span>Payment method</span><span class="r">${r.method ? `${esc(r.method.type)} · ${esc(r.method.label)}` : 'None on file'}${paid ? '<button class="linkbtn" data-pm="1">Update</button>' : ''}</span></div>
-      ${inv || '<div class="arow inv"><span>No invoices yet</span><span></span></div>'}</div>
-    <div class="afoot"><button class="btn glass sm" data-signout="1">Sign out</button><span class="demo" style="margin:0">Demo mode: no payments are processed.</span></div></div>`;
+    ${recurring ? `<div class="btns">${r.canceled ? '<button class="btn white sm" data-resume="1">Resume subscription</button>' : '<button class="btn glass sm" data-cancelsub="1">Cancel subscription</button>'}</div>` : ''}
+    <div class="asec"><h4>Payment method</h4>${row('On file', r.method ? `${esc(r.method.type)} · ${esc(r.method.label)}${paid ? '<button class="linkbtn" data-pm="1">Update</button>' : ''}` : 'None')}</div>
+    <div class="asec"><h4>Invoices</h4>${inv || '<div class="arow"><span>No invoices yet</span><span></span></div>'}</div>
+    <p class="hint">Demo mode: no payments are processed.</p>`;
 }
+function paneUsage() {
+  const L = limits(), U = usageNow().r, fmts = L.formats.map(k => FORMATS[k].label).join(', ');
+  return `<div class="asec first"><h4>Today</h4>${meter('Uploads', U.up, L.uploadsPerDay)}${meter('Downloads', U.down, L.downloadsPerDay)}${meter('Photos open', photos.length, L.photos)}<p class="hint">Daily counts reset at midnight.</p></div>
+    <div class="asec"><h4>What your ${esc(PLANS[plan].name)} plan allows</h4>
+      ${row('File size', `up to ${L.fileMB} MB`)}${row('Resolution', `up to ${L.megapixels} megapixels`)}${row('Export size', L.exportPx ? `up to ${L.exportPx}px` : 'Full resolution')}
+      ${row('Export formats', esc(fmts))}${row('Film looks', L.allLooks ? 'All 14' : '5, plus Original')}${row('Download all (ZIP)', L.zipMax ? `up to ${L.zipMax} photos` : 'Not included')}</div>`;
+}
+function renderAccount() {
+  if (!user) return renderSignIn();
+  const r = rec(), titles = { general:'General', plan:'Plan & billing', usage:'Usage' };
+  if (!titles[acctTab]) acctTab = 'general';
+  const nav = ACC_TABS.map(([id, label]) => `<button class="tabb${acctTab === id ? ' on' : ''}" role="tab" aria-selected="${acctTab === id}" data-atab="${id}">${ICONS[id]}<span>${label}</span></button>`).join('');
+  sheet.innerHTML = XBTN + `<div class="acctwrap"><nav class="anav" role="tablist" aria-label="Account"><div class="who">${avatarHTML(user, 40)}<div><b>${esc(user.name)}</b><span>${esc(user.email)}</span></div></div>${nav}<div class="spacer"></div>
+    <button class="tabb" data-signout="1">${ICONS.out}<span>Sign out</span></button></nav>
+    <section class="apane" role="tabpanel"><h2>${titles[acctTab]}</h2>${acctTab === 'plan' ? panePlan(r) : acctTab === 'usage' ? paneUsage() : paneGeneral(r)}</section></div>`;
+}
+function renderDelete() {
+  const r = rec(), live = (r.plan === 'monthly' || r.plan === 'yearly') && !r.canceled;
+  sheet.innerHTML = XBTN + `<div class="co"><button class="back" data-acc="1">← Account</button><h2>Delete your account?</h2>
+    <p class="ctext" style="margin:0;text-align:left">${live ? `You have an active <b>${esc(PLANS[r.plan].name)}</b> subscription. Cancel it first (Plan &amp; billing), then you can delete your account.`
+      : `This removes <b>${esc(user.email)}</b> and its plan details and invoices from this browser.${r.plan === 'lifetime' ? ' <b>You will lose your Lifetime access.</b>' : ''} This can't be undone.`}</p>
+    <div class="cact"><button class="btn glass" data-acc="1">Keep my account</button>${live ? '' : '<button class="btn danger" data-confirmdelete="1">Delete account</button>'}</div></div>`;
+}
+function deleteAccount() {
+  const r = rec(); if (!user || (r && (r.plan === 'monthly' || r.plan === 'yearly') && !r.canceled)) return false;
+  const a = readAcc(); delete a[user.sub]; writeAcc(a); signOut(); closeModal(); toast('Your account was deleted.', 3500); return true;
+}
+new MutationObserver(() => sheet.classList.toggle('acctsheet', !!sheet.querySelector(':scope > .acctwrap'))).observe(sheet, { childList:true });
 function renderCancel() {
   const r = rec(), p = PLANS[r.plan];
-  sheet.innerHTML = XBTN + `<div class="co"><button class="back" data-acc="1">← Account</button><h2>Cancel ${p.name}?</h2>
+  sheet.innerHTML = XBTN + `<div class="co"><button class="back" data-acc="1">← Plan &amp; billing</button><h2>Cancel ${p.name}?</h2>
     <p class="ctext" style="margin:0;text-align:left">You'll keep Pro until <b>${fmtDate(r.renewsAt)}</b>. After that you'll go back to the Free plan. You can resume any time before then.</p>
     <div class="cact"><button class="btn glass" data-acc="1">Keep my plan</button><button class="btn danger" data-confirmcancel="1">Cancel subscription</button></div></div>`;
 }
-function openAccount() { renderAccount(); openModal(); }
+function openAccount(tab) { acctTab = tab || 'general'; renderAccount(); openModal(); }
 function receiptFor(id) {
   const i = rec().invoices.find(x => x.id === id); if (!i) return;
   const gst = Math.round(i.amount - i.amount / 1.18);
@@ -1364,7 +1588,10 @@ $('modal').addEventListener('click', e => {
   const pb = t.closest('[data-plan]'); if (pb) return startCheckout(pb.dataset.plan);
   if (t.closest('[data-demo-signin]')) { const b = t.closest('[data-demo-signin]'); b.disabled = true; b.innerHTML = '<span class="spin"></span>Signing in…'; setTimeout(() => onSignedIn(DEMO_USER), 700); return; }
   if (t.closest('[data-signout]')) { signOut(); closeModal(); toast('Signed out'); return; }
-  if (t.closest('[data-acc]')) return renderAccount();
+  const at = t.closest('[data-atab]'); if (at) { acctTab = at.dataset.atab; return renderAccount(); }
+  const ac = t.closest('[data-acc]'); if (ac) { if (ac.dataset.acc === 'plan') acctTab = 'plan'; return renderAccount(); }
+  if (t.closest('[data-delete]')) return renderDelete();
+  if (t.closest('[data-confirmdelete]')) { deleteAccount(); return; }
   if (t.closest('[data-changeplan]')) return renderPlans({});
   if (t.closest('[data-cancelsub]')) return renderCancel();
   if (t.closest('[data-confirmcancel]')) { const r = rec(); r.canceled = true; saveRec(r); renderAccount(); toast(`Cancelled. Pro stays until ${fmtDate(r.renewsAt)}.`, 3200); return; }
