@@ -11,6 +11,7 @@
 <style>
   :root { --ink:#060607; --blurple:#5865f2; --blurple-d:#4752c4; --glass:rgba(255,255,255,.06); --glass-line:rgba(255,255,255,.11);
           --muted:rgba(255,255,255,.62); }
+  html { zoom:.9; }   /* the app's default size is 90%, like pressing zoom-out once in the browser */
   * { box-sizing:border-box; }
   html,body { margin:0; height:100%; color:#fff; font-family:"Google Sans",system-ui,-apple-system,sans-serif; font-size:15px; -webkit-font-smoothing:antialiased; }
   body { background:
@@ -391,7 +392,7 @@ const PLANS = {
   yearly:   { id:'yearly',   name:'Pro Yearly',  price:'₹1,499', per:'/ year',   amount:1499, note:'₹125 a month · save 50%',     term:'Billed yearly · renews until cancelled',  cta:'Yearly', badge:'Best value' },
   lifetime: { id:'lifetime', name:'Lifetime',    price:'₹2,999', per:'once',     amount:2999, note:'One payment, yours forever',  term:'One-time payment',                        cta:'Lifetime' },
 };
-const FREE_LOOKS = ['ORIG', 'PROV', 'VELV', 'REAL', 'S400', 'ACRS', 'POLA'];   // everything else is Pro
+const FREE_LOOKS = ['ORIG', 'PROV', 'VELV', 'REAL', 'S400', 'ACRS'];   // Original + the first 5 looks are free; everything else is Pro
 const FREE_MAX_PX = 2048, FREE_FORMATS = ['png', 'jpeg'];
 let plan = 'free'; try { const p = (localStorage.getItem('filmroom.plan') || localStorage.getItem('filmit.plan')); if (p && PLANS[p]) plan = p; } catch (e) {}
 FILMS.sort((a, b) => FREE_LOOKS.includes(b.id) - FREE_LOOKS.includes(a.id));
@@ -663,12 +664,16 @@ function applyProposal(prop) {   // accept as far as the proposal stays inside t
   for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; fits(lerpR(cur, prop, m), geo.angle) ? lo = m : hi = m; }
   geo.crop = lerpR(cur, prop, lo);
 }
+function pageZoom() {                                    // screen px per CSS px (0.9 here, since the whole app is zoomed to 90%)
+  const p = document.createElement('div'); p.style.cssText = 'position:absolute;left:0;top:0;width:100px;height:1px;visibility:hidden';
+  document.body.appendChild(p); const z = p.getBoundingClientRect().width / 100 || 1; p.remove(); return z;
+}
 function layout() {
   if (!editing || !view) return;
-  const rc = cv.getBoundingClientRect(), dr = drop.getBoundingClientRect();
-  ov.style.left = rc.left - dr.left + 'px'; ov.style.top = rc.top - dr.top + 'px';
-  ov.style.width = rc.width + 'px'; ov.style.height = rc.height + 'px';
-  const k = rc.width / cv.width * view.scale, Wb = cv.width / view.scale, Hb = cv.height / view.scale, c = geo.crop;
+  const z = pageZoom(), rc = cv.getBoundingClientRect(), dr = drop.getBoundingClientRect();
+  ov.style.left = (rc.left - dr.left) / z + 'px'; ov.style.top = (rc.top - dr.top) / z + 'px';
+  ov.style.width = rc.width / z + 'px'; ov.style.height = rc.height / z + 'px';
+  const k = rc.width / cv.width * view.scale / z, Wb = cv.width / view.scale, Hb = cv.height / view.scale, c = geo.crop;   // k: CSS px per image px
   cb.style.left = (c.cx - c.w/2 + Wb/2) * k + 'px'; cb.style.top = (c.cy - c.h/2 + Hb/2) * k + 'px';
   cb.style.width = c.w * k + 'px'; cb.style.height = c.h * k + 'px';
   ov.classList.toggle('locked', !!curRatio());
@@ -1169,7 +1174,7 @@ async function downloadAll() {
 // ---------- Pricing UI (mock) ----------
 const TICK = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3L13 4.5"/></svg>';
 const FEATURES = {
-  free: ['6 film looks, preview all 14', `Export up to ${FREE_MAX_PX}px`, 'JPEG & PNG export', 'Crop, straighten & grain'],
+  free: ['5 film looks, preview all 14', `Export up to ${FREE_MAX_PX}px`, 'JPEG & PNG export', 'Crop, straighten & grain'],
   pro:  ['All 14 film looks', 'Full-resolution export', 'JPEG, PNG, WebP, TIFF & BMP', 'Crop, straighten & grain', 'New film drops'],
 };
 let lastOpts = {}, checkoutPlan = null;

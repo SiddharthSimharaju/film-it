@@ -25,7 +25,7 @@ Pricing is built into the UI, but **no payments are processed**. Plan state is k
 | | Free | Pro Monthly | Pro Yearly | Lifetime |
 |---|---|---|---|---|
 | Price (₹, incl. GST) | 0 | 249 / month | 1,499 / year | 2,999 once |
-| Film looks | 6 (all 14 can be previewed) | All 14 | All 14 | All 14 |
+| Film looks | 5 (all 14 can be previewed) | All 14 | All 14 | All 14 |
 | Export | up to 2048px, JPEG and PNG | Full resolution, JPEG, PNG, WebP, TIFF, BMP | Same | Same |
 
 Locked looks show a lock on their cartridge, and trying to download one (or a Pro format) opens the plan picker. To wire up real payments, replace `startCheckout()` in `index.html`: create the order or subscription on a server, verify the payment, then call `setPlan()`.
