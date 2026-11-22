@@ -168,6 +168,8 @@
   .film { flex:0 0 112px; background:none; border:0; color:var(--muted); cursor:pointer; padding:0; display:flex; flex-direction:column; align-items:center; gap:9px;
     font-size:12px; font-weight:600; text-align:center; transition:color .15s; position:relative; }
   .film svg, .film img { width:100px; height:108px; object-fit:contain; overflow:visible; transition:transform .3s cubic-bezier(.2,.8,.2,1), filter .3s; filter:drop-shadow(0 8px 6px rgba(0,0,12,.6)); }
+  .film { border-radius:18px; outline:none; }
+  .film:focus-visible { outline:2px solid rgba(255,255,255,.55); outline-offset:-3px; }
   .film:hover { color:#fff; } .film:hover svg, .film:hover img { transform:translateY(-5px) rotate(-3deg); }
   .film.active { color:#fff; }
   .film.active svg, .film.active img { transform:translateY(-8px); filter:drop-shadow(0 12px 9px rgba(0,0,12,.7)) drop-shadow(0 0 16px rgba(88,101,242,.55)); }
@@ -199,7 +201,7 @@
   .topr { display:flex; align-items:center; gap:10px; }
   .btn.pro { background:linear-gradient(140deg,rgba(255,255,255,.24),rgba(255,255,255,.08)); box-shadow:inset 0 1px 0 rgba(255,255,255,.3); color:#fff; }
   .btn.pro svg { color:#ffd479; }
-  .lockbadge { position:absolute; top:-2px; right:20px; z-index:2; width:22px; height:22px; border-radius:50%; display:grid; place-items:center; color:#fff;
+  .lockbadge { position:absolute; top:8px; right:12px; z-index:2; width:22px; height:22px; border-radius:50%; display:grid; place-items:center; color:#fff;
     background:linear-gradient(140deg,rgba(255,255,255,.3),rgba(255,255,255,.1)); border:1px solid rgba(255,255,255,.3); backdrop-filter:blur(8px); }
   .lockbadge svg { width:12px; height:12px; }
   body.is-pro .lockbadge, body.is-pro .shelfdiv { display:none; }
@@ -223,7 +225,7 @@
     background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.16); font-size:13px; font-weight:600; }
   .reason svg { width:14px; height:14px; }
   .x { position:absolute; top:16px; right:16px; width:36px; height:36px; border-radius:50%; border:0; background:rgba(255,255,255,.1); color:#fff; cursor:pointer; display:grid; place-items:center; }
-  .x:hover { background:rgba(255,255,255,.18); }
+  .x:hover { background:rgba(255,255,255,.18); } .x:focus { outline:none; } .x:focus-visible { box-shadow:0 0 0 2px rgba(255,255,255,.65); }
   .plans { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
   .plan { position:relative; display:flex; flex-direction:column; padding:24px 20px 22px; border-radius:22px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12); }
   .plan.hot { border-color:rgba(130,142,255,.9); background:linear-gradient(160deg,rgba(88,101,242,.3),rgba(255,255,255,.05));
@@ -1321,8 +1323,8 @@ function onSignedIn(u) {
 function renderSignIn(opts = {}) {
   signinNext = opts.next || null; signinPlans = opts.plansAfter ? { reason:opts.reason } : null;
   const nudge = signinNext || signinPlans;
-  sheet.innerHTML = XBTN + `<div class="co"><div class="signin">${opts.reason ? `<div class="reason">${LOCK_SVG}${esc(opts.reason)}</div>` : ''}<h2>${nudge ? 'Sign in to continue' : 'Sign in to Filmroom'}</h2>
-    <p class="sub">${signinPlans ? 'Pro looks and full-resolution exports come with a plan. Sign in to start one or pick up where you left off.' : 'Your plan is tied to your account, so Pro works on any device and you can manage billing any time.'}</p><div class="gbox" id="gbox"></div>
+  sheet.innerHTML = XBTN + `<div class="co"><div class="signin">${opts.reason ? `<div class="reason">${LOCK_SVG}${esc(opts.reason)}</div>` : ''}<h2>${nudge ? 'Sign up to upgrade' : 'Sign in to Filmroom'}</h2>
+    <p class="sub">${signinPlans ? 'Pro looks and full-resolution exports come with a plan. Create a free account to get started, or sign in to pick up where you left off.' : signinNext ? 'Create a free account to buy a plan. It stays with you on any device, and you can manage billing any time.' : 'Your plan is tied to your account, so Pro works on any device and you can manage billing any time.'}</p><div class="gbox" id="gbox"></div>
     <p class="demo">${GOOGLE_CLIENT_ID ? 'We only read your name, email and photo from Google.' : '<b>Demo mode:</b> Google sign-in isn\'t connected yet. This creates a demo account stored in this browser.'}</p></div></div>`;
   const box = $('gbox');
   if (GOOGLE_CLIENT_ID) mountGoogleButton(box, onSignedIn).catch(() => { box.textContent = 'Couldn\'t load Google sign-in. Check your connection and try again.'; });
