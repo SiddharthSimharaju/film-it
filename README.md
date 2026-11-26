@@ -34,6 +34,10 @@ Payments are handled by [Dodo Payments](https://dodopayments.com) (hosted checko
 
 Every rule, where it is enforced and the test that proves it is in [docs/BUSINESS_RULES.md](docs/BUSINESS_RULES.md). The numbers live in one table (`LIMITS` in `index.html`). Locked looks show a lock on their cartridge, and hitting any limit opens the plan picker (Free) or shows a plain message (paid).
 
+## Legal
+
+[Terms of Service](terms/index.html) (plans, renewals, refunds) and [Privacy Policy](privacy/index.html) are static pages served at `/terms/` and `/privacy/`. They are linked from the sign-in screen, the payment screens, the analytics notice and the Account page. If the product, the data it collects or the refund policy changes, update the pages and the date at the top. Have them reviewed by a lawyer before relying on them.
+
 ## Analytics
 
 Google Analytics 4 tracks the growth funnel (visit, photo added, download, paywall, plans, checkout, purchase) and never photos, file names, emails or account ids. It stays off until a Measurement ID is set. Setup and how to read the funnel: [docs/ANALYTICS.md](docs/ANALYTICS.md).
@@ -46,7 +50,7 @@ Tests (all local, no network, no money):
 
 - **Server unit tests (37):** `cd server && npm test`. Webhook signatures, Google token checks, plan rules, webhook handling.
 - **Server end-to-end (33):** with the Worker and `node server/test/mock-dodo.mjs` running, `node server/test/e2e-local.mjs`. The whole purchase, renewal, cancel, refund and delete flow against a mock Dodo.
-- **Browser suite (57):** same two processes plus `python3 -m http.server 8731`, then open <http://localhost:8731/tests/run.html> (`?only=ACC-7,SRV-1` runs just those). After editing any inline script, run `python3 tools/update-csp.py` to refresh the content-security policy.
+- **Browser suite (61):** same two processes plus `python3 -m http.server 8731`, then open <http://localhost:8731/tests/run.html> (`?only=ACC-7,SRV-1` runs just those). After editing any inline script, run `python3 tools/update-csp.py` to refresh the content-security policy.
 
 ## Accounts (Google sign-in)
 

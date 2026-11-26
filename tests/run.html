@@ -259,6 +259,30 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
     return { pass: !!waiting && !!done && !/checkout=/.test(win.location.search), detail: `confirming shown: ${!!waiting}; success shown: ${!!done}; address: ${win.location.search}` };
   });
 
+  /* ===================== LEGAL: Terms and Privacy ===================== */
+  await boot();
+  await check('LEG-1', 'The sign-in screen says "By continuing, you agree to…" with Terms and Privacy links that open in a new tab', async () => {
+    $$('#acctbtn').click(); await until(() => $$('#gbox'), 2000); const f = $$('.signin .fine'), links = f ? [...f.querySelectorAll('a')] : [];
+    const hrefs = links.map(a => new URL(a.href).pathname.replace(/^.*?(\/(terms|privacy)\/)$/, '$1')); const ok = f && /By continuing, you agree to/.test(f.textContent) && links.length === 2
+      && hrefs.join() === '/terms/,/privacy/' && links.every(a => a.target === '_blank' && /noopener/.test(a.rel)); closeAll();
+    return { pass: !!ok, detail: `${f ? f.textContent.trim() : 'no line'} | ${hrefs.join(' ')}` };
+  });
+  await check('LEG-2', 'Both legal pages exist, are finished (no placeholders, real contact details) and link to each other', async () => {
+    const get = async p => { const r = await fetch(p); return { status: r.status, text: await r.text() }; }, t = await get('../terms/'), v = await get('../privacy/'), css = await get('../legal.css');
+    const done = x => x.status === 200 && !/\{\{|\[YOUR|TODO|lorem/i.test(x.text) && x.text.includes('siddharth.simharaju@gmail.com') && x.text.includes('Siddharth Simharaju');
+    return { pass: done(t) && done(v) && css.status === 200 && /<h1>Terms of Service/.test(t.text) && /<h1>Privacy Policy/.test(v.text) && t.text.includes('id="refunds"') && t.text.includes('../privacy/') && v.text.includes('../terms/'), detail: `terms ${t.status}, privacy ${v.status}, styles ${css.status}` };
+  });
+  await check('LEG-3', 'Paying shows the Terms, the refund policy and the auto-renewal notice before the button is pressed', async () => {
+    await signIn(); win.openPlans(); await until(() => $$('[data-plan=monthly]'), 2000); $$('[data-plan=monthly]').click(); await until(() => $$('#pay'), 2000);
+    const f = $$('.co .fine'), t = f ? f.textContent : '', hrefs = f ? [...f.querySelectorAll('a')].map(a => a.getAttribute('href')) : []; closeAll();
+    return { pass: /Renews automatically until you cancel/.test(t) && /Terms of Service/.test(t) && hrefs.includes('terms/#refunds'), detail: t.trim().slice(0, 140) };
+  });
+  await boot(); await signIn();
+  await check('LEG-4', 'The Account page lists the Terms and Privacy links', async () => {
+    await openAcct('general'); const l = [...doc.querySelectorAll('.apane a.lnk')].map(a => a.getAttribute('href')); closeAll();
+    return { pass: l.join() === 'terms/,privacy/', detail: l.join(' ') };
+  });
+
   /* ===================== SPEED: film looks are ready before they are clicked ===================== */
   await boot();
   await check('LOOK-1', 'All 14 film looks download in the background without being clicked', async () => {

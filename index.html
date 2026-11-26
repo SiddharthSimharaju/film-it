@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-Xi94jF3mByjPMr70S0WADXFcw4/ge1aK6AweTo5iJ1o=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://accounts.google.com/gsi/ https://filmroom-api.siddharth-simharaju.workers.dev http://localhost:8787; frame-src 'self' https://accounts.google.com/gsi/; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-vSX+5oJ8YkZxElOJ/vBCYUExlw+BS4qZfFfM3bM90NM=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://accounts.google.com/gsi/ https://filmroom-api.siddharth-simharaju.workers.dev http://localhost:8787; frame-src 'self' https://accounts.google.com/gsi/; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin">
 <!-- Clickjacking guard: the page stays hidden unless it is the top window or framed by our own origin. -->
 <style id="antiframe">html{display:none!important}</style>
@@ -295,6 +295,9 @@
   .methods { display:flex; gap:8px; margin:18px 0; }
   .co .pay { width:100%; height:52px; }
   .demo { text-align:center; color:var(--muted); font-size:12px; margin:14px 0 0; }
+  .fine { text-align:center; color:var(--muted); font-size:12.5px; line-height:1.55; margin:14px 0 0; }
+  .fine a, .consent a, .asec a.lnk { color:#c3c8ff; text-decoration:underline; text-underline-offset:2px; } .fine a:hover, .consent a:hover, .asec a.lnk:hover { color:#fff; }
+  .signin .fine { margin:14px 0 0; font-size:13px; }
   .spin { width:16px; height:16px; border-radius:50%; border:2px solid rgba(0,0,0,.2); border-top-color:#000; animation:sp .7s linear infinite; }
   @keyframes sp { to { transform:rotate(360deg); } }
   .done { text-align:center; padding:18px 0 6px; }
@@ -504,7 +507,7 @@ if (ANALYTICS_ON) {
   const gs = document.createElement('script'); gs.async = true; gs.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID; document.head.appendChild(gs);
   if (saved === null) addEventListener('DOMContentLoaded', () => {
     const b = document.createElement('div'); b.className = 'consent'; b.setAttribute('role', 'dialog'); b.setAttribute('aria-label', 'Analytics');
-    b.innerHTML = '<p>We count visits and see where people get stuck, using Google Analytics. <b>Your photos, file names and email are never sent.</b></p><div class="cbtns"><button class="btn white sm" data-c="yes">OK</button><button class="btn glass sm" data-c="no">No thanks</button></div>';
+    b.innerHTML = '<p>We count visits and see where people get stuck, using Google Analytics. <b>Your photos, file names and email are never sent.</b> <a href="privacy/" target="_blank" rel="noopener">Privacy Policy</a></p><div class="cbtns"><button class="btn white sm" data-c="yes">OK</button><button class="btn glass sm" data-c="no">No thanks</button></div>';
     b.addEventListener('click', e => { const c = e.target.closest('[data-c]'); if (!c) return; try { localStorage.setItem(CONSENT_KEY, c.dataset.c); } catch (x) {} if (c.dataset.c === 'yes') gtag('consent', 'update', { analytics_storage:'granted' }); b.remove(); });
     document.body.appendChild(b);
   });
@@ -1540,7 +1543,8 @@ function startCheckout(id) {
     <div class="sum"><div><b>${p.name}</b><span>${p.term}</span></div><strong>${fmtINR(p.amount)}</strong></div>
     <div class="rowl"><span>Price includes GST</span><span></span></div>
     <button class="btn white pay" id="pay" data-pay="1">Continue to payment</button>
-    <p class="demo">You'll finish on Dodo Payments' secure page, where you pick how to pay. The final price and any tax are shown before you pay.</p></div>`;
+    <p class="demo">You'll finish on Dodo Payments' secure page, where you pick how to pay. The final price and any tax are shown before you pay.</p>
+    <p class="fine">${RECURRING.has(id) ? 'Renews automatically until you cancel; cancel any time in your account. ' : ''}By paying you agree to our <a href="terms/" target="_blank" rel="noopener">Terms of Service</a>, including the <a href="terms/#refunds" target="_blank" rel="noopener">refund policy</a>.</p></div>`;
 }
 // ---------- Switching between Monthly and Yearly (for someone who already subscribes) ----------
 // Monthly -> Yearly starts now: the server asks Dodo for the exact amount (the yearly price minus credit for the unused part of the current period) and
@@ -1557,7 +1561,8 @@ async function renderSwitch(id) {
     shell(q.kind === 'upgrade'
       ? `<div class="sum"><div><b>Due today</b><span>${p.name} (${fmtINR(p.amount)}) minus credit for the unused part of your ${from.name} period</span></div><strong>${fmtMoney(q.chargeNow, q.currency)}</strong></div>
          <p class="ctext" style="text-align:left">Charged to the payment method you already use. ${p.name} starts today and renews on <b>${fmtDate(q.nextBillingDate)}</b> for ${fmtINR(p.amount)}.</p>
-         <button class="btn white pay" id="pay" data-switchgo="1">Pay ${fmtMoney(q.chargeNow, q.currency)} and switch</button>`
+         <button class="btn white pay" id="pay" data-switchgo="1">Pay ${fmtMoney(q.chargeNow, q.currency)} and switch</button>
+         <p class="fine">By switching you agree to our <a href="terms/" target="_blank" rel="noopener">Terms of Service</a>, including the <a href="terms/#refunds" target="_blank" rel="noopener">refund policy</a>.</p>`
       : `<div class="sum"><div><b>Nothing to pay today</b><span>${from.name} stays active until ${fmtDate(q.effectiveAt)}</span></div><strong>${fmtINR(0)}</strong></div>
          <p class="ctext" style="text-align:left">On <b>${fmtDate(q.effectiveAt)}</b> you move to ${p.name} at ${fmtINR(p.amount)} ${p.per}. You keep every Pro feature until then, and you can change your mind before that date.</p>
          <button class="btn white pay" id="pay" data-switchgo="1">Schedule the switch</button>`);
@@ -1677,6 +1682,7 @@ function renderSignIn(opts = {}) {
   const nudge = signinNext || signinPlans;
   sheet.innerHTML = XBTN + `<div class="co"><div class="signin">${opts.reason ? `<div class="reason">${LOCK_SVG}${esc(opts.reason)}</div>` : ''}<h2>${nudge ? 'Sign up to upgrade' : 'Sign in to Filmroom'}</h2>
     <p class="sub">${signinPlans ? 'Pro looks and full-resolution exports come with a plan. Create a free account to get started, or sign in to pick up where you left off.' : signinNext ? 'Create a free account to buy a plan. It stays with you on any device, and you can manage billing any time.' : 'Your plan is tied to your account, so Pro works on any device and you can manage billing any time.'}</p><div class="gbox" id="gbox"></div>
+    <p class="fine">By continuing, you agree to our <a href="terms/" target="_blank" rel="noopener">Terms of Service</a> and <a href="privacy/" target="_blank" rel="noopener">Privacy Policy</a>.</p>
     <p class="demo">${GOOGLE_CLIENT_ID ? 'We only read your name, email and photo from Google.' : '<b>Local test mode:</b> signs in as a demo account on your own machine.'}</p></div></div>`;
   const box = $('gbox');
   if (GOOGLE_CLIENT_ID) mountGoogleButton(box, onSignedIn).catch(() => { box.textContent = 'Couldn\'t load Google sign-in. Check your connection and try again.'; });
@@ -1697,7 +1703,7 @@ function paneGeneral(r) {
     <div class="fieldl">Name</div><div class="field">${esc(user.name)}</div>
     <div class="fieldl">Email</div><div class="field">${esc(user.email)}</div>
     <p class="hint">These come from your Google account, so change them there.</p>
-    <div class="asec">${row('Sign-in method', `${GLOGO}<span>Google</span>`)}${row('Member since', r.joined ? fmtDate(r.joined) : '—')}${row('Current plan', esc(PLANS[plan].name))}</div>
+    <div class="asec">${row('Sign-in method', `${GLOGO}<span>Google</span>`)}${row('Member since', r.joined ? fmtDate(r.joined) : '—')}${row('Current plan', esc(PLANS[plan].name))}${row('Legal', '<a class="lnk" href="terms/" target="_blank" rel="noopener">Terms of Service</a> · <a class="lnk" href="privacy/" target="_blank" rel="noopener">Privacy Policy</a>')}</div>
     <div class="asec danger"><h4>Danger zone</h4><div class="arow"><span>Delete your account and the plan details saved with it.</span><button class="btn danger sm" data-delete="1">Delete account</button></div></div>`;
 }
 function panePlan(r) {
