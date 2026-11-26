@@ -24,7 +24,7 @@ const check = async (id, name, fn) => { try { const r = await fn(); record(id, n
 // ---------- harness helpers ----------
 async function boot(setup) {                                // fresh app; optional storage set-up first
   document.getElementById('host').innerHTML = ''; localStorage.clear(); if (setup) setup();
-  const f = document.createElement('iframe'); f.src = '../index.html?t=' + Date.now(); document.getElementById('host').appendChild(f);
+  const f = document.createElement('iframe'); f.src = '../index.html?demo=1&t=' + Date.now(); document.getElementById('host').appendChild(f);
   await new Promise(r => f.onload = r); win = f.contentWindow; doc = win.document;
   await until(() => doc.querySelectorAll('#strip .film img').length === 15, 8000);
   win.__dl = []; win.__blobs = [];

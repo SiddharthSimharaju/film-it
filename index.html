@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-Y+jRe6YI53ehfFVFkYHHO6f+wUDYrIgI8pUrFAGoLSc=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://accounts.google.com/gsi/; frame-src 'self' https://accounts.google.com/gsi/; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-j6O9l7mlZhzWKhM6oQS/L5hs5yF4SgSxTo65/uvPngI=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://accounts.google.com/gsi/; frame-src 'self' https://accounts.google.com/gsi/; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin">
 <!-- Clickjacking guard: the page stays hidden unless it is the top window or framed by our own origin. -->
 <style id="antiframe">html{display:none!important}</style>
@@ -69,15 +69,7 @@
   .ph .intro p { max-width:470px; margin:0 auto; font-size:15px; line-height:1.55; color:var(--muted); text-wrap:pretty; }
   .ph .intro .mark { display:block; margin:0 auto 18px; }
   .ph .intro { margin-bottom:30px; }
-  /* the drop target: a dashed card with a soft icon, so it reads as "put files here" */
-  .ph .zone { margin:0 auto; width:min(400px,100%); padding:28px 28px 24px; border:1.5px dashed rgba(255,255,255,.28); border-radius:24px; background:rgba(255,255,255,.035); transition:border-color .15s, background .15s; }
-  .drop:hover .ph .zone { border-color:rgba(165,175,255,.65); background:rgba(120,132,255,.08); }
-  .drop.over .ph .zone { border-color:#aab2ff; background:rgba(120,132,255,.16); }
-  .ph .zico { display:grid; place-items:center; width:56px; height:56px; margin:0 auto 14px; border-radius:50%; border:1px solid rgba(255,255,255,.26);
-    background:linear-gradient(140deg,rgba(255,255,255,.22),rgba(255,255,255,.06)); box-shadow:inset 0 1px 0 rgba(255,255,255,.32); }
-  .ph .zico svg { width:30px; height:30px; }
-  .ph .hint { display:block; margin-top:16px; font-size:12.5px; color:var(--muted); opacity:.8; }
-  @media (max-height:780px) { .ph .zico { display:none; } .ph .intro h2 { font-size:28px; } .ph .intro { margin-bottom:22px; } .ph .zone { padding:22px 24px 20px; } }
+  @media (max-height:780px) { .ph .intro h2 { font-size:28px; } .ph .intro { margin-bottom:22px; } }
   @media (max-height:640px) { .ph .intro .mark { display:none; } }
   @media (max-width:640px) { .ph .intro h2 { font-size:26px; } .ph .intro { margin-bottom:24px; } }
   .btn svg { flex:none; display:block; }
@@ -409,13 +401,9 @@
           <h2>Give your photos the look of real film</h2>
           <p>Pick a Fujifilm-style film roll, add grain, then crop and straighten. It all runs in your browser, so your photos never leave your device.</p>
         </div>
-        <div class="zone">
-          <span class="zico"><svg viewBox="0 0 28 28" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="6.5" width="17" height="14" rx="3.5"/><circle cx="9" cy="12" r="1.6"/><path d="M4 18l5-4.5 4 3.2 3-2.7 4.5 4"/><path d="M22.5 3v6M19.5 6h6"/></svg></span>
-          <b>Drop images here</b>
-          <span class="or">or</span>
-          <div><button class="btn white" id="upbtn"><svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 11V2.5M4.5 6L8 2.5 11.5 6M2.5 13.5h11"/></svg>Upload images</button></div>
-          <small class="hint">JPG, PNG, WebP, HEIC, TIFF and more</small>
-        </div>
+        <b>Drop images here</b>
+        <span class="or">or</span>
+        <div><button class="btn white" id="upbtn"><svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 11V2.5M4.5 6L8 2.5 11.5 6M2.5 13.5h11"/></svg>Upload images</button></div>
       </div>
       <canvas id="cv"></canvas>
       <div class="overlay" id="ov"><div class="cropbox" id="cb">
@@ -1463,7 +1451,7 @@ function renderSuccess(id) {
 // Sign-in is a DEMO until you paste a Google OAuth client ID here. With an ID, "Continue with Google" becomes Google's real
 // button. The account/plan data below lives in this browser's localStorage for now: when payments go live it has to move to a
 // server (verify the Google ID token there, and store the plan against the verified Google account id).
-const GOOGLE_CLIENT_ID = '';
+const GOOGLE_CLIENT_ID = new URLSearchParams(location.search).has('demo') ? '' : '215546086872-dttuivggji3jcaif5tglc3uq2ndru0vk.apps.googleusercontent.com';   // add ?demo=1 to the address for the offline demo sign-in (the test suite uses it)
 const DEMO_USER = { sub:'demo-google-user', name:'Demo User', email:'demo.user@example.com', picture:'' };
 const DAY = 86400000, TERM_DAYS = { monthly:30, yearly:365 };
 let user = null, signinNext = null, signinPlans = null;
@@ -1540,11 +1528,15 @@ function parseJwt(t) {                                    // Google returns a si
   const b = t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
   return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(b + '='.repeat((4 - b.length % 4) % 4)), c => c.charCodeAt(0))));
 }
-function googleUserFromCredential(cred) { const p = parseJwt(cred); return { sub:p.sub, name:p.name || p.email, email:p.email, picture:p.picture || '' }; }
+function googleUserFromCredential(cred) {                  // sanity checks only: real verification of the signature has to happen on a server
+  let p; try { p = parseJwt(cred); } catch (e) { return null; }
+  if (!p || p.aud !== GOOGLE_CLIENT_ID || !/^(https:\/\/)?accounts\.google\.com$/.test(p.iss || '') || !(p.exp * 1000 > Date.now()) || p.email_verified === false || !p.sub || !p.email) return null;
+  return { sub:p.sub, name:p.name || p.email, email:p.email, picture:p.picture || '' };
+}
 async function mountGoogleButton(el, onUser) {
   if (!(window.google && google.accounts && google.accounts.id)) await loadScript('https://accounts.google.com/gsi/client');
-  google.accounts.id.initialize({ client_id:GOOGLE_CLIENT_ID, callback:r => onUser(googleUserFromCredential(r.credential)) });
-  google.accounts.id.renderButton(el, { theme:'filled_black', size:'large', shape:'pill', text:'continue_with', width:320 });
+  google.accounts.id.initialize({ client_id:GOOGLE_CLIENT_ID, callback:r => { const u = googleUserFromCredential(r.credential); if (u) onUser(u); else toast('Couldn\'t verify that Google sign-in. Please try again.', 3500); } });
+  google.accounts.id.renderButton(el, { theme:'filled_black', size:'large', shape:'pill', text:'continue_with', width:336 });
 }
 const GLOGO = '<svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>';
 
