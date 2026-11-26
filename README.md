@@ -2,7 +2,7 @@
 
 Give any photo the look of classic Fujifilm and Polaroid film stocks, add grain, crop and straighten, then download it in the format you want. Everything runs in your browser, so your photos never leave your device.
 
-**[Open the app](https://siddharthsimharaju.github.io/film-it/)**
+**[Open the app](https://filmroom.in)**
 
 ![Filmroom](docs/screenshot.png)
 
@@ -47,7 +47,7 @@ Plans belong to an account. Buying a plan needs a sign-in. The account dialog ha
 Sign-in is a **demo** until you add a Google OAuth client ID:
 
 1. In Google Cloud Console, create an **OAuth client ID** of type *Web application*.
-2. Add your site (for example `https://siddharthsimharaju.github.io`) and `http://localhost:8731` under *Authorized JavaScript origins*.
+2. Add your site (`https://filmroom.in` and `https://www.filmroom.in`) and `http://localhost:8731` under *Authorized JavaScript origins*.
 3. Paste the client ID into `GOOGLE_CLIENT_ID` near the top of the accounts code in `index.html`. "Continue with Google" then becomes Google's real button.
 
 For now account and plan data is stored in the browser. Before real payments, move it to a server: verify the Google ID token there and store the plan against the verified account.
