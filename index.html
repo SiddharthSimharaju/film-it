@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-vSX+5oJ8YkZxElOJ/vBCYUExlw+BS4qZfFfM3bM90NM=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://accounts.google.com/gsi/ https://filmroom-api.siddharth-simharaju.workers.dev http://localhost:8787; frame-src 'self' https://accounts.google.com/gsi/; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-8dZ3x9zoUud2BwZNw5VrIrDNOG9dHjQlIQOIpr2oLmE=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://accounts.google.com/gsi/ https://filmroom-api.siddharth-simharaju.workers.dev http://localhost:8787; frame-src 'self' https://accounts.google.com/gsi/; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin">
 <!-- Clickjacking guard: the page stays hidden unless it is the top window or framed by our own origin. -->
 <style id="antiframe">html{display:none!important}</style>
@@ -1683,7 +1683,7 @@ function renderSignIn(opts = {}) {
   sheet.innerHTML = XBTN + `<div class="co"><div class="signin">${opts.reason ? `<div class="reason">${LOCK_SVG}${esc(opts.reason)}</div>` : ''}<h2>${nudge ? 'Sign up to upgrade' : 'Sign in to Filmroom'}</h2>
     <p class="sub">${signinPlans ? 'Pro looks and full-resolution exports come with a plan. Create a free account to get started, or sign in to pick up where you left off.' : signinNext ? 'Create a free account to buy a plan. It stays with you on any device, and you can manage billing any time.' : 'Your plan is tied to your account, so Pro works on any device and you can manage billing any time.'}</p><div class="gbox" id="gbox"></div>
     <p class="fine">By continuing, you agree to our <a href="terms/" target="_blank" rel="noopener">Terms of Service</a> and <a href="privacy/" target="_blank" rel="noopener">Privacy Policy</a>.</p>
-    <p class="demo">${GOOGLE_CLIENT_ID ? 'We only read your name, email and photo from Google.' : '<b>Local test mode:</b> signs in as a demo account on your own machine.'}</p></div></div>`;
+    ${GOOGLE_CLIENT_ID ? '' : '<p class="demo"><b>Local test mode:</b> signs in as a demo account on your own machine.</p>'}</div></div>`;
   const box = $('gbox');
   if (GOOGLE_CLIENT_ID) mountGoogleButton(box, onSignedIn).catch(() => { box.textContent = 'Couldn\'t load Google sign-in. Check your connection and try again.'; });
   else box.innerHTML = `<button class="btn white gbtn" data-demo-signin="1">${GLOGO}Continue with Google</button>`;
