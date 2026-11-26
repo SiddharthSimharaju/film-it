@@ -2,6 +2,12 @@
 
 Free, and it answers the growth questions: how many visitors, how many try the app, who hits a limit, who looks at plans, who starts checkout, who pays, and where each group drops off.
 
+## Status
+
+**On**, with Measurement ID `G-NWXGNCWTV6` (`const GA_ID` in `index.html`). It is a direct GA4 integration (`gtag.js`), **not Google Tag Manager**. GTM would let anyone with access to the container run code on Filmroom, where sign-in sessions and payments live, and it would force the content-security policy to be loosened. If you ever need GTM, add it as a deliberate change with that in mind.
+
+Still to do in the GA4 admin (it cannot be done from the page): the data-retention setting (step 3 below), the custom dimensions (step 6) and the key events (step 7).
+
 ## Switch it on (about 10 minutes)
 
 1. **Create the property.** [analytics.google.com](https://analytics.google.com) → Admin → *Create* → Property. Name `Filmroom`, time zone India, currency INR.

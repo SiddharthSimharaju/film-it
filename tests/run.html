@@ -316,7 +316,7 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
     return { pass: ev.length > 6 && !leaks.length, detail: leaks.length ? 'LEAKS: ' + leaks : `${ev.length} events, none contain personal data` };
   });
   await boot();
-  await check('ANA-3', 'Analytics is off without a Measurement ID (no Google scripts, no data layer, nothing loaded)', async () => {
+  await check('ANA-3', 'Analytics stays completely off on localhost, even with a Measurement ID set (no Google scripts, no data layer, nothing loaded), so tests and local work never pollute the data', async () => {
     const hosts = win.performance.getEntriesByType('resource').map(r => new URL(r.name).hostname).filter(h => /google-analytics|googletagmanager|analytics\.google/.test(h));
     return { pass: win.dataLayer === undefined && !hosts.length && !$$('.consent'), detail: `dataLayer ${win.dataLayer === undefined ? 'absent' : 'present'}, analytics requests: ${hosts.length}` };
   });
