@@ -10,6 +10,7 @@ export const newRecord = () => ({
   sub: null,               // { id, plan, status, nextBillingDate (ms), cancelAtPeriodEnd, endsAt (ms) }
   payments: [],            // newest first, max 50: { id, plan, amount, currency, at, status, subId }
   usage: { day: '', down: 0 },
+  ga: null,                // { cid, at }: this visitor's Google Analytics client id, kept ONLY while they have accepted analytics (see analytics.js)
 });
 
 /** @returns {{plan:'free'|'monthly'|'yearly'|'lifetime', renewsAt:number|null, canceled:boolean, status:string}} */

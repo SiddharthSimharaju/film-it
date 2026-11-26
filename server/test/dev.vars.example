@@ -3,4 +3,7 @@ ENABLE_DEV_ROUTES=1
 DODO_API_KEY=dummy_local_key
 DODO_WEBHOOK_SECRET=whsec_bG9jYWxfdGVzdF9zZWNyZXRfMTIzNDU2Nzg5MDEyMzQ1
 DODO_BASE=http://localhost:8799
+GA_API_SECRET=dev_secret
+GA_MEASUREMENT_ID=G-TEST000000
+GA_ENDPOINT=http://localhost:8798/mp/collect
 ALLOWED_ORIGINS=https://filmroom.in,http://localhost:8731,http://localhost:8787

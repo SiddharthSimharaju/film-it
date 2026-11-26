@@ -23,6 +23,7 @@
     "DODO_ENV": "test_mode",                         // "test_mode" or "live_mode": this one switch decides which Dodo API is called
     "GOOGLE_CLIENT_ID": "215546086872-dttuivggji3jcaif5tglc3uq2ndru0vk.apps.googleusercontent.com",
     "SITE_URL": "https://filmroom.in",
+    "GA_MEASUREMENT_ID": "G-NWXGNCWTV6",             // Google Analytics: the server sends subscription events here (needs the GA_API_SECRET secret, see docs/ANALYTICS.md)
     "ALLOWED_ORIGINS": "https://filmroom.in,https://www.filmroom.in",
     // Dodo product ids for the CURRENT mode (test and live products have different ids).
     "PRODUCT_MONTHLY": "pdt_0NsmAclo8rlbC3hkeYMhj",

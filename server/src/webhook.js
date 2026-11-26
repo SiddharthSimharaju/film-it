@@ -2,6 +2,7 @@
 // (status, product, dates) are re-read from Dodo's API with our own key, so a malformed or replayed body cannot grant anything.
 import { planForProduct } from './plans.js';
 import { subFromDodo } from './entitlement.js';
+import { paymentEvents, reversalEvents, subscriptionEvents } from './analytics.js';
 
 const SUB_RE = /^[A-Za-z0-9._-]{1,64}$/;
 const ms = v => { const t = v ? Date.parse(v) : NaN; return Number.isFinite(t) ? t : Date.now(); };
@@ -22,13 +23,21 @@ async function bind(deps, sub, obj) {            // remember customer -> account
   await deps.kv.put(`c:${cid}`, sub);
 }
 
+// Tell Google Analytics, but only for a person whose browser linked its analytics id (they accepted analytics). Never throws, never blocks.
+async function emit(deps, rec, events) {
+  if (deps.ga && rec && rec.ga && rec.ga.cid && events.length) { try { await deps.ga(deps.env, rec.ga.cid, events); } catch { /* analytics must never break a payment */ } }
+}
+
 async function syncSubscription(deps, subObj) {
   const plan = planForProduct(deps.env, subObj.product_id);
   if (!plan || plan === 'lifetime') return { ignored: 'not one of our subscription products' };
   const sub = await resolveSub(deps, subObj);
   if (!sub) { await deps.kv.put(`o:${subObj.subscription_id}`, JSON.stringify({ at: Date.now(), kind: 'subscription' }), { expirationTtl: 30 * 86400 }); return { ignored: 'unmapped subscription' }; }
   await bind(deps, sub, subObj);
-  await deps.accountFor(sub).setSub(subFromDodo(subObj, plan));
+  const acct = deps.accountFor(sub), prev = await acct.raw(), next = subFromDodo(subObj, plan);
+  const events = subscriptionEvents(prev.sub, next), linked = prev.ga;        // decided from the state BEFORE it is saved
+  await acct.setSub(next);
+  await emit(deps, { ga: linked }, events);
   return { sub, plan, status: subObj.status };
 }
 
@@ -52,8 +61,11 @@ async function onPaymentSucceeded(deps, data) {
   const sub = await resolveSub(deps, pay) || (subObj && await resolveSub(deps, subObj));
   if (!sub) { await deps.kv.put(`o:${pay.payment_id}`, JSON.stringify({ at: Date.now(), kind: 'payment' }), { expirationTtl: 30 * 86400 }); return { ignored: 'unmapped payment' }; }
   await bind(deps, sub, pay);
-  const acct = deps.accountFor(sub);
-  await acct.recordPayment({ id: pay.payment_id, plan, amount: Number(pay.total_amount || 0) / 100, currency: String(pay.currency || 'INR'), at: ms(pay.created_at), status: 'succeeded', subId: pay.subscription_id || null });
+  const acct = deps.accountFor(sub), prev = await acct.raw();
+  const record = { id: pay.payment_id, plan, amount: Number(pay.total_amount || 0) / 100, currency: String(pay.currency || 'INR'), at: ms(pay.created_at), status: 'succeeded', subId: pay.subscription_id || null };
+  const events = paymentEvents(prev, record), linked = prev.ga;  // decided from the state BEFORE the payment is recorded
+  await acct.recordPayment(record);
+  await emit(deps, { ga: linked }, events);                      // purchase + started / renewed / plan changed (once per payment)
   if (subObj) await syncSubscription(deps, subObj);
   if (plan === 'lifetime') {
     await acct.grantLifetime({ paymentId: pay.payment_id, at: ms(pay.created_at) });
@@ -69,8 +81,10 @@ async function onPaymentReversed(deps, data, kind) {       // refund.succeeded /
   const id = data.payment_id; if (!id) return { ignored: 'no payment id' };
   const pay = await deps.api.getPayment(deps.env, id);
   const sub = await resolveSub(deps, pay); if (!sub) return { ignored: 'unmapped payment' };
-  const acct = deps.accountFor(sub);
+  const acct = deps.accountFor(sub), prev = await acct.raw(), was = prev.payments.find(x => x.id === id);
+  const events = was && was.status === 'succeeded' && (kind === 'refunded' || kind === 'chargeback') ? reversalEvents({ ...was }, kind) : [], linked = prev.ga;   // once, not on every replay
   await acct.setPaymentStatus(id, kind);
+  await emit(deps, { ga: linked }, events);
   await acct.revokeLifetime(id);
   return { sub, payment: id, kind };
 }

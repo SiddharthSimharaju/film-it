@@ -8,6 +8,34 @@ Free, and it answers the growth questions: how many visitors, how many try the a
 
 **Property setup is done** (property `Filmroom`, `properties/565936259`, stream `Film Room` at https://filmroom.in/): event data is kept for **14 months**; the custom dimensions Plan, Look, Reason, Format, Signed in and Look locked are registered; `purchase`, `sign_up`, `begin_checkout` and `photo_downloaded` are key events. It was applied with `server/scripts/ga-setup.py` (safe to re-run). Steps 1 to 7 below are kept as the manual route and as a record of what the script does.
 
+## Growth metrics, daily or monthly, and the funnels
+
+**The numbers, from a script (the quickest view).** It reads Google Analytics directly:
+
+```
+python3 server/scripts/ga-growth.py                 # daily, last 30 days
+python3 server/scripts/ga-growth.py --by month      # monthly, last 12 months
+python3 server/scripts/ga-growth.py --funnels-only
+```
+
+Columns: Visitors, New, Sessions, Sign-ups, Used (opened a photo), Saved (downloaded), Paywall, Plans, Checkout, Payments, New subs, Renewals, Churned, Refunds, Revenue. Then three funnels (growth, sign-up, retention of paid customers) with the share of people reaching each step.
+
+**In the Google Analytics screen** (daily and monthly are both built in):
+- Any line chart in Reports has a **Day / Week / Month** switch above it. In Explore → Free form, put **Date** or **Year month** in Rows.
+- Reports → Realtime now. Reports → Acquisition → Traffic acquisition for visitors and sources. Reports → Monetization → Ecommerce purchases for payments and revenue.
+- Admin → Audiences shows how many *people* are in each of the audiences below.
+
+**Audiences created for you** (they start counting from the day they were created, not retroactively): Signed up · Activated: added a photo · Got value: downloaded a photo · Hit a paywall · Viewed plans · Started checkout · Paid customers · **Churned subscribers** · **Active paying subscribers** (paid and not churned). `Paid customers` and `Churned subscribers` are the "number of people who paid / churned".
+
+**The funnel to build in Explore** (Google offers no way to create saved explorations from outside, so this takes two minutes): Explore → *Funnel exploration* → name it "Filmroom growth" → choose **Open funnel** → add these steps, each as *Event name* equals:
+1. `page_view` (Landed) · 2. `photo_added` (**Using it**) · 3. `photo_downloaded` (Got value) · 4. `paywall_shown` · 5. `view_item_list` (Viewed plans) · 6. `begin_checkout` · 7. `purchase` (**Converted**)
+
+Then set **Breakdown** to *Device category* or *Session default channel group*. The step with the biggest drop is where to work. For a second tab use: `page_view` → `sign_up` → `begin_checkout` → `purchase`.
+
+**Churn, paid people and renewals come from the server.** They happen at Dodo, not in the browser, so the Worker sends them to Google Analytics when Dodo reports them: `subscription_started`, `subscription_renewed`, `subscription_plan_changed`, `subscription_churned` (the paid plan really ended, once, with `reason` cancelled or expired), `subscription_on_hold` (a renewal failed: churn risk), `refund`, `chargeback`, plus a `purchase` for every payment. Google merges a browser `purchase` and the server one by `transaction_id`, so nothing is counted twice.
+- **Consent first.** They are sent only for people who pressed OK and are signed in. Everyone else sends nothing, so these counts are a **lower bound**. **Dodo's dashboard is the exact record** of subscribers, renewals, churn and revenue; use Google Analytics for the funnel and trends.
+- **To switch it on** (a one-time step that must be done by the property owner): Google Analytics → Admin → Property settings → Data collection and modification → Data collection → **User data collection acknowledgement** → Acknowledge. It is a legal statement that you have the privacy disclosures and rights from your users, so it cannot be done on your behalf. Then run `bash server/scripts/ga-login.sh` (if needed) and `python3 server/scripts/ga-mp-secret.py`, which stores the key as a Worker secret without printing it. Until then the Worker sends nothing.
+
 ## Switch it on (about 10 minutes)
 
 1. **Create the property.** [analytics.google.com](https://analytics.google.com) → Admin → *Create* → Property. Name `Filmroom`, time zone India, currency INR.

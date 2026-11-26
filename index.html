@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-xSM0GcoXcrEwSF4PCRbD8CQullToSvx8PQP3xRJchs4=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client https://www.googletagmanager.com/gtag/js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://accounts.google.com/gsi/ https://filmroom-api.siddharth-simharaju.workers.dev http://localhost:8787 https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; frame-src 'self' https://accounts.google.com/gsi/; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-9JmK1Gj1BELG/qqjsXuKVVaJPAroBiMY9u6Sf3Zx09A=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client https://www.googletagmanager.com/gtag/js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://accounts.google.com/gsi/ https://filmroom-api.siddharth-simharaju.workers.dev http://localhost:8787 https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; frame-src 'self' https://accounts.google.com/gsi/; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin">
 <!-- Clickjacking guard: the page stays hidden unless it is the top window or framed by our own origin. -->
 <style id="antiframe">html{display:none!important}</style>
@@ -492,6 +492,21 @@ const planItem = id => ({ item_id:id, item_name:PLANS[id].name, price:PLANS[id].
 const paywallKind = r => { r = String(r || ''); return !r ? 'menu' : /Pro look/.test(r) ? 'pro_look' : /photos at once/.test(r) ? 'photo_limit' : /download/i.test(r) && /(used|left)/.test(r) ? 'daily_downloads' : /Download all/.test(r) ? 'zip' : /export is a Pro feature/.test(r) ? 'export_format' : 'other'; };
 const rejectKind = w => /SVG/.test(w) ? 'svg' : /isn't an image/.test(w) ? 'not_image' : /empty/.test(w) ? 'empty' : /MB/.test(w) ? 'too_big' : /megapixels/.test(w) ? 'too_many_mp' : /unusual shape/.test(w) ? 'odd_shape' : 'open_failed';
 function setPlanProp() { if (ANALYTICS_ON && window.gtag) gtag('set', 'user_properties', { plan }); }
+// Subscription events (started, renewed, ended, refunded) happen at Dodo, not in the browser, so the SERVER sends them to Google Analytics. For that it needs this
+// browser's analytics id, and it only ever gets it after the person pressed OK: any other answer (No thanks, no answer, Do Not Track) makes it forget the id.
+const LINK_KEY = 'filmroom.analyticslinked';
+function linkAnalytics() {
+  if (!user || !sessionToken) return;
+  const optOut = navigator.doNotTrack === '1' || navigator.globalPrivacyControl === true;
+  if (!ANALYTICS_ON && !optOut) return;                                 // localhost, or no Measurement ID: nothing was ever linked
+  let saved = null; try { saved = localStorage.getItem(CONSENT_KEY); } catch (e) {}
+  const once = cid => {
+    const key = (cid || 'none') + ':' + sessionToken.slice(-8); try { if (sessionStorage.getItem(LINK_KEY) === key) return; sessionStorage.setItem(LINK_KEY, key); } catch (e) {}
+    api('/analytics/link', { method:'POST', json:{ cid } }).catch(() => { try { sessionStorage.removeItem(LINK_KEY); } catch (e) {} });
+  };
+  if (optOut || saved !== 'yes') return once(null);
+  if (window.gtag) gtag('get', GA_ID, 'client_id', c => once(typeof c === 'string' && /^\d{4,12}\.\d{4,12}$/.test(c) ? c : null));
+}
 function trackPurchase(id) {                               // once per payment, even if the page is reloaded or the plan is re-checked
   const inv = acct && acct.invoices && acct.invoices[0], key = 'filmroom.tracked'; if (!inv || !inv.id) return;
   let seen = []; try { seen = JSON.parse(localStorage.getItem(key) || '[]'); if (!Array.isArray(seen)) seen = []; } catch (e) {}
@@ -508,7 +523,7 @@ if (ANALYTICS_ON) {
   if (saved === null) addEventListener('DOMContentLoaded', () => {
     const b = document.createElement('div'); b.className = 'consent'; b.setAttribute('role', 'dialog'); b.setAttribute('aria-label', 'Analytics');
     b.innerHTML = '<p>We count visits and see where people get stuck, using Google Analytics. <b>Your photos, file names and email are never sent.</b> <a href="privacy/" target="_blank" rel="noopener">Privacy Policy</a></p><div class="cbtns"><button class="btn white sm" data-c="yes">OK</button><button class="btn glass sm" data-c="no">No thanks</button></div>';
-    b.addEventListener('click', e => { const c = e.target.closest('[data-c]'); if (!c) return; try { localStorage.setItem(CONSENT_KEY, c.dataset.c); } catch (x) {} if (c.dataset.c === 'yes') gtag('consent', 'update', { analytics_storage:'granted' }); b.remove(); });
+    b.addEventListener('click', e => { const c = e.target.closest('[data-c]'); if (!c) return; try { localStorage.setItem(CONSENT_KEY, c.dataset.c); } catch (x) {} if (c.dataset.c === 'yes') gtag('consent', 'update', { analytics_storage:'granted' }); b.remove(); linkAnalytics(); });
     document.body.appendChild(b);
   });
 }
@@ -1653,7 +1668,7 @@ function avatarHTML(u, size) {
 }
 async function signInWith(path, payload) {               // exchange a Google credential (or the local dev login) for a server session
   const r = await api(path, { method:'POST', json:payload });
-  setToken(r.token); setAccount(r.account); refreshPlanUI();
+  setToken(r.token); setAccount(r.account); refreshPlanUI(); linkAnalytics();
   track(acct && acct.joined && Date.now() - acct.joined < 120000 ? 'sign_up' : 'login', { method:'google' });
 }
 async function signOut() {
@@ -1801,7 +1816,7 @@ $('modal').addEventListener('click', e => {
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('modal').classList.contains('open')) closeModal(); });
 $('acctbtn').onclick = () => { if (user) openAccount(); else { renderSignIn(); openModal(); } };
 refreshPlanUI();
-restoreSession().then(() => { refreshPlanUI(); handleCheckoutReturn(); });
+restoreSession().then(() => { refreshPlanUI(); handleCheckoutReturn(); linkAnalytics(); });
 idle(prefetchLuts, 3000);                                                   // after the page is up: fetch every look in the background
 if ('serviceWorker' in navigator && !IS_LOCAL) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));   // keeps the looks for next time
 window.addEventListener('focus', () => { if (user) refreshAccount(); });

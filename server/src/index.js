@@ -5,6 +5,7 @@ import { googleKeys, verifyGoogleToken } from './google.js';
 import { PLANS, productIds } from './plans.js';
 import { subFromDodo } from './entitlement.js';
 import { processEvent } from './webhook.js';
+import { CID_RE, sendGa } from './analytics.js';
 export { Account } from './account.js';
 
 const SESSION_TTL_S = 30 * 86400;
@@ -119,6 +120,15 @@ const routes = {
     } catch (e) { console.error('unschedule failed', e.status, e.body); return dodoErr(e); }
   },
 
+  // The page calls this ONLY after the person accepted analytics (cid = their Google Analytics client id), or with cid null to forget it.
+  // With a cid on file, subscription events (started, renewed, ended, refunded) are sent to Google Analytics for that visitor; without one, nothing is.
+  'POST /analytics/link': async (req, env, a) => {
+    const { cid } = await readJson(req);
+    if (cid !== null && !(typeof cid === 'string' && CID_RE.test(cid))) return fail(400, 'bad_cid', 'Invalid analytics id.');
+    await accountFor(env)(a.sub).setGa(cid);
+    return json({ ok: true });
+  },
+
   'POST /billing/portal': async (req, env, a) => {
     const rec = await accountFor(env)(a.sub).raw();
     if (!rec.customerId) return fail(404, 'no_customer', 'There is no billing profile yet. It is created with your first purchase.');
@@ -189,7 +199,7 @@ async function webhook(req, env) {
   if (await env.KV.get(`e:${id}`)) return json({ ok: true, duplicate: true });                 // Dodo retries: handle each delivery once
   let event; try { event = JSON.parse(raw); } catch { return fail(400, 'bad_json', 'Invalid JSON.'); }
   try {
-    const result = await processEvent(event, { env, kv: env.KV, api: dodo, accountFor: accountFor(env) });
+    const result = await processEvent(event, { env, kv: env.KV, api: dodo, accountFor: accountFor(env), ga: sendGa });
     await env.KV.put(`e:${id}`, '1', { expirationTtl: 7 * 86400 });
     console.log('webhook', event.type, JSON.stringify(result));
     return json({ ok: true });

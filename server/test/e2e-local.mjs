@@ -34,6 +34,12 @@ const mock = http.createServer((req, res) => {
   });
 }).listen(8799);
 
+// ---------- mock Google Analytics (Measurement Protocol) on :8798: records what the Worker would send ----------
+const gaLog = [];
+const gaMock = http.createServer((req, res) => {
+  let body = ''; req.on('data', c => body += c); req.on('end', () => { try { gaLog.push({ url: req.url, ...JSON.parse(body) }); } catch { /* ignore */ } res.writeHead(204); res.end(); });
+}).listen(8798);
+
 // ---------- helpers ----------
 const enc = new TextEncoder();
 async function webhook(type, data, { id = 'msg_' + Math.random().toString(36).slice(2), ts = Math.floor(Date.now() / 1000), tamper = false } = {}) {
@@ -138,6 +144,33 @@ try {
   ok('Monthly -> Yearly: product and proration come from the server, the browser cannot pick a cheaper mode');
   db.subs.sub_M.product_id = PROD.yearly; await webhook('subscription.plan_changed', { subscription_id: 'sub_M' }); assert.equal((await call('/me', { token: tm })).body.account.plan, 'yearly'); ok("Dodo's plan_changed webhook moves the account to Yearly");
 
+  // ---- Google Analytics: subscription events are sent from the server, only for visitors who accepted analytics ----
+  const CID = '1234567890.1700000000', link = (token, cid) => call('/analytics/link', { token, method: 'POST', json: { cid } }), sentNames = () => gaLog.flatMap(g => g.events.map(e => e.name));
+  const ta = await login('gabuyer', 'gabuyer@example.com'), tb = await login('gaprivate', 'gaprivate@example.com');
+  assert.equal((await link(ta, 'not-a-client-id')).status, 400); assert.equal((await link(ta, 12345)).status, 400); assert.equal((await link(ta, '123.456')).status, 400); ok('a malformed analytics id is refused');
+  assert.equal((await call('/analytics/link', { method: 'POST', json: { cid: CID } })).status, 401); ok('linking needs a signed-in session');
+  assert.equal((await link(ta, CID)).status, 200); assert.equal((await link(tb, CID)).status, 200); assert.equal((await link(tb, null)).status, 200); ok('a visitor who accepted links their id; one who declines (null) clears it');
+  gaLog.length = 0;
+  db.subs.sub_GA = { subscription_id: 'sub_GA', product_id: PROD.monthly, status: 'active', next_billing_date: future(30), metadata: { sub: 'gabuyer' }, customer: { customer_id: 'cus_GA', email: 'gabuyer@example.com' } };
+  db.pays.pay_GA1 = { payment_id: 'pay_GA1', status: 'succeeded', total_amount: 14900, currency: 'INR', created_at: new Date().toISOString(), subscription_id: 'sub_GA', metadata: { sub: 'gabuyer' }, customer: { customer_id: 'cus_GA' } };
+  await webhook('payment.succeeded', { payment_id: 'pay_GA1' }); await webhook('subscription.active', { subscription_id: 'sub_GA' });
+  assert.deepEqual(sentNames(), ['purchase', 'subscription_started']); const g0 = gaLog[0];
+  assert.equal(g0.client_id, CID); assert.match(g0.url, /measurement_id=G-TEST000000&api_secret=dev_secret/); assert.deepEqual(Object.keys(g0).filter(k => k !== 'url').sort(), ['client_id', 'events', 'timestamp_micros']);
+  assert.deepEqual([g0.events[0].params.transaction_id, g0.events[0].params.value, g0.events[0].params.currency], ['pay_GA1', 149, 'INR']); ok('a first payment sends purchase + subscription_started to Google (id, amount, currency only)');
+  assert.ok(!JSON.stringify(gaLog).match(/gabuyer|@example|"email"|"user_id"|"customer/i)); ok('nothing identifying (no email, name or account id) is sent');
+  await webhook('payment.succeeded', { payment_id: 'pay_GA1' }, { id: 'msg_again' }); assert.deepEqual(sentNames(), ['purchase', 'subscription_started']); ok('the same payment delivered again sends nothing more');
+  db.pays.pay_GA2 = { ...db.pays.pay_GA1, payment_id: 'pay_GA2' }; await webhook('payment.succeeded', { payment_id: 'pay_GA2' });
+  assert.deepEqual(sentNames().slice(2), ['purchase', 'subscription_renewed']); ok('the next payment on the same plan is a renewal');
+  db.subs.sub_GA.status = 'cancelled'; for (let i = 0; i < 3; i++) await webhook('subscription.cancelled', { subscription_id: 'sub_GA' });
+  assert.equal(sentNames().filter(x => x === 'subscription_churned').length, 1); ok('churn (the plan really ended) is sent exactly once, even with repeated webhooks');
+  db.pays.pay_GA2.status = 'succeeded'; await webhook('refund.succeeded', { payment_id: 'pay_GA2' }); await webhook('refund.succeeded', { payment_id: 'pay_GA2' }, { id: 'msg_refund2' });
+  assert.equal(sentNames().filter(x => x === 'refund').length, 1); ok('a refund is sent once');
+  const before = gaLog.length;
+  db.subs.sub_GB = { subscription_id: 'sub_GB', product_id: PROD.monthly, status: 'active', next_billing_date: future(30), metadata: { sub: 'gaprivate' }, customer: { customer_id: 'cus_GB', email: 'gaprivate@example.com' } };
+  db.pays.pay_GB1 = { payment_id: 'pay_GB1', status: 'succeeded', total_amount: 14900, currency: 'INR', subscription_id: 'sub_GB', metadata: { sub: 'gaprivate' }, customer: { customer_id: 'cus_GB' } };
+  await webhook('payment.succeeded', { payment_id: 'pay_GB1' }); await webhook('subscription.active', { subscription_id: 'sub_GB' });
+  assert.equal((await call('/me', { token: tb })).body.account.plan, 'monthly'); assert.equal(gaLog.length, before); ok('a visitor who declined analytics gets their plan and sends Google nothing');
+
   console.log(`\n${n} checks passed`);
 } catch (e) { console.error('\nFAILED:', e.message, '\n', e.stack.split('\n').slice(0, 4).join('\n')); process.exitCode = 1; }
-finally { mock.close(); }
+finally { mock.close(); gaMock.close(); }

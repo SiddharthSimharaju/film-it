@@ -30,6 +30,8 @@ export class Account extends DurableObject {
   async upsertProfile(profile, now = Date.now()) {
     const rec = await this.#load(); rec.profile = profile; rec.joined = rec.joined || now; await this.#save(rec);
   }
+  /** Link (or, with null, forget) the browser's analytics client id. Called by the page only after the person accepted analytics. */
+  async setGa(cid, now = Date.now()) { const rec = await this.#load(); rec.ga = cid ? { cid, at: now } : null; await this.#save(rec); }
   async setCustomer(customerId) { const rec = await this.#load(); if (customerId && rec.customerId !== customerId) { rec.customerId = customerId; await this.#save(rec); } }
 
   async setSub(sub) { const rec = await this.#load(); rec.sub = sub; await this.#save(rec); }
