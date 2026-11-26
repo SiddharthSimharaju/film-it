@@ -57,9 +57,9 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
 (async () => {
   /* ===================== BUSINESS RULES: FREE ===================== */
   await boot();
-  await check('BR-F1', 'Free: at most 5 photos open at once; the 6th triggers the upgrade nudge', async () => {
-    await upload(await Promise.all([1, 2, 3, 4, 5, 6, 7].map(i => png(8, 8, `f${i}.png`))));
-    const r = reason(), ok = nPhotos() === 5 && /Free allows 5 photos at once/.test(r) && /5 of 5 photos/.test($$('#pcount').textContent); closeAll(); return { pass: ok, detail: `${nPhotos()} photos; ${r}` };
+  await check('BR-F1', 'Free: at most 25 photos open at once; the 26th triggers the upgrade nudge', async () => {
+    await upload(await Promise.all(Array.from({ length: 27 }, (_, i) => png(8, 8, `f${i}.png`))));
+    const r = reason(), ok = nPhotos() === 25 && /Free allows 25 photos at once/.test(r) && /25 of 25 photos/.test($$('#pcount').textContent); closeAll(); return { pass: ok, detail: `${nPhotos()} photos; ${r}` };
   });
   await boot();
   await check('BR-F2', 'Free: a file over 20 MB is refused before decoding', async () => {
@@ -88,9 +88,12 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
   });
   await check('ACC-8', 'Before/After switch: Before shows the untouched photo, and Download always saves the edit', async () => {
     await boot(); await upload([await png(64, 48, 'ba.png')]);
-    $all('.film').find(f => /VELVIA/i.test(f.textContent)).click(); await sleep(500);
     const grab = () => $$('#cv').toDataURL(), side = () => $$('#ba button.on').dataset.v;
-    const after = grab(); $$('#ba button[data-v="0"]').click(); await sleep(500);
+    await sleep(400); const untouched = grab();
+    $all('.film').find(f => /VELVIA/i.test(f.textContent)).click();
+    await until(() => grab() !== untouched, 15000);                 // the look file may take a moment on a real network
+    const after = grab(); $$('#ba button[data-v="0"]').click();
+    await until(() => grab() !== after, 5000);
     const before = grab(), showsBefore = side() === '0';
     await download(); const backToAfter = side() === '1';
     return { pass: after !== before && showsBefore && backToAfter, detail: `differs ${after !== before}, before shown ${showsBefore}, reset by download ${backToAfter}` };
@@ -109,7 +112,7 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
   });
 
   /* ===================== BUSINESS RULES: PAID PLANS ===================== */
-  const PLAN_SPEC = { monthly: { photos: 25, label: 'Pro Monthly' }, yearly: { photos: 50, label: 'Pro Yearly' }, lifetime: { photos: 100, label: 'Lifetime' } };
+  const PLAN_SPEC = { monthly: { photos: 25, label: 'Pro Monthly' }, yearly: { photos: 25, label: 'Pro Yearly' }, lifetime: { photos: 25, label: 'Lifetime' } };
   for (const [id, sp] of Object.entries(PLAN_SPEC)) {
     await boot(); await signIn(); await buy(id);
     await check(`BR-${id[0].toUpperCase()}1`, `${sp.label}: ${sp.photos} photos open at once`, async () => {
@@ -145,8 +148,8 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
   });
   const now = Date.now(), lapsed = JSON.stringify({ 'demo-google-user': { plan: 'monthly', renewsAt: now - 86400000, canceled: true, invoices: [], profile: { name: 'D', email: 'd@example.com', picture: '' } } });
   await boot(() => { localStorage.setItem('filmroom.accounts', lapsed); localStorage.setItem('filmroom.session', 'demo-google-user'); });
-  await check('BR-B2', 'A lapsed cancelled subscription is Free again (the 5-photo limit applies)', async () => {
-    await upload(await Promise.all([1, 2, 3, 4, 5, 6].map(i => png(8, 8, `l${i}.png`)))); const ok = nPhotos() === 5; closeAll(); return { pass: ok, detail: `${nPhotos()} photos` };
+  await check('BR-B2', 'A lapsed cancelled subscription is Free again (the Free 1024px export cap applies)', async () => {
+    await upload([await png(3000, 2000, 'lapsed.png')]); await download(); const [w, h] = await blobDims(win.__blobs.at(-1)); closeAll(); return { pass: w === 1024 && h === 683, detail: `${w} x ${h}` };
   });
   await boot();
   await check('BR-B3', 'Daily counters cannot be reset by winding the clock back (up to 2 days; beyond that only a server can know)', async () => {
@@ -176,7 +179,7 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
   await boot(); await signIn();
   await check('ACC-3', 'Usage tab shows the real counts (1 download, 2 photos open) and this plan\'s limits; no upload counter', async () => {
     await upload([await png(8, 8, 'a.png'), await png(8, 8, 'b.png')]); await download(); await openAcct('usage'); const t = $$('.apane').textContent.replace(/\s+/g, ' '); closeAll();
-    return { pass: !/Uploads/.test(t) && /Downloads\s*1 \/ 10/.test(t) && /Photos open\s*2 \/ 5/.test(t) && /Downloads per day\s*10/.test(t) && /File size\s*up to 20 MB/.test(t) && /Export size\s*up to 1024px/.test(t) && /Download all \(ZIP\)\s*Not included/.test(t), detail: t.slice(0, 240) };
+    return { pass: !/Uploads/.test(t) && /Downloads\s*1 \/ 10/.test(t) && /Photos open\s*2 \/ 25/.test(t) && /Downloads per day\s*10/.test(t) && /File size\s*up to 20 MB/.test(t) && /Export size\s*up to 1024px/.test(t) && /Download all \(ZIP\)\s*Not included/.test(t), detail: t.slice(0, 240) };
   });
   await boot(); await signIn(); await buy('monthly');
   await check('ACC-4', 'Account removal: refused while a subscription is active; allowed after cancelling; clears the saved data and signs out', async () => {

@@ -26,11 +26,11 @@ Pricing is built into the UI, but **no payments are processed**. Plan state is k
 |---|---|---|---|---|
 | Price (₹, incl. GST) | 0 | 149 / month | 1,499 / year | 3,499 once |
 | Film looks to download | Original + 5 (all 14 can be previewed) | All 14 | All 14 | All 14 |
-| Photos open at once | 5 | 25 | 50 | 100 |
+| Photos open at once | 25 | 25 | 25 | 25 |
 | Largest file / resolution | 20 MB / 24 MP | 60 MB / 60 MP | 100 MB / 100 MP | 150 MB / 120 MP |
 | Downloads per day | 10 | unlimited | unlimited | unlimited |
 | Export size and formats | 1024 px, JPEG and PNG | Original size, all formats | Same | Same |
-| "Download all" ZIP | not included | up to 25 photos | up to 50 | up to 100 |
+| "Download all" ZIP | not included | up to 25 photos | up to 25 | up to 25 |
 
 Every rule, where it is enforced and the test that proves it is in [docs/BUSINESS_RULES.md](docs/BUSINESS_RULES.md). The numbers live in one table (`LIMITS` in `index.html`). Locked looks show a lock on their cartridge, and hitting any limit opens the plan picker (Free) or shows a plain message (paid). To wire up real payments, replace `startCheckout()` in `index.html`: create the order or subscription on a server, verify the payment, then call `activatePlan()`.
 

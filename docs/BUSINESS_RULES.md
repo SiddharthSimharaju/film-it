@@ -21,11 +21,11 @@ What each plan allows, and where each rule lives in the code. Every rule is chec
 | | Free | Pro Monthly | Pro Yearly | Lifetime |
 |---|---|---|---|---|
 | **Price (₹, GST included)** | 0 | 149 / month | 1,499 / year | 3,499 once |
-| Photos open at once | 5 | 25 | 50 | 100 |
+| Photos open at once | 25 | 25 | 25 | 25 |
 | Largest single file | 20 MB | 60 MB | 100 MB | 150 MB |
 | Largest resolution | 24 MP | 60 MP | 100 MP | 120 MP |
 | Downloads per day | 10 | unlimited | unlimited | unlimited |
-| "Download all" ZIP | not included | up to 25 photos | up to 50 | up to 100 |
+| "Download all" ZIP | not included | up to 25 photos | up to 25 | up to 25 |
 | Export size | 1024 px (long side) | original size | original size | original size |
 | Export formats | JPEG, PNG | JPEG, PNG, WebP, AVIF*, TIFF, BMP | same | same |
 | Film looks you can download | Original + 5 | all 14 | all 14 | all 14 |

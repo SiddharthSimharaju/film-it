@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-RiJhg37/mAAdy8+bsf6BFDwvz4vppxb74NB/5NWwDX4=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://accounts.google.com/gsi/; frame-src 'self' https://accounts.google.com/gsi/; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-Y+jRe6YI53ehfFVFkYHHO6f+wUDYrIgI8pUrFAGoLSc=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://accounts.google.com/gsi/; frame-src 'self' https://accounts.google.com/gsi/; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin">
 <!-- Clickjacking guard: the page stays hidden unless it is the top window or framed by our own origin. -->
 <style id="antiframe">html{display:none!important}</style>
@@ -64,7 +64,22 @@
   body.has .drop { cursor:default; background:rgba(0,0,12,.55); }
   body.has .drop:hover { border-color:var(--glass-line); box-shadow:0 40px 90px rgba(0,0,20,.55); }
   .ph { text-align:center; color:var(--muted); }
-  .ph > svg { display:block; margin:0 auto 14px; opacity:.85; }
+  .ph { max-width:620px; padding:0 20px; }
+  .ph .intro h2 { margin:0 0 12px; font-size:34px; line-height:1.1; font-weight:600; letter-spacing:-.035em; color:#fff; text-wrap:balance; }
+  .ph .intro p { max-width:470px; margin:0 auto; font-size:15px; line-height:1.55; color:var(--muted); text-wrap:pretty; }
+  .ph .intro .mark { display:block; margin:0 auto 18px; }
+  .ph .intro { margin-bottom:30px; }
+  /* the drop target: a dashed card with a soft icon, so it reads as "put files here" */
+  .ph .zone { margin:0 auto; width:min(400px,100%); padding:28px 28px 24px; border:1.5px dashed rgba(255,255,255,.28); border-radius:24px; background:rgba(255,255,255,.035); transition:border-color .15s, background .15s; }
+  .drop:hover .ph .zone { border-color:rgba(165,175,255,.65); background:rgba(120,132,255,.08); }
+  .drop.over .ph .zone { border-color:#aab2ff; background:rgba(120,132,255,.16); }
+  .ph .zico { display:grid; place-items:center; width:56px; height:56px; margin:0 auto 14px; border-radius:50%; border:1px solid rgba(255,255,255,.26);
+    background:linear-gradient(140deg,rgba(255,255,255,.22),rgba(255,255,255,.06)); box-shadow:inset 0 1px 0 rgba(255,255,255,.32); }
+  .ph .zico svg { width:30px; height:30px; }
+  .ph .hint { display:block; margin-top:16px; font-size:12.5px; color:var(--muted); opacity:.8; }
+  @media (max-height:780px) { .ph .zico { display:none; } .ph .intro h2 { font-size:28px; } .ph .intro { margin-bottom:22px; } .ph .zone { padding:22px 24px 20px; } }
+  @media (max-height:640px) { .ph .intro .mark { display:none; } }
+  @media (max-width:640px) { .ph .intro h2 { font-size:26px; } .ph .intro { margin-bottom:24px; } }
   .btn svg { flex:none; display:block; }
   .ph b { display:block; color:#fff; font-size:20px; font-weight:600; margin-bottom:4px; }
   .ph .or { display:block; margin-top:12px; font-size:15px; font-weight:500; color:var(--muted); }
@@ -82,8 +97,7 @@
   body.has .caption { display:flex; } .drop:has(.overlay.on) .caption { display:none; }
   /* before / after switch, top right of the photo */
   .ba { position:absolute; top:16px; right:16px; display:none; gap:2px; padding:4px; border-radius:13px; z-index:3; }
-  .ba button { display:grid; place-items:center; width:40px; height:30px; padding:0; border:0; background:transparent; color:var(--muted); border-radius:9px; cursor:pointer; transition:background .15s, color .15s; }
-  .ba svg { width:18px; height:18px; }
+  .ba button { border:0; background:transparent; color:var(--muted); font:inherit; font-size:13px; font-weight:600; padding:6px 14px; border-radius:9px; cursor:pointer; transition:background .15s, color .15s; }
   .ba button:hover { color:#fff; } .ba button.on { background:#fff; color:#07072e; }
   .ba button:focus-visible { outline:2px solid #fff; outline-offset:1px; }
   body.has .ba { display:flex; } .drop:has(.overlay.on) .ba { display:none; }
@@ -280,7 +294,8 @@
   .acct { border:0; cursor:pointer; color:#fff; font-weight:600; font-size:14px; font-family:inherit; display:inline-flex; align-items:center; gap:8px; height:40px; padding:0 18px; border-radius:13px; position:relative;
     background:rgba(255,255,255,.12); transition:background .15s; }
   .acct:hover { background:rgba(255,255,255,.2); } .acct.in { padding:0; width:40px; border-radius:50%; justify-content:center; background:none; box-shadow:0 0 0 2px rgba(255,255,255,.25); }
-  .acct.in.pro::after { content:'\2605'; position:absolute; right:-3px; bottom:-3px; width:17px; height:17px; border-radius:50%; display:grid; place-items:center; background:#ffd479; color:#4a3200; font-size:10px; box-shadow:0 0 0 2px #0a0a2e; }
+  .acct.in.pro::after { content:'PRO'; position:absolute; left:50%; bottom:-8px; transform:translateX(-50%); padding:2px 7px; border-radius:999px; color:#fff; font-size:9px; font-weight:700; letter-spacing:.07em; line-height:1.35;
+    background:linear-gradient(140deg,rgba(126,138,255,.95),rgba(70,80,225,.9)); border:1px solid rgba(255,255,255,.42); box-shadow:inset 0 1px 0 rgba(255,255,255,.4), 0 4px 12px rgba(20,20,120,.55); }
   .acct.in:hover { box-shadow:0 0 0 2px rgba(255,255,255,.6); }
   .av { display:grid; place-items:center; border-radius:50%; object-fit:cover; flex:none; background:linear-gradient(140deg,#5865f2,#8b5cf6); color:#fff; font-weight:700; }
   .sheet.acctsheet { padding:0; width:min(940px,100%); height:min(660px,calc(100vh - 48px)); overflow:hidden; }
@@ -377,22 +392,30 @@
       Filmroom
     </div>
     <nav class="nav"><button class="navbtn" id="adjtab" disabled>Film</button><button class="navbtn" id="cropbtn" disabled>Crop</button><button class="navbtn" id="adjstab" disabled>Adjustments</button></nav>
-    <div class="topr"><button class="acct out" id="acctbtn" title="Sign in">Sign in</button><div class="split">
+    <div class="topr"><div class="split">
       <button class="btn white sm" id="dl" disabled>
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8.5M4.5 7.5L8 11l3.5-3.5M2.5 13.5h11"/></svg>Download <span class="fmt" id="dlfmt">PNG</span></button>
       <button class="btn white sm caret" id="dlcaret" disabled aria-label="Choose download format" aria-haspopup="true">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5L6 8l3.5-3.5"/></svg></button>
       <div class="menu" id="dlmenu" role="menu"></div>
-    </div></div>
+    </div><button class="acct out" id="acctbtn" title="Sign in">Sign in</button></div>
   </header>
 
   <main class="stage">
     <div class="drop" id="drop">
       <div class="ph">
-        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="9" width="34" height="26" rx="7"/><circle cx="15" cy="19" r="3"/><path d="M6 31l9-8 7 6 6-5 10 8"/></svg>
-        <b>Drop images here</b>
-        <span class="or">or</span>
-        <div><button class="btn white" id="upbtn"><svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 11V2.5M4.5 6L8 2.5 11.5 6M2.5 13.5h11"/></svg>Upload images</button></div>
+        <div class="intro">
+          <svg class="mark" width="48" height="48" viewBox="0 0 30 30" aria-hidden="true"><rect x="2" y="5" width="26" height="20" rx="6" fill="none" stroke="#fff" stroke-width="2.6"/><circle cx="15" cy="15" r="4.6" fill="#fff"/><rect x="5.5" y="2.5" width="6" height="3.5" rx="1.5" fill="#fff"/></svg>
+          <h2>Give your photos the look of real film</h2>
+          <p>Pick a Fujifilm-style film roll, add grain, then crop and straighten. It all runs in your browser, so your photos never leave your device.</p>
+        </div>
+        <div class="zone">
+          <span class="zico"><svg viewBox="0 0 28 28" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="6.5" width="17" height="14" rx="3.5"/><circle cx="9" cy="12" r="1.6"/><path d="M4 18l5-4.5 4 3.2 3-2.7 4.5 4"/><path d="M22.5 3v6M19.5 6h6"/></svg></span>
+          <b>Drop images here</b>
+          <span class="or">or</span>
+          <div><button class="btn white" id="upbtn"><svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 11V2.5M4.5 6L8 2.5 11.5 6M2.5 13.5h11"/></svg>Upload images</button></div>
+          <small class="hint">JPG, PNG, WebP, HEIC, TIFF and more</small>
+        </div>
       </div>
       <canvas id="cv"></canvas>
       <div class="overlay" id="ov"><div class="cropbox" id="cb">
@@ -400,7 +423,7 @@
         <i class="h se" data-h="se"></i><i class="h s" data-h="s"></i><i class="h sw" data-h="sw"></i><i class="h w" data-h="w"></i>
       </div></div>
       <div class="caption"><span id="filmpill">Original</span><span class="protag" id="protag">PRO</span><i></i><span id="fdim"></span></div>
-      <div class="ba" id="ba" role="group" aria-label="Compare with the original"><button type="button" data-v="0" aria-pressed="false" aria-label="Before (original)" title="Before"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4" width="15" height="12" rx="3"/><circle cx="7.5" cy="8.5" r="1.3"/><path d="M3 14l4-3.5 3 2.5 3-3 4 3.5"/></svg></button><button type="button" data-v="1" class="on" aria-pressed="true" aria-label="After (edited)" title="After"><svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 2.5l1.6 4.4 4.4 1.6-4.4 1.6L10 14.5 8.4 10.1 4 8.5l4.4-1.6z"/><path d="M15.5 12.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg></button></div>
+      <div class="ba" id="ba" role="group" aria-label="Compare with the original"><button type="button" data-v="0" aria-pressed="false">Before</button><button type="button" data-v="1" class="on" aria-pressed="true">After</button></div>
       <span class="tag" id="tag"></span>
     </div>
   </main>
@@ -466,7 +489,7 @@ const FILMS = [
 const PLANS = {
   free:     { id:'free',     name:'Free',        price:'₹0',     per:'forever',  note:'Try every look on your own photo' },
   monthly:  { id:'monthly',  name:'Pro Monthly', price:'₹149',   per:'/ month',  amount:149,  note:'Cancel anytime',              term:'Billed monthly · renews until cancelled', cta:'Monthly' },
-  yearly:   { id:'yearly',   name:'Pro Yearly',  price:'₹1,499', per:'/ year',   amount:1499, note:'₹125 a month · 2 months free',     term:'Billed yearly · renews until cancelled',  cta:'Yearly', badge:'Best value' },
+  yearly:   { id:'yearly',   name:'Pro Yearly',  price:'₹1,499', per:'/ year',   amount:1499, note:'₹125 a month · save ₹289 a year',     term:'Billed yearly · renews until cancelled',  cta:'Yearly', badge:'Best value' },
   lifetime: { id:'lifetime', name:'Lifetime',    price:'₹3,499', per:'once',     amount:3499, note:'One payment, yours forever',  term:'One-time payment',                        cta:'Lifetime' },
 };
 const FREE_LOOKS = ['ORIG', 'PROV', 'VELV', 'REAL', 'S400', 'ACRS'];   // Original + the first 5 looks are free; everything else is Pro
@@ -478,10 +501,10 @@ const isPro = () => plan !== 'free';
 const MB = 1048576, ALL_FORMATS = ['png', 'jpeg', 'webp', 'avif', 'tiff', 'bmp'];
 const LIMITS = {
   //            photos open at once | max size of one file | max megapixels | downloads/day (0 = unlimited) | photos per "Download all" ZIP | export size cap (px, 0 = original size)
-  free:     { photos:5,   fileMB:20,  megapixels:24,  downloadsPerDay:10,  zipMax:0,     exportPx:1024, formats:['png', 'jpeg'], allLooks:false },
+  free:     { photos:25,  fileMB:20,  megapixels:24,  downloadsPerDay:10,  zipMax:0,     exportPx:1024, formats:['png', 'jpeg'], allLooks:false },
   monthly:  { photos:25,  fileMB:60,  megapixels:60,  downloadsPerDay:0,   zipMax:25,   exportPx:0,    formats:ALL_FORMATS,     allLooks:true },
-  yearly:   { photos:50,  fileMB:100, megapixels:100, downloadsPerDay:0,   zipMax:50,   exportPx:0,    formats:ALL_FORMATS,     allLooks:true },
-  lifetime: { photos:100, fileMB:150, megapixels:120, downloadsPerDay:0,   zipMax:100, exportPx:0,    formats:ALL_FORMATS,     allLooks:true },
+  yearly:   { photos:25,  fileMB:100, megapixels:100, downloadsPerDay:0,   zipMax:25,   exportPx:0,    formats:ALL_FORMATS,     allLooks:true },
+  lifetime: { photos:25,  fileMB:150, megapixels:120, downloadsPerDay:0,   zipMax:25,   exportPx:0,    formats:ALL_FORMATS,     allLooks:true },
 };
 // Safety ceilings no plan can exceed, whatever the table above says (they protect the browser tab, they are not pricing rules).
 const HARD = { fileMB:150, megapixels:120, photos:100, zipBytes:1.5e9, decodeMs:45000 };
@@ -1246,12 +1269,11 @@ function resolveFmt() {
 const CHECK = '<svg class="ck" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3L13 4.5"/></svg>';
 function buildMenu() {
   const m = $('dlmenu'), r = resolveFmt(), f = FORMATS[r];
-  const item = (key, name, desc, locked) => `<button class="mi${selFmt === key ? ' sel' : ''}${locked ? ' locked' : ''}" role="menuitem" data-f="${key}"${locked ? ' data-lock="1"' : ''}><span class="t"><div class="n">${name}${locked ? '<span class="prochip">PRO</span>' : ''}</div><div class="d">${desc}</div></span>${CHECK}</button>`;
-  const cut = origKey && supported[origKey] && r !== origKey;
-  const origDesc = origLabel ? (cut ? `Your file is ${origLabel} · saves as ${f.label}${isPro() ? '' : ' on Free'}` : origKey && supported[origKey] ? `Your file is ${origLabel} · saves as ${f.label}` : `Your file is ${origLabel} · saves as ${f.label} (can't write ${origLabel})`) : 'Keeps the format you opened';
+  const item = (key, name, desc, locked) => `<button class="mi${r === key ? ' sel' : ''}${locked ? ' locked' : ''}" role="menuitem" data-f="${key}"${locked ? ' data-lock="1"' : ''}><span class="t"><div class="n">${name}${locked ? '<span class="prochip">PRO</span>' : ''}</div><div class="d">${desc}</div></span>${CHECK}</button>`;
   const left = remaining(), cap = limits().downloadsPerDay, zipOk = !!limits().zipMax;
   const all = (cap ? `<div class="usage"><span>Downloads left today</span><b>${left} of ${nf(cap)}</b></div>` : '') + (photos.length > 1 ? `<button class="mi all${zipOk ? '' : ' locked'}" role="menuitem" data-all="1"><span class="t"><div class="n">Download all ${photos.length} photos${zipOk ? '' : '<span class="prochip">PRO</span>'}</div><div class="d">${zipOk ? `One ZIP, each photo with its own edits (up to ${limits().zipMax})` : 'One ZIP with every photo and its own edits'}</div></span></button><div class="msep"></div>` : (cap ? '<div class="msep"></div>' : ''));
-  m.innerHTML = all + item('orig', 'Same as original', origDesc) +
+  // no separate 'same as original' row: the format of the photo you opened is simply selected by default (until you pick another)
+  m.innerHTML = all +
     Object.keys(FORMATS).filter(k => supported[k]).map(k => item(k, FORMATS[k].label, FORMATS[k].note, !limits().formats.includes(k))).join('') +
     (isPro() ? '' : `<button class="mi promo" role="menuitem" data-promo="1"><span class="t"><div class="n">Unlock full resolution &amp; all formats</div><div class="d">Free exports are capped at ${limits().exportPx}px</div></span></button>`) +
     `<div class="mq${f.lossy ? ' on' : ''}"><label class="ctl">Quality<input type="range" id="q" min="40" max="100" value="${quality}"><output id="qv">${quality}%</output></label></div>`;
@@ -1386,7 +1408,7 @@ function featuresFor(id) {
   const L = LIMITS[id];
   return id === 'free'
     ? ['5 film looks, preview all 14', `Export up to ${L.exportPx}px`, 'JPEG & PNG', `${L.photos} photos at once, ${L.fileMB} MB each`, `${L.downloadsPerDay} downloads a day`, 'Crop, straighten & adjust']
-    : ['All 14 film looks', 'Full-resolution export', 'JPEG, PNG, WebP, TIFF & BMP', `${L.photos} photos at once, ${L.fileMB} MB each`, 'Unlimited downloads', `Download all as ZIP (up to ${L.zipMax})`, 'New film drops'];
+    : ['All 14 film looks', 'Full-resolution export', 'JPEG, PNG, WebP, TIFF & BMP', `${L.photos} photos at once, ${L.fileMB} MB each`, 'Unlimited downloads', `Download all as ZIP (up to ${L.zipMax})`];
 }
 let lastOpts = {}, checkoutPlan = null;
 const sheet = $('sheet');
