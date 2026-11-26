@@ -354,6 +354,16 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
     return { pass: !!ok, detail: `Chrome track ${wk ? wk.h + 'px high, radius ' + wk.r + 'px' : 'MISSING'}; Firefox track rounded ${ff}; touch box transparent ${boxClear}` };
   });
 
+  /* ===================== UPLOAD BUTTON ===================== */
+  await boot();
+  await check('UPL-1', 'The Upload button opens the file picker exactly once (a second call made iPhones drop the chosen photo); tapping the empty drop area still opens it once; the "Drop images here / or" lines are hidden on touch screens', async () => {
+    const f = $$('#file'); let n = 0; f.click = () => { n++; };
+    $$('#upbtn').click(); await sleep(100); const viaButton = n; n = 0;
+    $$('.ph .droptxt').click(); await sleep(100); const viaArea = n;
+    const css = [...doc.styleSheets].flatMap(s => { try { return [...s.cssRules]; } catch (e) { return []; } }).filter(r => r.media && /pointer:\s*coarse/.test(r.media.mediaText)).some(r => [...r.cssRules].some(x => /\.droptxt/.test(x.selectorText) && x.style.display === 'none'));
+    return { pass: viaButton === 1 && viaArea === 1 && css, detail: `picker opened ${viaButton}x from the button, ${viaArea}x from the drop area; drop text hidden on touch ${css}` };
+  });
+
   /* ===================== SMOOTH SLIDERS ===================== */
   await boot(); await signIn(); await buy('monthly');
   await check('SLIDE-1', 'Dragging a slider draws a lighter preview (long side up to 1400 px) and returns to full resolution when it stops; an export straight after a drag is still full resolution', async () => {
