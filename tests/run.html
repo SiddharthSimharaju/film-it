@@ -279,9 +279,16 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
   });
   await boot();
   await check('LEG-5', 'The landing screen itself shows Terms and Privacy links in the page HTML (what Google\'s branding check and crawlers look for)', async () => {
-    const t = doc.querySelector('.intro a[href="terms/"]'), p = doc.querySelector('.intro a[href="privacy/"]');
-    const raw = await (await fetch('../index.html')).text(), inHtml = /<p class="legal"><a href="terms\/">Terms of Service<\/a>.*<a href="privacy\/">Privacy Policy<\/a>/.test(raw);
+    const t = doc.querySelector('#legalbar a[href="terms/"]'), p = doc.querySelector('#legalbar a[href="privacy/"]');
+    const raw = await (await fetch('../index.html')).text(), inHtml = /id="legalbar"><a href="terms\/">Terms of Service<\/a>.*<a href="privacy\/">Privacy Policy<\/a>/.test(raw);
     return { pass: !!t && !!p && inHtml && getComputedStyle(t).display !== 'none' && t.getBoundingClientRect().width > 0, detail: `terms link ${!!t}, privacy link ${!!p}, present in the served HTML ${inHtml}` };
+  });
+  await check('LEG-6', 'Terms/Privacy sit where Filter and Grain go: shown with no photo, replaced by Filter and Grain once a photo is opened, and back after the photo is removed', async () => {
+    const vis = el => { const s = getComputedStyle(el), b = el.getBoundingClientRect(); return s.display !== 'none' && s.visibility !== 'hidden' && b.width > 0; };
+    const empty = vis($$('#legalbar')) && !vis($$('#controls'));
+    await upload([await png(8, 8, 'lg.png')]); const withPhoto = !vis($$('#legalbar')) && vis($$('#controls'));
+    $$('#thumbs .pt .rm').click(); await until(() => $$('#cyes'), 1500); $$('#cyes').click(); await sleep(500); const backAgain = vis($$('#legalbar')) && !vis($$('#controls'));
+    return { pass: empty && withPhoto && backAgain, detail: `no photo: links shown ${empty}; with a photo: sliders shown ${withPhoto}; photo removed: links back ${backAgain}` };
   });
   await boot(); await signIn();
   await check('LEG-4', 'The Account page lists the Terms and Privacy links', async () => {

@@ -295,7 +295,12 @@
   .methods { display:flex; gap:8px; margin:18px 0; }
   .co .pay { width:100%; height:52px; }
   .demo { text-align:center; color:var(--muted); font-size:12px; margin:14px 0 0; }
-  .intro .legal { margin:16px 0 0; font-size:12.5px; color:var(--muted); } .intro .legal a { color:inherit; text-decoration:underline; text-underline-offset:2px; } .intro .legal a:hover { color:#fff; }
+  /* Until a photo is open, the Filter / Grain bar is replaced by Terms and Privacy links (the bar stays in the layout, invisible, so nothing shifts). They are
+     real links in the page HTML on purpose: Google's branding check looks for a privacy-policy link on the homepage. */
+  .dock { position:relative; }
+  .legalbar { display:none; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:max-content; max-width:calc(100% - 24px); flex-wrap:nowrap; white-space:nowrap; align-items:center; gap:10px; padding-top:10px; padding-bottom:10px; font-size:14px; line-height:21px; color:var(--muted); }
+  .legalbar a { color:inherit; text-decoration:none; } .legalbar a:hover { color:#fff; }
+  body:not(.has) .legalbar { display:flex; } body:not(.has) #controls { visibility:hidden; }
   .fine { text-align:center; color:var(--muted); font-size:12.5px; line-height:1.55; margin:14px 0 0; }
   .fine a, .consent a, .asec a.lnk { color:#c3c8ff; text-decoration:underline; text-underline-offset:2px; } .fine a:hover, .consent a:hover, .asec a.lnk:hover { color:#fff; }
   .signin .fine { margin:14px 0 0; font-size:13px; }
@@ -426,7 +431,6 @@
           <svg class="mark" width="48" height="48" viewBox="0 0 30 30" aria-hidden="true"><rect x="2" y="5" width="26" height="20" rx="6" fill="none" stroke="#fff" stroke-width="2.6"/><circle cx="15" cy="15" r="4.6" fill="#fff"/><rect x="5.5" y="2.5" width="6" height="3.5" rx="1.5" fill="#fff"/></svg>
           <h2>Give your photos the look of real film</h2>
           <p>Pick a Fujifilm-style film roll, add grain, then crop and straighten. It all runs in your browser, so your photos never leave your device.</p>
-          <p class="legal"><a href="terms/">Terms of Service</a><span aria-hidden="true"> · </span><a href="privacy/">Privacy Policy</a></p>
         </div>
         <b>Drop images here</b>
         <span class="or">or</span>
@@ -451,6 +455,7 @@
   </div>
 
   <div class="dock">
+    <div class="card legalbar" id="legalbar"><a href="terms/">Terms of Service</a><span aria-hidden="true">·</span><a href="privacy/">Privacy Policy</a></div>
     <div class="card controls off" id="controls">
       <label class="ctl">Filter<input type="range" id="amt" min="0" max="100" value="100"><output id="amtv">100%</output></label>
       <label class="ctl">Grain<input type="range" id="grn" min="0" max="100" value="40"><output id="grnv">40%</output></label>
