@@ -405,7 +405,8 @@
     #controls { display:none; }                                         /* browsing films: no sliders */
     body.has.fedit #controls:not(.hide) { display:grid; }              /* a film was tapped: sliders replace the shelf */
     body.has.fedit .shelf, body[data-tab="crop"] .shelf, body[data-tab="adjust"] .shelf { display:none; }       /* the photo gets that room back */
-    #controls { width:100%; margin-bottom:8px; padding:8px 14px 10px; gap:2px; grid-template-columns:minmax(0,1fr); border-radius:20px; }
+    .dock > .card:not(.legalbar) { margin-bottom:calc(14px + env(safe-area-inset-bottom, 0px)); }      /* the bottom card never touches the edge of the screen (or the iPhone home bar) */
+    #controls { width:100%; padding:8px 14px 10px; gap:2px; grid-template-columns:minmax(0,1fr); border-radius:20px; }
     #controls .ctl { display:grid; grid-template-columns:54px minmax(0,1fr) 44px; align-items:center; gap:10px; }     /* label | slider | value, so both tracks line up */
     #controls .ctl input[type=range] { width:100%; min-width:0; } #controls .ctl output { text-align:right; }
     .cthead { display:flex; align-items:center; justify-content:space-between; }
@@ -415,6 +416,13 @@
     .shelf { padding-bottom:env(safe-area-inset-bottom, 0px); }
     .strip { padding:2px 6px 12px; } .film { flex:0 0 80px; gap:4px; font-size:11px; }
     .film svg, .film img { width:64px; height:70px; } .film.active::after { bottom:-8px; }
+  }
+  /* small phones: no room for words, so the header is icons only (the logo mark without its name, a download icon, a person icon for Sign in) */
+  @media (max-width:480px) {
+    .logo { font-size:0; gap:0; } .logo svg { width:30px; height:30px; }
+    .topr { gap:6px; }
+    .topr #dl { font-size:0; gap:0; padding:0 13px; } .topr #dl svg { width:20px; height:20px; } .split .caret { padding:0 10px; }
+    .acct.out { width:40px; padding:0; justify-content:center; gap:0; } .acct.out span { display:none; } .acct.out svg { width:20px; height:20px; }
   }
 </style>
 </head>
@@ -449,7 +457,7 @@
     </div>
     <nav class="nav"><button class="navbtn" id="adjtab" disabled>Film</button><button class="navbtn" id="cropbtn" disabled>Crop</button><button class="navbtn" id="adjstab" disabled>Adjustments</button></nav>
     <div class="topr"><div class="split">
-      <button class="btn white sm" id="dl" disabled>
+      <button class="btn white sm" id="dl" title="Download" disabled>
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8.5M4.5 7.5L8 11l3.5-3.5M2.5 13.5h11"/></svg>Download <span class="fmt" id="dlfmt">PNG</span></button>
       <button class="btn white sm caret" id="dlcaret" disabled aria-label="Choose download format" aria-haspopup="true">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5L6 8l3.5-3.5"/></svg></button>

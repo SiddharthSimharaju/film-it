@@ -297,6 +297,24 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
     return { pass: shown('#legalbar') && !shown('#controls') && shown('#upbtn') && shown('.shelf'), detail: `terms bar ${shown('#legalbar')}, sliders hidden ${!shown('#controls')}, upload button ${shown('#upbtn')}` };
   });
 
+  await check('MOB-7', 'Small phones (320 to 430 px): the header is icons only (logo mark, download, sign in) and nothing overlaps or runs off the right edge', async () => {
+    const out = []; let ok = true;
+    for (const w of [320, 360, 390, 430]) {
+      fPhone.style.width = w + 'px'; await sleep(450);
+      const l = R('.logo'), d = R('#dl'), c = R('#dlcaret'), a = R('#acctbtn');
+      const fits = l.width < 40 && l.right < d.left - 8 && d.right <= c.left + 1 && c.right < a.left && a.right <= w && R('.nav').top > Math.max(d.bottom, a.bottom);
+      ok = ok && fits; out.push(`${w}:${fits ? 'ok' : 'OVERLAP'}`);
+    }
+    fPhone.style.width = '390px'; await sleep(300); return { pass: ok, detail: out.join(' ') };
+  });
+  await check('MOB-8', 'Phone: the bottom card never touches the edge of the screen (Crop, Adjustments and the film sliders all keep at least 12 px)', async () => {
+    const gaps = {}; const lowest = () => Math.max(...[...doc.querySelectorAll('.dock > .card, .croppanel')].filter(e => getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().height > 0 && e.id !== 'legalbar').map(e => e.getBoundingClientRect().bottom));
+    await upload([await png(1200, 1600, 'gap.png')]); await sleep(700);
+    lookBtn('S400').click(); await sleep(400); gaps.film = 700 - lowest(); $$('#ctlclose').click(); await sleep(200);
+    $$('#cropbtn').click(); await sleep(700); gaps.crop = 700 - lowest(); $$('#adjstab').click(); await sleep(600); gaps.adjust = 700 - lowest(); $$('#adjtab').click(); await sleep(300);
+    return { pass: Object.values(gaps).every(g => g >= 12), detail: Object.entries(gaps).map(([k, v]) => `${k} ${Math.round(v)}px`).join(', ') };
+  });
+
   /* ===================== LEGAL: Terms and Privacy ===================== */
   await boot();
   await check('LEG-1', 'The sign-in screen says "By continuing, you agree to…" with Terms and Privacy links that open in a new tab', async () => {
