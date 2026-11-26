@@ -242,6 +242,27 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
     return { pass: !!waiting && !!done && !/checkout=/.test(win.location.search), detail: `confirming shown: ${!!waiting}; success shown: ${!!done}; address: ${win.location.search}` };
   });
 
+  /* ===================== ANALYTICS ===================== */
+  await boot(); const ev = []; win.trackSink = (n, p) => ev.push([n, JSON.parse(JSON.stringify(p))]);
+  await check('ANA-1', 'The growth funnel is tracked: photo added, look, download, paywall, sign-up, plans, plan chosen, checkout started', async () => {
+    await upload([await png(8, 8, 'my-secret-holiday.png')]); lookBtn('VELV').click(); await sleep(400); await download();
+    lookBtn('ASTI').click(); await sleep(400); $$('#dl').click(); await sleep(400);                    // a Pro look: the paywall
+    await signIn(); win.openPlans(); await until(() => $$('[data-plan=yearly]'), 2000); $$('[data-plan=yearly]').click(); await until(() => $$('#pay'), 2000);
+    win.navigateTo = () => {}; $$('#pay').click(); await until(() => ev.some(e => e[0] === 'begin_checkout'), 5000);
+    const names = ev.map(e => e[0]), need = ['photo_added', 'look_selected', 'photo_downloaded', 'paywall_shown', 'sign_up', 'view_item_list', 'select_item', 'begin_checkout'], missing = need.filter(n => !names.includes(n));
+    const get = n => (ev.find(e => e[0] === n) || [])[1] || {}, wall = ev.find(e => e[0] === 'paywall_shown' && e[1].reason === 'pro_look');
+    return { pass: !missing.length && get('photo_added').photos === 1 && !!get('photo_downloaded').format && !!wall && get('select_item').items[0].item_id === 'yearly' && get('begin_checkout').value === 1499 && get('begin_checkout').currency === 'INR', detail: `${names.join(' > ')}${missing.length ? ' | MISSING ' + missing : ''}` };
+  });
+  await check('ANA-2', 'No event carries a file name, email, name or account id', async () => {
+    const all = JSON.stringify(ev); const leaks = ['secret-holiday', '.png', 'example.com', 'demo.user', 'Demo User', 'demo-google-user'].filter(w => all.includes(w));
+    return { pass: ev.length > 6 && !leaks.length, detail: leaks.length ? 'LEAKS: ' + leaks : `${ev.length} events, none contain personal data` };
+  });
+  await boot();
+  await check('ANA-3', 'Analytics is off without a Measurement ID (no Google scripts, no data layer, nothing loaded)', async () => {
+    const hosts = win.performance.getEntriesByType('resource').map(r => new URL(r.name).hostname).filter(h => /google-analytics|googletagmanager|analytics\.google/.test(h));
+    return { pass: win.dataLayer === undefined && !hosts.length && !$$('.consent'), detail: `dataLayer ${win.dataLayer === undefined ? 'absent' : 'present'}, analytics requests: ${hosts.length}` };
+  });
+
   /* ===================== SECURITY ===================== */
   await boot();
   await check('SEC-1', 'XSS via file name: markup in a name never runs or becomes HTML', async () => {

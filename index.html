@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-7FCaglieM0Ts8bj5W2yWOK3g/J8jJNLKA8XahQuOMjs=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://accounts.google.com/gsi/ https://filmroom-api.siddharth-simharaju.workers.dev http://localhost:8787; frame-src 'self' https://accounts.google.com/gsi/; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-qbPm61RFHRpeB/oA3HpZdqKsIipr79LuVhKx+oOWURc=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://accounts.google.com/gsi/ https://filmroom-api.siddharth-simharaju.workers.dev http://localhost:8787; frame-src 'self' https://accounts.google.com/gsi/; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin">
 <!-- Clickjacking guard: the page stays hidden unless it is the top window or framed by our own origin. -->
 <style id="antiframe">html{display:none!important}</style>
@@ -370,6 +370,10 @@
     .topr { gap:5px; } .btn.sm { padding:0 10px; } .split .caret { padding:0 9px; } .fmt { display:none; } .split #dl { gap:6px; }
     .stage { padding:4px 12px 10px; } .dock { padding:0 12px; } .card { padding:10px 16px; gap:10px 20px; } input[type=range] { width:120px; }
   }
+  /* analytics consent notice */
+  .consent { position:fixed; left:16px; bottom:16px; z-index:60; max-width:340px; padding:14px 16px; border-radius:16px; background:rgba(10,10,61,.97); border:1px solid rgba(255,255,255,.14); color:#e8e8f5; font-size:13px; line-height:1.5; box-shadow:0 10px 30px rgba(0,0,0,.45); }
+  .consent p { margin:0 0 12px; } .consent b { color:#fff; } .consent .cbtns { display:flex; gap:8px; }
+  @media (max-width:560px) { .consent { left:10px; right:10px; bottom:10px; max-width:none; } }
 </style>
 </head>
 <body>
@@ -472,6 +476,40 @@
 </div>
 
 <script>
+// ---------- Analytics (Google Analytics 4): counts what people DO, never what they have ----------
+// Sent: page views and the named events below (look chosen, photo count, format, plan, which limit was hit, checkout steps).
+// Never sent: photos, file names, emails, names or account ids. Off on localhost, off when the browser says Do Not Track or Global
+// Privacy Control, and cookie-less until the visitor presses OK. Paste the GA4 Measurement ID below to switch it on (docs/ANALYTICS.md).
+const GA_ID = '';
+const ANALYTICS_ON = /^G-[A-Z0-9]{6,14}$/.test(GA_ID) && !['localhost', '127.0.0.1'].includes(location.hostname) && navigator.doNotTrack !== '1' && navigator.globalPrivacyControl !== true;
+const CONSENT_KEY = 'filmroom.analytics';
+function trackSink() {}                                    // tests replace this to see what would be sent
+function track(name, params = {}) { try { trackSink(name, params); if (ANALYTICS_ON && window.gtag) gtag('event', name, params); } catch (e) {} }
+const planItem = id => ({ item_id:id, item_name:PLANS[id].name, price:PLANS[id].amount, quantity:1 });
+const paywallKind = r => { r = String(r || ''); return !r ? 'menu' : /Pro look/.test(r) ? 'pro_look' : /photos at once/.test(r) ? 'photo_limit' : /download/i.test(r) && /(used|left)/.test(r) ? 'daily_downloads' : /Download all/.test(r) ? 'zip' : /export is a Pro feature/.test(r) ? 'export_format' : 'other'; };
+const rejectKind = w => /SVG/.test(w) ? 'svg' : /isn't an image/.test(w) ? 'not_image' : /empty/.test(w) ? 'empty' : /MB/.test(w) ? 'too_big' : /megapixels/.test(w) ? 'too_many_mp' : /unusual shape/.test(w) ? 'odd_shape' : 'open_failed';
+function setPlanProp() { if (ANALYTICS_ON && window.gtag) gtag('set', 'user_properties', { plan }); }
+function trackPurchase(id) {                               // once per payment, even if the page is reloaded or the plan is re-checked
+  const inv = acct && acct.invoices && acct.invoices[0], key = 'filmroom.tracked'; if (!inv || !inv.id) return;
+  let seen = []; try { seen = JSON.parse(localStorage.getItem(key) || '[]'); if (!Array.isArray(seen)) seen = []; } catch (e) {}
+  if (seen.includes(inv.id)) return;
+  try { localStorage.setItem(key, JSON.stringify([...seen, inv.id].slice(-20))); } catch (e) {}
+  track('purchase', { transaction_id:inv.id, currency:inv.currency || 'INR', value:Number(inv.amount) || PLANS[id].amount, items:[planItem(id)] });
+}
+if (ANALYTICS_ON) {
+  let saved = null; try { saved = localStorage.getItem(CONSENT_KEY); } catch (e) {}
+  window.dataLayer = window.dataLayer || []; window.gtag = function () { dataLayer.push(arguments); };
+  gtag('consent', 'default', { analytics_storage:saved === 'yes' ? 'granted' : 'denied', ad_storage:'denied', ad_user_data:'denied', ad_personalization:'denied' });
+  gtag('js', new Date()); gtag('config', GA_ID, { allow_google_signals:false, allow_ad_personalization_signals:false });
+  const gs = document.createElement('script'); gs.async = true; gs.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID; document.head.appendChild(gs);
+  if (saved === null) addEventListener('DOMContentLoaded', () => {
+    const b = document.createElement('div'); b.className = 'consent'; b.setAttribute('role', 'dialog'); b.setAttribute('aria-label', 'Analytics');
+    b.innerHTML = '<p>We count visits and see where people get stuck, using Google Analytics. <b>Your photos, file names and email are never sent.</b></p><div class="cbtns"><button class="btn white sm" data-c="yes">OK</button><button class="btn glass sm" data-c="no">No thanks</button></div>';
+    b.addEventListener('click', e => { const c = e.target.closest('[data-c]'); if (!c) return; try { localStorage.setItem(CONSENT_KEY, c.dataset.c); } catch (x) {} if (c.dataset.c === 'yes') gtag('consent', 'update', { analytics_storage:'granted' }); b.remove(); });
+    document.body.appendChild(b);
+  });
+}
+
 // ---------- Films (real Hald CLUTs sampled from actual film / Fujifilm output) ----------
 const FILMS = [
   { id:'ORIG', label:'ORIGINAL',     iso:'--',  body:'#8a8a8a', band:'#ddd',    ink:'#222' },
@@ -747,7 +785,7 @@ function setBefore(v, quiet) {
 document.getElementById('ba').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setBefore(b.dataset.v === '0'); });
 function select(f, btn) {
   if (before) setBefore(false);
-  current = f;
+  current = f; track('look_selected', { look:f.id, locked:lookLocked(f), has_photo:hasImage });
   strip.querySelectorAll('.film').forEach(x => x.classList.toggle('active', x === btn));
   render();
 }
@@ -1178,11 +1216,13 @@ async function addFiles(list) {
   const added = photos.length - first;
   const skipped = rejected.length ? `${rejected.length} skipped: ${rejected.slice(0, 2).map(([f, why]) => `${(f.name || 'file').slice(0, 28)} ${why}`).join('; ')}${rejected.length > 2 ? '…' : ''}.` : '';
   if (!added) {
+    track('upload_rejected', { reason:stop ? 'photo_limit' : rejected.length ? rejectKind(rejected[0][1]) : 'none' });
     if (stop) blocked(whyPhotos());
     else toast(skipped || 'Couldn\'t open that file. Try JPG, PNG, HEIC, WebP, AVIF, TIFF or BMP.', 5500);
     return;
   }
   toast([added > 1 || skipped ? `Added ${added} photo${added > 1 ? 's' : ''}.` : '', skipped, stop ? whyPhotos() : ''].filter(Boolean).join(' ') || '', skipped || stop ? 6000 : (added > 1 ? 2400 : 1));
+  track('photo_added', { photos:added, total:photos.length, rejected:rejected.length });
   renderPhotos();
   await activate(first, { bmp:firstBmp });
   if (stop && !isPro()) blocked(whyPhotos());
@@ -1390,7 +1430,7 @@ dl.onclick = async () => {
     const { blob, f, capped, out, name } = await exportCurrent();
     if (!blob) { toast(`Couldn't create a ${f.label} file for an image this large. Try PNG or JPEG.`, 4500); return; }
     if (!(await reserveDownloads(1))) return;                                                         // rule: the server counts it first, then we save
-    saveBlob(blob, name);
+    saveBlob(blob, name); track('photo_downloaded', { format:f.ext, look:current.id, capped:!!capped, plan });
     toast(capped ? `Saved as ${f.label} at ${out.width} × ${out.height}. Upgrade for full resolution.` : `Saved as ${f.label}`, capped ? 4200 : 1800);
   } finally { exporting = false; }
 };
@@ -1418,7 +1458,7 @@ async function downloadAll() {
     if (tooBig) { toast('That ZIP would be larger than 1.5 GB. Download fewer photos at a time.', 5500); return; }
     if (!files.length) { toast('Couldn\'t export those photos. Try PNG or JPEG.', 4500); return; }
     if (!(await reserveDownloads(files.length))) return;
-    saveBlob(makeZip(files), 'filmroom-photos.zip');
+    saveBlob(makeZip(files), 'filmroom-photos.zip'); track('download_all', { photos:files.length, plan });
     toast(`Saved ${files.length} photo${files.length > 1 ? 's' : ''} as a ZIP${failed ? ` (${failed} failed)` : ''}${capped ? `. Exports are capped at ${limits().exportPx}px on your plan.` : ''}`, capped || failed ? 4500 : 2200);
   } finally { exporting = false; }
 }
@@ -1435,7 +1475,7 @@ const sheet = $('sheet');
 const XBTN = '<button class="x" data-close aria-label="Close"><svg width="14" height="14" viewBox="0 0 14 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l10 10M12 2L2 12"/></svg></button>';
 function openModal() { $('modal').classList.add('open'); document.body.classList.add('modal-open'); const x = sheet.querySelector('.x'); if (x) x.focus({ preventScroll:true }); }
 function closeModal() { $('modal').classList.remove('open'); document.body.classList.remove('modal-open'); }
-function openPlans(opts = {}) { if (!user) { renderSignIn({ plansAfter:true, reason:opts.reason }); openModal(); return; } renderPlans(opts); openModal(); }
+function openPlans(opts = {}) { track('paywall_shown', { reason:paywallKind(opts.reason), signed_in:!!user, plan }); if (!user) { renderSignIn({ plansAfter:true, reason:opts.reason }); openModal(); return; } renderPlans(opts); openModal(); }
 function updateProTag() { $('protag').classList.toggle('on', hasImage && lookLocked(current)); }
 function refreshPlanUI() {
   document.body.classList.toggle('is-pro', isPro());
@@ -1454,7 +1494,7 @@ function planCard(id) {
     <ul>${featuresFor(id).map(t => `<li>${TICK}<span>${esc(t)}</span></li>`).join('')}</ul></div>`;
 }
 function renderPlans(opts = {}) {
-  lastOpts = opts;
+  lastOpts = opts; track('view_item_list', { item_list_name:'plans', items:['monthly', 'yearly', 'lifetime'].map(planItem) });
   sheet.innerHTML = XBTN + (opts.reason ? `<div class="reason">${LOCK_SVG}${opts.reason}</div>` : '') +
     `<h2>${isPro() ? 'Your plan' : 'Choose your plan'}</h2><p class="sub">Start free. Upgrade when you want every look and full-resolution exports.</p>
     <div class="plans">${['free', 'monthly', 'yearly', 'lifetime'].map(planCard).join('')}</div>
@@ -1480,6 +1520,7 @@ async function beginPayment() {
     try { sessionStorage.setItem('filmroom.prevplan', plan); } catch (e) {}
     const { url } = await api('/checkout', { method:'POST', json:{ plan:checkoutPlan } });
     if (!/^https:\/\/([a-z0-9-]+\.)?checkout\.dodopayments\.com\//.test(url)) throw new Error('unexpected checkout address');
+    track('begin_checkout', { currency:'INR', value:PLANS[checkoutPlan].amount, items:[planItem(checkoutPlan)], transport_type:'beacon' });
     navigateTo(url);
   } catch (e) { b.disabled = false; b.textContent = 'Continue to payment'; toast(e.status === 409 || e.status === 429 ? e.message : "Couldn't open checkout. Please try again.", 5000); }
 }
@@ -1492,7 +1533,8 @@ async function handleCheckoutReturn() {
   sheet.innerHTML = XBTN + '<div class="done"><div class="ok"><span class="spin"></span></div><h2>Confirming your payment…</h2><p>This usually takes a few seconds. You can keep this window open.</p></div>'; openModal();
   for (let i = 0; i < 25 && plan === was; i++) { await new Promise(r => setTimeout(r, i ? 2000 : 800)); await refreshAccount(); }
   refreshPlanUI();
-  if (plan !== was && plan !== 'free') renderSuccess(plan);
+  track('checkout_returned', { confirmed:plan !== was && plan !== 'free' });
+  if (plan !== was && plan !== 'free') { trackPurchase(plan); renderSuccess(plan); }
   else sheet.innerHTML = XBTN + '<div class="done"><h2>Still confirming</h2><p>Your bank is taking longer than usual. If you were charged, your plan appears here automatically within a few minutes. There is nothing more to do.</p><div class="cact" style="max-width:340px;margin:0 auto"><button class="btn white" data-close="1">Close</button></div></div>';
 }
 function renderSuccess(id) {
@@ -1529,6 +1571,7 @@ function setAccount(a) {                                  // what the server sai
   user = pr ? { name:cleanText(pr.name || pr.email, 100), email:cleanText(pr.email, 200), picture:safePicture(pr.picture) } : null;
   plan = acct && typeof acct.plan === 'string' && Object.hasOwn(PLANS, acct.plan) ? acct.plan : 'free';
   if (!user) { acct = null; plan = 'free'; }
+  setPlanProp();
 }
 const rec = () => acct;
 async function refreshAccount() { if (!sessionToken) return; try { setAccount((await api('/me')).account); refreshPlanUI(); } catch (e) {} }
@@ -1540,6 +1583,7 @@ function avatarHTML(u, size) {
 async function signInWith(path, payload) {               // exchange a Google credential (or the local dev login) for a server session
   const r = await api(path, { method:'POST', json:payload });
   setToken(r.token); setAccount(r.account); refreshPlanUI();
+  track(acct && acct.joined && Date.now() - acct.joined < 120000 ? 'sign_up' : 'login', { method:'google' });
 }
 async function signOut() {
   const t = sessionToken; setToken(null); setAccount(null);
@@ -1631,7 +1675,7 @@ function renderDelete() {
 async function deleteAccount() {
   if (!user) return false;
   try { await api('/me', { method:'DELETE' }); } catch (e) { toast(e.status === 409 ? e.message : "Couldn't delete your account. Please try again.", 5000); return false; }
-  setToken(null); setAccount(null); refreshPlanUI(); closeModal(); toast('Your account was deleted.', 3500); return true;
+  track('account_deleted', { plan }); setToken(null); setAccount(null); refreshPlanUI(); closeModal(); toast('Your account was deleted.', 3500); return true;
 }
 new MutationObserver(() => sheet.classList.toggle('acctsheet', !!sheet.querySelector(':scope > .acctwrap'))).observe(sheet, { childList:true });
 function renderCancel() {
@@ -1653,7 +1697,7 @@ async function openBilling() {
 }
 async function changeCancel(cancel) {
   try {
-    const r = await api(cancel ? '/billing/cancel' : '/billing/resume', { method:'POST' }); setAccount(r.account); refreshPlanUI(); renderAccount();
+    const r = await api(cancel ? '/billing/cancel' : '/billing/resume', { method:'POST' }); setAccount(r.account); refreshPlanUI(); renderAccount(); track(cancel ? 'subscription_cancelled' : 'subscription_resumed', { plan });
     toast(cancel ? `Cancelled. Pro stays until ${fmtDate(acct.renewsAt)}.` : 'Subscription resumed', cancel ? 3200 : 2200);
   } catch (e) { toast(e.message || "Couldn't update your subscription. Please try again.", 4500); }
 }
@@ -1661,7 +1705,7 @@ async function changeCancel(cancel) {
 $('modal').addEventListener('click', e => {
   const t = e.target;
   if (t === $('modal') || t.closest('[data-close]')) return closeModal();
-  const pb = t.closest('[data-plan]'); if (pb) return startCheckout(pb.dataset.plan);
+  const pb = t.closest('[data-plan]'); if (pb) { if (Object.hasOwn(PLANS, pb.dataset.plan) && pb.dataset.plan !== 'free') track('select_item', { item_list_name:'plans', items:[planItem(pb.dataset.plan)] }); return startCheckout(pb.dataset.plan); }
   if (t.closest('[data-demo-signin]')) { const b = t.closest('[data-demo-signin]'); b.disabled = true; b.innerHTML = '<span class="spin"></span>Signing in…'; signInWith('/dev/login', { sub:'demo-google-user', email:'demo.user@example.com', name:'Demo User' }).then(onSignedIn).catch(() => { b.disabled = false; b.innerHTML = GLOGO + 'Continue with Google'; toast('Sign-in failed. Is the local API running?', 3500); }); return; }
   if (t.closest('[data-signout]')) { signOut(); closeModal(); toast('Signed out'); return; }
   const at = t.closest('[data-atab]'); if (at) { acctTab = at.dataset.atab; return renderAccount(); }

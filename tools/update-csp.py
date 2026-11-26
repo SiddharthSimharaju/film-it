@@ -17,17 +17,23 @@ m = re.search(r"const API_URL = IS_LOCAL \? '(http://localhost:\d+)' : '(https:/
 assert m, 'API_URL not found in index.html'
 api_local, api_prod = m.group(1), m.group(2)
 
+# Google Analytics is allowed ONLY once a Measurement ID is set (const GA_ID = 'G-...' in index.html); until then the policy stays as strict as before.
+ga = re.search(r"const GA_ID = '([^']*)'", html); ga_on = bool(ga and ga.group(1))
+GA_SCRIPT = ' https://www.googletagmanager.com/gtag/js' if ga_on else ''                      # that exact path only
+GA_CONNECT = ' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com' if ga_on else ''
+GA_IMG = ' https://*.google-analytics.com https://*.googletagmanager.com' if ga_on else ''
+
 # inline classic scripts only (no src, not a module)
 scripts = [m.group(1) for m in re.finditer(r'<script(?![^>]*\bsrc=)(?![^>]*type="module")[^>]*>(.*?)</script>', html, re.S)]
 hashes = ' '.join("'sha256-%s'" % base64.b64encode(hashlib.sha256(s.encode('utf-8')).digest()).decode() for s in scripts)
 
 policy = "; ".join([
     "default-src 'none'",
-    f"script-src 'self' {hashes} https://accounts.google.com/gsi/client",
+    f"script-src 'self' {hashes} https://accounts.google.com/gsi/client{GA_SCRIPT}",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style",
     "font-src https://fonts.gstatic.com",
-    "img-src 'self' data: blob: https://*.googleusercontent.com",
-    f"connect-src 'self' https://accounts.google.com/gsi/ {api_prod} {api_local}",   # the API: production Worker, and the local one for tests
+    f"img-src 'self' data: blob: https://*.googleusercontent.com{GA_IMG}",
+    f"connect-src 'self' https://accounts.google.com/gsi/ {api_prod} {api_local}{GA_CONNECT}",   # the API: production Worker, and the local one for tests
     "frame-src 'self' https://accounts.google.com/gsi/",   # 'self' = the sandboxed HEIC converter page
     "object-src 'none'",
     "base-uri 'none'",
