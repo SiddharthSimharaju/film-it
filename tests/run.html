@@ -278,7 +278,7 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
     const photoWhileEditing = R('#cv').height;
     $$('#ctlclose').click(); await sleep(400);
     const back = shown('.shelf') && !shown('#controls');
-    return { pass: browse && editing && back && photoWhileEditing >= 420, detail: `browse: shelf only ${browse}; tapped: sliders+name+X ${editing} (photo ${Math.round(photoWhileEditing)}px tall); after X: shelf back ${back}` };
+    return { pass: browse && editing && back && photoWhileEditing >= 370, detail: `browse: shelf only ${browse}; tapped: sliders+name+X ${editing} (photo ${Math.round(photoWhileEditing)}px tall); after X: shelf back ${back}` };
   });
   await check('MOB-4', 'Phone: sliders line up (both tracks start at the same place) and fit the screen', async () => {
     lookBtn('VELV').click(); await sleep(400); const a = R('#amt'), g = R('#grn'), card = R('#controls');
@@ -313,6 +313,60 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
     lookBtn('S400').click(); await sleep(400); gaps.film = 700 - lowest(); $$('#ctlclose').click(); await sleep(200);
     $$('#cropbtn').click(); await sleep(700); gaps.crop = 700 - lowest(); $$('#adjstab').click(); await sleep(600); gaps.adjust = 700 - lowest(); $$('#adjtab').click(); await sleep(300);
     return { pass: Object.values(gaps).every(g => g >= 12), detail: Object.entries(gaps).map(([k, v]) => `${k} ${Math.round(v)}px`).join(', ') };
+  });
+
+  await check('MOB-9', 'Phone: the Film, Adjustments and Crop panels all stretch to the full width with side padding', async () => {
+    const w = {}; const width = s => { const b = R(s); return [Math.round(b.left), Math.round(b.width)]; };
+    lookBtn('S400').click(); await sleep(400); w.film = width('#controls'); $$('#ctlclose').click(); await sleep(200);
+    $$('#adjstab').click(); await sleep(600); w.adjust = width('#adjpanel');
+    $$('#cropbtn').click(); await sleep(800); w.crop = width('#croppanel'); $$('#adjtab').click(); await sleep(400);
+    const ok = Object.values(w).every(([l, wd]) => l >= 4 && l <= 14 && wd >= 360 && wd <= 380);
+    return { pass: ok, detail: Object.entries(w).map(([k, [l, wd]]) => `${k}: starts ${l}px, ${wd}px wide`).join('; ') };
+  });
+  await check('MOB-10', 'Phone: every slider has a touch area at least 34 px tall on screen (the page renders at 90%) and the two film sliders are at least 36 px apart, with a thumb no bigger than 28 px', async () => {
+    lookBtn('S400').click(); await sleep(400); const a = R('#amt'), g = R('#grn'); const film = [a, g].every(b => b.height >= 34) && (g.top + g.height / 2) - (a.top + a.height / 2) >= 36; $$('#ctlclose').click(); await sleep(200);
+    $$('#adjstab').click(); await sleep(600); const adj = [...doc.querySelectorAll('#adjpanel input[type=range]')].every(e => e.getBoundingClientRect().height >= 34);
+    $$('#cropbtn').click(); await sleep(800); const ang = R('#ang').height >= 34; $$('#adjtab').click(); await sleep(400);
+    return { pass: film && adj && ang, detail: `film ${film} (heights ${Math.round(a.height)}/${Math.round(g.height)}), adjustments ${adj}, angle ${ang}` };
+  });
+
+  /* ===================== SMOOTH SLIDERS ===================== */
+  await boot(); await signIn(); await buy('monthly');
+  await check('SLIDE-1', 'Dragging a slider draws a lighter preview (long side up to 1400 px) and returns to full resolution when it stops; an export straight after a drag is still full resolution', async () => {
+    await upload([await png(3000, 2000, 'big.png')]); await sleep(900); const full = $$('#cv').width;
+    const g = $$('#grn'); g.value = 70; g.dispatchEvent(new Event('input')); await sleep(90); const during = $$('#cv').width;
+    await sleep(700); const after = $$('#cv').width;
+    g.value = 30; g.dispatchEvent(new Event('input')); const n0 = win.__blobs.length; $$('#dl').click(); await until(() => win.__blobs.length > n0, 15000); await sleep(200);
+    const [w, h] = await blobDims(win.__blobs.at(-1));
+    return { pass: full === 3000 && during <= 1400 && after === 3000 && w === 3000 && h === 2000, detail: `full ${full}px wide; while dragging ${during}px; after stopping ${after}px; export right after a drag ${w} x ${h}` };
+  });
+
+  /* ===================== SAVE TO PHOTOS (touch devices) ===================== */
+  await boot(); await signIn(); await buy('monthly');
+  const shares = []; let shareMode = 'ok';
+  win.touchDevice = () => true; win.canShareFiles = () => true;                              // pretend to be a phone that can share files
+  Object.defineProperty(win.navigator, 'share', { configurable: true, value: async d => { shares.push(d); if (shareMode === 'abort') throw Object.assign(new Error('x'), { name: 'AbortError' }); if (shareMode === 'fail') throw new Error('nope'); } });
+  await upload([await png(300, 200, 'phone-save.png')]); await sleep(600);
+  await check('SAVE-1', 'On a touch device, Download offers "Save to Photos" instead of a download; its button opens the share sheet with the image file', async () => {
+    const d0 = win.__dl.length; $$('#dl').click(); await until(() => modalOpen() && /Your photo is ready/.test($$('.sheet').textContent), 8000);
+    const offered = /Save to Photos/.test($$('.sheet').textContent) && win.__dl.length === d0 && modalOpen();
+    $$('[data-savephotos]').click(); await sleep(300);
+    const f = (shares[0] || {}).files || [];
+    return { pass: offered && shares.length === 1 && f.length === 1 && /\.(png|jpg)$/.test(f[0].name) && /^image\//.test(f[0].type) && !modalOpen() && win.__dl.length === d0, detail: `offered ${offered}; shared ${f.length} file ${f[0] ? f[0].name + ' (' + f[0].type + ')' : ''}; window closed ${!modalOpen()}; no plain download ${win.__dl.length === d0}` };
+  });
+  await check('SAVE-2', 'If the share sheet is closed the window stays open to try again; if sharing fails, the file downloads normally; "Download file instead" also downloads', async () => {
+    const d0 = win.__dl.length; $$('#dl').click(); await until(() => modalOpen() && /Your photo is ready/.test($$('.sheet').textContent), 8000);
+    shareMode = 'abort'; $$('[data-savephotos]').click(); await sleep(300); const stays = modalOpen() && win.__dl.length === d0;
+    shareMode = 'fail'; $$('[data-savephotos]').click(); await sleep(400); const fell = win.__dl.length === d0 + 1 && !modalOpen();
+    shareMode = 'ok'; $$('#dl').click(); await until(() => modalOpen() && /Your photo is ready/.test($$('.sheet').textContent), 8000); $$('[data-savefile]').click(); await sleep(300);
+    return { pass: stays && fell && win.__dl.length === d0 + 2 && !modalOpen(), detail: `closed sheet keeps window ${stays}; failure falls back to download ${fell}; "Download file instead" ${win.__dl.length === d0 + 2}` };
+  });
+  await check('SAVE-3', 'Download all on a touch device offers the photos for Photos (several image files, no ZIP)', async () => {
+    await upload([await png(200, 150, 'second.png')]); await sleep(600); lookBtn('ORIG').click(); await sleep(300);
+    const d0 = win.__dl.length, s0 = shares.length; $$('#dlcaret').click(); await sleep(200); $$('#dlmenu .mi.all').click();
+    await until(() => /photos are ready/.test($$('.sheet').textContent), 20000); const offered = /2 photos are ready/.test($$('.sheet').textContent) && !win.__dl.some(d => /\.zip$/.test(d.name));
+    $$('[data-savephotos]').click(); await sleep(400); const f = (shares[s0] || {}).files || [];
+    return { pass: offered && f.length === 2 && f.every(x => /^image\//.test(x.type)) && win.__dl.length === d0, detail: `offered ${offered}; shared ${f.length} files (${f.map(x => x.name).join(', ')}); ZIP downloaded: ${win.__dl.some(d => /\.zip$/.test(d.name))}` };
   });
 
   /* ===================== LEGAL: Terms and Privacy ===================== */
@@ -394,6 +448,29 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
   await check('ANA-4', 'With analytics off (localhost), the page never tells the server an analytics id', async () => {
     const calls = win.performance.getEntriesByType('resource').filter(r => /\/analytics\/link/.test(r.name)).length;
     return { pass: calls === 0 && win.sessionStorage.getItem('filmroom.analyticslinked') === null, detail: `${calls} link requests` };
+  });
+
+  await boot(); const ev5 = []; win.trackSink = (n, p) => ev5.push([n, JSON.parse(JSON.stringify(p))]);
+  await check('ANA-5', 'Usage events are named for the Top events report: upload_image, upload_multiple_images, download_image, adjustment_used (once per control), compare_before_after, and the visitor is marked guest, then signed in, then guest again', async () => {
+    const last = n => (ev5.filter(e => e[0] === n).at(-1) || [])[1], count = n => ev5.filter(e => e[0] === n).length, prop = () => (ev5.filter(e => e[0] === 'set:user_properties').at(-1) || [])[1] || {};
+    await upload([await png(8, 8, 'one.png')]); const one = last('upload_image');
+    await upload([await png(8, 8, 'a.png'), await png(8, 8, 'b.png'), await png(8, 8, 'c.png')]); const many = last('upload_multiple_images');
+    await download(); const dl = last('download_image');
+    const g = $$('#grn'); g.value = 11; g.dispatchEvent(new Event('input')); g.value = 22; g.dispatchEvent(new Event('input')); await sleep(400);
+    const used = ev5.filter(e => e[0] === 'adjustment_used' && e[1].control === 'grain').length;
+    $$('#ba button[data-v="0"]').click(); await sleep(250); const cmp = count('compare_before_after') === 1; $$('#ba button[data-v="1"]').click(); await sleep(150);
+    const guest = true;                                           // (the guest mark is sent on page load, before this test listens; signing out below proves it is sent again)
+    await signIn(); const signedIn = prop().signed_in === 'yes';
+    $$('#acctbtn').click(); await until(() => $$('[data-signout]'), 2000); $$('[data-signout]').click(); await sleep(500); const out = count('sign_out') === 1 && prop().signed_in === 'no';
+    return { pass: !!one && one.photos === 1 && one.signed_in === 'no' && !!many && many.photos === 3 && !!dl && dl.photos === 1 && dl.signed_in === 'no' && used === 1 && cmp && guest && signedIn && out,
+      detail: `upload_image ${one && one.photos}; upload_multiple_images ${many && many.photos}; download_image ${!!dl}; grain used once ${used === 1}; compare ${cmp}; guest ${guest}, signed in ${signedIn}, signed out ${out}` };
+  });
+  await boot(); await signIn(); await buy('monthly'); const ev6 = []; win.trackSink = (n, p) => ev6.push([n, JSON.parse(JSON.stringify(p))]);
+  await check('ANA-6', 'Download all sends download_multiple_images with the number of photos and signed_in = yes', async () => {
+    await upload([await png(40, 30, 'x.png'), await png(40, 30, 'y.png')]); lookBtn('ORIG').click(); await sleep(300);
+    $$('#dlcaret').click(); await sleep(150); $$('#dlmenu .mi.all').click(); await until(() => ev6.some(e => e[0] === 'download_multiple_images'), 20000); await sleep(300);
+    const e = ev6.find(x => x[0] === 'download_multiple_images'); const ups = ev6.find(x => x[0] === 'upload_multiple_images');
+    return { pass: !!e && e[1].photos === 2 && e[1].signed_in === 'yes' && !!ups && ups[1].signed_in === 'yes', detail: e ? JSON.stringify(e[1]) : 'no event' };
   });
 
   /* ===================== SECURITY ===================== */

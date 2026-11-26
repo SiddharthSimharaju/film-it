@@ -73,6 +73,14 @@ Then set **Breakdown** to *Device category* or *Session default channel group*. 
 | `checkout_returned` | back from Dodo | `confirmed` |
 | `purchase` | the plan is active (once per payment) | `transaction_id`, `value`, `currency`, plan |
 | `subscription_cancelled` / `subscription_resumed` / `account_deleted` | account actions | `plan` |
+| `upload_image` / `upload_multiple_images` | one photo, or several at once, were opened (sent together with `photo_added`) | `photos`, `total`, `signed_in` |
+| `download_image` / `download_multiple_images` | one photo saved, or a batch ("Download all", or several shared to Photos) (sent together with `photo_downloaded` / `download_all`) | `photos`, `format`, `look`, `plan`, `signed_in` |
+| `sign_out`, `photo_removed`, `apply_look_to_all`, `crop_applied`, `compare_before_after` | other usage | `plan`, `photos`, `signed_in` |
+| `adjustment_used` | the first time each slider is touched in a visit | `control` (`filter`, `grain`, `exposure`, `contrast`, `highlights`, `shadows`) |
+
+The visitor property `signed_in` (`yes` / `no`) is set on every visit, so any report can be split into **signed-in visitors and guests**. The `photos` parameter is registered as a metric ("Photos in event"), so you can sum it for total photos uploaded or downloaded.
+
+**Unique vs not unique:** in Google Analytics' *Top events* report (Reports → Business objectives → Examine user behavior → Top events), **Event count** is how many times it happened (not unique) and **Total users** is how many different people did it (unique). `python3 server/scripts/ga-growth.py` prints both side by side for every event, with a signed-in versus guest split.
 
 The user property `plan` (`free` / `monthly` / `yearly` / `lifetime`) lets every report be split by plan.
 

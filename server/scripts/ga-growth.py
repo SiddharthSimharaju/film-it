@@ -58,6 +58,30 @@ if not a.funnels_only:
     print('-' * (11 + 10 * len(cols))); print('Total'.ljust(11) + ''.join((f'{tot[c]:,.0f}' if c == 'Revenue' else str(tot[c])).rjust(10) for c in cols))
     print('\n(Used = people who opened a photo. Saved = saved a photo. New subs / Renewals / Churned come from the server, for visitors who accepted analytics.)')
 
+# ---------- 1b. every event: how many times (NOT unique) vs how many different people (UNIQUE), and signed-in vs guests ----------
+if not a.funnels_only:
+    ev_all = post('v1beta', 'runReport', {'dateRanges': RANGE, 'dimensions': [{'name': 'eventName'}], 'metrics': [{'name': 'eventCount'}, {'name': 'totalUsers'}],
+          'orderBys': [{'metric': {'metricName': 'eventCount'}, 'desc': True}], 'limit': 40})
+    print(f'\nEVENTS, last {days} days: "Events" counts every time it happened (not unique); "People" counts each person once (unique)\n')
+    if 'error' in ev_all: print('   Google said:', ev_all['error'])
+    elif not ev_all.get('rows'): print('   (no data in this period yet)')
+    else:
+        print('   ' + 'Event'.ljust(28) + 'Events'.rjust(9) + 'People'.rjust(9) + 'Per person'.rjust(12))
+        for r in ev_all['rows']:
+            n, (cnt, ppl) = r['dimensionValues'][0]['value'], (int(x['value']) for x in r['metricValues'])
+            print('   ' + n.ljust(28) + f'{cnt:>9}{ppl:>9}' + (f'{cnt / ppl:.1f}' if ppl else '-').rjust(12))
+    KEY = ['upload_image', 'upload_multiple_images', 'download_image', 'download_multiple_images', 'sign_up', 'login', 'sign_out', 'paywall_shown', 'begin_checkout', 'purchase']
+    split = post('v1beta', 'runReport', {'dateRanges': RANGE, 'dimensions': [{'name': 'eventName'}, {'name': 'customUser:signed_in'}], 'metrics': [{'name': 'eventCount'}, {'name': 'totalUsers'}],
+          'dimensionFilter': {'filter': {'fieldName': 'eventName', 'inListFilter': {'values': KEY}}}, 'orderBys': [{'dimension': {'dimensionName': 'eventName'}}]})
+    print('\nSIGNED IN vs GUESTS (from the "signed in visitor" property; starts counting once the page sends it)\n')
+    if 'error' in split: print('   Google said:', split['error'])
+    elif not split.get('rows'): print('   (no data yet: the property is new, check back after a day of traffic)')
+    else:
+        print('   ' + 'Event'.ljust(28) + 'Signed in?'.ljust(12) + 'Events'.rjust(9) + 'People'.rjust(9))
+        for r in split['rows']:
+            n, who = (x['value'] for x in r['dimensionValues']); cnt, ppl = (int(x['value']) for x in r['metricValues'])
+            print('   ' + n.ljust(28) + {'yes': 'signed in', 'no': 'guest'}.get(who, who or '(not set)').ljust(12) + f'{cnt:>9}{ppl:>9}')
+
 # ---------- 2. funnels ----------
 def funnel(title, steps, note=''):
     body = {'dateRanges': RANGE, 'funnel': {'isOpenFunnel': True, 'steps': [{'name': n, 'filterExpression': {'funnelEventFilter': {'eventName': e}}} for n, e in steps]}}
