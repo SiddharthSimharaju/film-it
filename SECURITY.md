@@ -74,6 +74,8 @@ What was built, against the list in section 3:
 
 **Tests:** 36 server unit tests (webhook signatures, Google token attacks, plan rules, webhook handling), 24 local end-to-end checks (forged, replayed and unsigned webhooks; someone else's invoice; double subscription; refund; account deletion) and the 49-test browser suite, which now also covers checkout, the return from Dodo, the server-side download cap and forged browser storage.
 
+**Test and live are isolated:** accounts (Durable Object names) and sessions (KV keys) are prefixed `live:` in live mode, so test-mode purchases and logins can't carry over, and a test-mode webhook (signed with the test secret) fails the signature check once the Worker holds the live secret.
+
 **Residual risks to know about:** the plan is only as trustworthy as the Dodo API key and webhook secret (keep them as Worker secrets, rotate if leaked); if the webhook endpoint is down Dodo retries, but a buyer may wait a few minutes for Pro (the page says so and keeps checking); the Dodo `payment.succeeded`/`subscription.*` payload shapes were handled defensively but should be confirmed with a real test-mode purchase before going live (see `server/README.md`).
 
 ## Reporting a vulnerability

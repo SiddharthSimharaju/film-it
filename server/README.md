@@ -54,22 +54,17 @@ The browser suite (`../tests/run.html`) uses the same processes; see the top-lev
 
 ## Test mode → live mode
 
-Everything that differs between modes is configuration. **Test and live are separate Dodo accounts' worth of data: products, API keys, webhooks and customers do not carry over.**
+Everything that differs between modes is configuration, and **test and live are separate worlds**: products, API keys, webhooks, customers, and also Filmroom's own accounts and sessions (the Worker keeps them apart, so a test-card purchase can never grant Pro on the live site, and everyone signs in again when it goes live).
 
-1. **Dodo:** finish business verification (KYC) and payout details in the dashboard. Live payments stay off until Dodo approves it. *Only you can do this.*
-2. **Live products.** With a *live* API key: `DODO_API_KEY=<live key> DODO_ENV=live_mode node scripts/create-products.mjs`. It prints the three product ids.
-3. **Live webhook.** In the live dashboard add the same `/webhooks/dodo` URL and copy that endpoint's own signing secret.
-4. **Switch the Worker.** In `wrangler.jsonc` set `"DODO_ENV": "live_mode"` and the three live `PRODUCT_*` ids. Then:
+1. **In Dodo (live dashboard), only you can do this:** business verification (KYC) approved, payout details set, an **API key** created (Developer → API Keys, with the Test/Live switch on *Live*). Invoice details (legal name, address, support email) are set here too.
+2. **Run the script in a normal terminal** (not through a chat):
    ```bash
-   npx wrangler secret put DODO_API_KEY          # the LIVE key
-   npx wrangler secret put DODO_WEBHOOK_SECRET   # the LIVE endpoint's secret
-   npx wrangler deploy
-   curl https://filmroom-api.<subdomain>.workers.dev/health    # must say "live_mode"
+   cd server && node scripts/go-live.mjs
    ```
-5. **Rehearse with real money, small.** Buy the cheapest plan yourself with a real card, confirm: checkout opens on `checkout.dodopayments.com`, you return to Filmroom, the "Confirming…" screen turns into your plan, the invoice downloads, *Manage billing* opens the portal. Then cancel, and refund the payment from the Dodo dashboard and confirm Pro is removed (Lifetime) or the subscription ends.
-6. **Business details Dodo shows on invoices** (legal name, address, support email) are set in the Dodo dashboard, not here.
+   It asks you to type `live`, then asks for the live API key (hidden), creates the three live products, shows you the webhook URL to add in the live dashboard, asks for that endpoint's signing secret (hidden), stores both as Worker secrets, switches `wrangler.jsonc` to `live_mode` with the live product ids, deploys, and checks `/health` says `live_mode`.
+3. **Rehearse with real money, small.** On https://filmroom.in sign in (again), buy the cheapest plan with a real card. Confirm: checkout opens on `checkout.dodopayments.com`, you come back to Filmroom, "Confirming…" turns into your plan, the invoice downloads, *Manage billing* opens the portal. Then refund the payment in the Dodo dashboard and confirm the plan is removed (Lifetime) or cancel the subscription.
 
-Rollback is the same switch in reverse: `"DODO_ENV": "test_mode"`, the test product ids, the test secrets, `wrangler deploy`.
+**Rollback:** `git checkout wrangler.jsonc` (back to `test_mode` and the test product ids), then `npx wrangler secret put DODO_API_KEY` and `DODO_WEBHOOK_SECRET` with the *test* key and secret (make new ones in the test dashboard if you no longer have them), then `npx wrangler deploy`. Nobody's test or live data is lost by switching back and forth.
 
 ## Operating notes
 

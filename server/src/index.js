@@ -29,25 +29,30 @@ async function readJson(req) {
 }
 const sha256hex = async s => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))].map(b => b.toString(16).padStart(2, '0')).join('');
 const newToken = () => 'fr_' + btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-const accountFor = env => sub => env.ACCOUNT.get(env.ACCOUNT.idFromName(sub));
+// Test mode and live mode keep SEPARATE accounts: a purchase made with a test card must never grant Pro once the site is live (and live
+// accounts start empty). Test-mode ids stay unprefixed, so nothing that already exists moves.
+const accountFor = env => sub => env.ACCOUNT.get(env.ACCOUNT.idFromName(env.DODO_ENV === 'live_mode' ? `live:${sub}` : sub));
 const clientIp = req => req.headers.get('cf-connecting-ip') || 'unknown';
 async function limited(env, name, key) { const rl = env[name]; if (!rl) return false; const { success } = await rl.limit({ key }); return !success; }
 
 // ---------- sessions: opaque random tokens, only their hash is stored, revocable, 30 days ----------
+// Test and live mode have separate sessions too (like separate accounts): a login from test mode is simply not valid once the API is live.
+const sessionKey = (env, h) => `${env.DODO_ENV === 'live_mode' ? 'live:' : ''}s:${h}`;
+const indexKey = (env, sub, h = '') => `${env.DODO_ENV === 'live_mode' ? 'live:' : ''}u:${sub}:${h}`;
 async function startSession(env, sub) {
   const token = newToken(), h = await sha256hex(token);
-  await env.KV.put(`s:${h}`, sub, { expirationTtl: SESSION_TTL_S });
-  await env.KV.put(`u:${sub}:${h}`, '1', { expirationTtl: SESSION_TTL_S });           // per-user index, so "delete account" can revoke every session
+  await env.KV.put(sessionKey(env, h), sub, { expirationTtl: SESSION_TTL_S });
+  await env.KV.put(indexKey(env, sub, h), '1', { expirationTtl: SESSION_TTL_S });     // per-user index, so "delete account" can revoke every session
   return token;
 }
 async function authenticate(req, env) {
   const m = /^Bearer (fr_[A-Za-z0-9_-]{40,50})$/.exec(req.headers.get('authorization') || ''); if (!m) return null;
-  const h = await sha256hex(m[1]), sub = await env.KV.get(`s:${h}`); return sub ? { sub, hash: h } : null;
+  const h = await sha256hex(m[1]), sub = await env.KV.get(sessionKey(env, h)); return sub ? { sub, hash: h } : null;
 }
 async function endSessions(env, sub) {
   let cursor; do {
-    const l = await env.KV.list({ prefix: `u:${sub}:`, cursor });
-    await Promise.all(l.keys.flatMap(k => [env.KV.delete(k.name), env.KV.delete(`s:${k.name.split(':')[2]}`)]));
+    const l = await env.KV.list({ prefix: indexKey(env, sub), cursor });
+    await Promise.all(l.keys.flatMap(k => [env.KV.delete(k.name), env.KV.delete(sessionKey(env, k.name.split(':').pop()))]));
     cursor = l.list_complete ? undefined : l.cursor;
   } while (cursor);
 }
@@ -68,7 +73,7 @@ const routes = {
     return json({ token: await startSession(env, u.sub), account: await acct.view() });
   },
 
-  'POST /auth/signout': async (req, env, a) => { await env.KV.delete(`s:${a.hash}`); await env.KV.delete(`u:${a.sub}:${a.hash}`); return json({ ok: true }); },
+  'POST /auth/signout': async (req, env, a) => { await env.KV.delete(sessionKey(env, a.hash)); await env.KV.delete(indexKey(env, a.sub, a.hash)); return json({ ok: true }); },
 
   'GET /me': async (req, env, a) => json({ account: await accountFor(env)(a.sub).view() }),
 
