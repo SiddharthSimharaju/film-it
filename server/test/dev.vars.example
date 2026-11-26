@@ -1,0 +1,6 @@
+# Copy to server/.dev.vars (git-ignored) for local development and test/e2e-local.mjs. Never contains real keys.
+ENABLE_DEV_ROUTES=1
+DODO_API_KEY=dummy_local_key
+DODO_WEBHOOK_SECRET=whsec_bG9jYWxfdGVzdF9zZWNyZXRfMTIzNDU2Nzg5MDEyMzQ1
+DODO_BASE=http://localhost:8799
+ALLOWED_ORIGINS=https://filmroom.in,http://localhost:8731,http://localhost:8787

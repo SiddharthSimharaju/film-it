@@ -4,7 +4,10 @@
   Black-box tests (IV&V): drive the real app in a same-origin iframe through its UI and check
     BR-*  the business rules (docs/BUSINESS_RULES.md): what each plan allows
     SEC-* the security controls and the attacks found in the VAPT (SECURITY.md)
-  Run:   python3 -m http.server 8731     then open  http://localhost:8731/tests/run.html
+  Needs three local processes (accounts and plans live on the server now; see server/README.md):
+    1. cd server && node test/mock-dodo.mjs                 (stand-in for the Dodo API; no network, no money)
+    2. cd server && cp test/dev.vars.example .dev.vars && npx wrangler dev --port 8787
+    3. python3 -m http.server 8731                           then open  http://localhost:8731/tests/run.html
   Result: the table below; document.title becomes "tests: N/M passed" (and window.__out has the details).
 -->
 <style>body{font:14px/1.5 system-ui;background:#0b0b1e;color:#e8e8f5;margin:16px}table{border-collapse:collapse;width:100%}td{border-bottom:1px solid #26264a;padding:5px 8px;vertical-align:top}
@@ -13,18 +16,23 @@
 <script>
 const MB = 1048576, results = [], sleep = ms => new Promise(r => setTimeout(r, ms));
 let win, doc;
+const API = 'http://localhost:8787';
+const post = async (path, body, tk) => (await fetch(API + path, { method: 'POST', headers: tk ? { authorization: 'Bearer ' + tk } : {}, body: JSON.stringify(body || {}) })).json();
+const devLogin = async (extra = {}) => (await post('/dev/login', { sub: 'demo-google-user', email: 'demo.user@example.com', name: 'Demo User', ...extra })).token;
+const devGrant = (tk, body) => post('/dev/grant', body, tk);
 const until = async (fn, ms = 8000, step = 60) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { try { const v = fn(); if (v) return v; } catch (e) {} await sleep(step); } return false; };
 function record(id, name, pass, detail) {
   results.push({ id, name, pass: !!pass, detail: detail === undefined ? '' : String(detail) });
   const tr = document.createElement('tr'); tr.innerHTML = `<td>${id}</td><td></td><td class="${pass ? 'ok' : 'no'}">${pass ? 'PASS' : 'FAIL'}</td><td><code></code></td>`;
   tr.children[1].textContent = name; tr.querySelector('code').textContent = detail === undefined ? '' : String(detail); document.getElementById('t').appendChild(tr);
 }
-const check = async (id, name, fn) => { try { const r = await fn(); record(id, name, r === true || (r && r.pass), r && r.detail); } catch (e) { record(id, name, false, 'threw: ' + e.message); } };
+const ONLY = (new URLSearchParams(location.search).get('only') || '').split(',').filter(Boolean);       // ?only=ACC-7,SRV-1 runs just those
+const check = async (id, name, fn) => { if (ONLY.length && !ONLY.includes(id)) return; try { const r = await fn(); record(id, name, r === true || (r && r.pass), r && r.detail); } catch (e) { record(id, name, false, 'threw: ' + e.message); } };
 
 // ---------- harness helpers ----------
-async function boot(setup) {                                // fresh app; optional storage set-up first
-  document.getElementById('host').innerHTML = ''; localStorage.clear(); if (setup) setup();
-  const f = document.createElement('iframe'); f.src = '../index.html?demo=1&t=' + Date.now(); document.getElementById('host').appendChild(f);
+async function boot(setup, query = '') {                    // fresh app, fresh server-side test account; optional (async) set-up first
+  document.getElementById('host').innerHTML = ''; localStorage.clear(); await post('/dev/reset', { sub: 'demo-google-user' }); if (setup) await setup();
+  const f = document.createElement('iframe'); f.src = '../index.html?demo=1' + query + '&t=' + Date.now(); document.getElementById('host').appendChild(f);
   await new Promise(r => f.onload = r); win = f.contentWindow; doc = win.document;
   await until(() => doc.querySelectorAll('#strip .film img').length === 15, 8000);
   win.__dl = []; win.__blobs = [];
@@ -46,7 +54,8 @@ const toastText = () => ($$('#toast') || {}).textContent;
 const closeAll = () => { if (modalOpen()) $$('[data-close]').click(); };
 async function signIn() { $$('#acctbtn').click(); await until(() => $$('[data-demo-signin]'), 2000); $$('[data-demo-signin]').click(); await until(() => !modalOpen() || $$('.plan'), 3000); await sleep(200); closeAll(); await sleep(100); }
 async function openAcct(tab = 'general') { $$('#acctbtn').click(); await until(() => $$('.acctwrap'), 2000); if (tab !== 'general') { $$(`[data-atab=${tab}]`).click(); await sleep(120); } }
-async function buy(id) { await openAcct('plan'); await until(() => $$('[data-changeplan]'), 2000); $$('[data-changeplan]').click(); await until(() => $$(`[data-plan=${id}]`), 2000); $$(`[data-plan=${id}]`).click(); await until(() => $$('#pay'), 2000); $$('#pay').click(); await until(() => $$('.done'), 4000); closeAll(); await sleep(150); }
+// "Buying" in tests: the Worker's dev-only /dev/grant route stands in for Dodo's signed webhook (the real webhook path is covered by server/test/e2e-local.mjs).
+async function buy(id) { await devGrant(win.localStorage.getItem('filmroom.token'), { plan: id }); await win.refreshAccount(); await sleep(150); }
 async function download() { const n = win.__dl.length; $$('#dl').click(); await until(() => win.__dl.length > n || modalOpen() || /Couldn|used all/.test(toastText()), 8000); await sleep(150); return win.__dl.length > n; }
 async function blobDims(b) { const bm = await createImageBitmap(b); const r = [bm.width, bm.height]; bm.close(); return r; }
 const IDS = ['ORIG', 'PROV', 'VELV', 'REAL', 'S400', 'ACRS', 'ASTI', 'SENS', 'P4X', 'XTRA', '400H', 'XPRO', 'FP', 'FPN', 'POLA'];
@@ -146,8 +155,7 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
     const kept = /Pro stays until/.test($$('.sheet').textContent), stillBig = true; closeAll();
     const batch = []; for (let i = 0; i < 8; i++) batch.push(await png(8, 8, `k${i}.png`)); await upload(batch); return { pass: kept && nPhotos() === 8, detail: `${nPhotos()} photos accepted while cancelled-but-active` };
   });
-  const now = Date.now(), lapsed = JSON.stringify({ 'demo-google-user': { plan: 'monthly', renewsAt: now - 86400000, canceled: true, invoices: [], profile: { name: 'D', email: 'd@example.com', picture: '' } } });
-  await boot(() => { localStorage.setItem('filmroom.accounts', lapsed); localStorage.setItem('filmroom.session', 'demo-google-user'); });
+  await boot(async () => { const tk = await devLogin(); await devGrant(tk, { plan: 'monthly', cancelAtPeriodEnd: true, nextBillingDate: Date.now() - 86400000 }); localStorage.setItem('filmroom.token', tk); });
   await check('BR-B2', 'A lapsed cancelled subscription is Free again (the Free 1024px export cap applies)', async () => {
     await upload([await png(3000, 2000, 'lapsed.png')]); await download(); const [w, h] = await blobDims(win.__blobs.at(-1)); closeAll(); return { pass: w === 1024 && h === 683, detail: `${w} x ${h}` };
   });
@@ -183,36 +191,55 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
   });
   await boot(); await signIn(); await buy('monthly');
   await check('ACC-4', 'Account removal: refused while a subscription is active; allowed after cancelling; clears the saved data and signs out', async () => {
-    await openAcct(); $$('[data-delete]').click(); await sleep(150); const blockedMsg = /Cancel it first/.test($$('.sheet').textContent) && !$$('[data-confirmdelete]'); closeAll();
+    const tk0 = localStorage.getItem('filmroom.token'); await openAcct(); $$('[data-delete]').click(); await sleep(150); const blockedMsg = /Cancel it first/.test($$('.sheet').textContent) && !$$('[data-confirmdelete]'); closeAll();
     await openAcct('plan'); $$('[data-cancelsub]').click(); await sleep(150); $$('[data-confirmcancel]').click(); await sleep(250);
     $$('[data-atab=general]').click(); await sleep(100); $$('[data-delete]').click(); await sleep(150); const allowed = !!$$('[data-confirmdelete]'); $$('[data-confirmdelete]').click(); await sleep(400);
-    const stored = Object.keys(JSON.parse(localStorage.getItem('filmroom.accounts') || '{}')).length, signedOut = $$('#acctbtn').classList.contains('out');
-    return { pass: blockedMsg && allowed && stored === 0 && signedOut, detail: `blocked while active: ${blockedMsg}; allowed after cancel: ${allowed}; records left: ${stored}; signed out: ${signedOut}` };
+    const gone = (await fetch(API + '/me', { headers: { authorization: 'Bearer ' + tk0 } })).status === 401, signedOut = $$('#acctbtn').classList.contains('out') && !localStorage.getItem('filmroom.token');
+    return { pass: blockedMsg && allowed && gone && signedOut, detail: `blocked while active: ${blockedMsg}; allowed after cancel: ${allowed}; old session refused by server: ${gone}; signed out: ${signedOut}` };
   });
   await boot(); await signIn();
   await check('ACC-5', 'Account removal on a Free account: confirm, then the record and session are gone and you are signed out', async () => {
-    await openAcct(); $$('[data-delete]').click(); await sleep(120); $$('[data-confirmdelete]').click(); await sleep(400);
-    return { pass: Object.keys(JSON.parse(localStorage.getItem('filmroom.accounts') || '{}')).length === 0 && !localStorage.getItem('filmroom.session') && $$('#acctbtn').classList.contains('out'), detail: 'record and session cleared; signed out' };
+    const tk0 = localStorage.getItem('filmroom.token'); await openAcct(); $$('[data-delete]').click(); await sleep(120); $$('[data-confirmdelete]').click(); await sleep(500);
+    const gone = (await fetch(API + '/me', { headers: { authorization: 'Bearer ' + tk0 } })).status === 401;
+    return { pass: gone && !localStorage.getItem('filmroom.token') && $$('#acctbtn').classList.contains('out'), detail: 'server record and session gone; signed out' };
   });
 
   await boot(); await signIn(); await buy('yearly');
-  await check('ACC-6', 'Receipt is a valid one-page PDF with the receipt number, transaction id, date, method, GST split and total', async () => {
-    await openAcct('plan'); const n = win.__blobs.length; $$('[data-receipt]').click(); await sleep(400);
-    const blob = win.__blobs[win.__blobs.length - 1], text = await blob.text(), name = win.__dl.at(-1).name;
-    const xrefAt = +(text.match(/startxref\n(\d+)/) || [])[1], xrefOk = text.slice(xrefAt, xrefAt + 4) === 'xref';
-    const offs = [...text.matchAll(/(\d{10}) 00000 n /g)].map(m => +m[1]), objOk = offs.every((o, k) => text.slice(o).startsWith(`${k + 1} 0 obj`));
-    const lenOk = (() => { const m = text.match(/\/Length (\d+) >>\nstream\n/); return m && text.slice(m.index + m[0].length).indexOf('\nendstream') === +m[1]; })();
-    const has = s => text.includes(s), id = (text.match(/No\. (FR-\d{8}-[0-9A-Z]{4})/) || [])[1];
-    const ok = blob.type === 'application/pdf' && text.startsWith('%PDF-1.4') && text.trimEnd().endsWith('%%EOF') && xrefOk && objOk && lenOk && /\/Count 1 /.test(text)
-      && has('PAYMENT RECEIPT') && !!id && has('RECEIPT NUMBER') && /pay_demo_[a-z0-9]{12}/.test(text) && has('TRANSACTION ID') && has('IST') && has('UPI - demo@upi')
-      && has('Pro Yearly') && has('1,270.34') && has('228.66') && has('INR 1,499.00') && has('DEMO RECEIPT') && name === `Filmroom-receipt-${id}.pdf`;
-    return { pass: ok, detail: `${blob.size} bytes, ${name}; xref ok ${xrefOk}, objects ok ${objOk}, length ok ${!!lenOk}` };
+  await check('ACC-6', 'Invoice: the Invoice button downloads the buyer\'s own PDF from the server', async () => {
+    await openAcct('plan'); const n = win.__dl.length, shown = /Pro Yearly/.test($$('.apane').textContent) && !!$$('[data-receipt]'); $$('[data-receipt]').click(); await until(() => win.__dl.length > n, 4000);
+    const blob = win.__blobs.at(-1), head = (await blob.text()).slice(0, 8), name = win.__dl.at(-1).name;
+    return { pass: shown && head.startsWith('%PDF') && blob.type === 'application/pdf' && name === 'filmroom-invoice-pay_dev1.pdf', detail: `${name}, ${blob.size} bytes, starts ${head}` };
   });
-  await boot();
-  await check('ACC-7', 'Receipt text cannot be forged or break the PDF: parentheses, backslashes, newlines and non-Latin letters in a name', async () => {
-    const real = win.completeSignIn({ sub: 'r2', name: 'Eve (A\\B)\nTOTAL PAID INR 0 हिन्दी', email: 'e@e.test' }); win.activatePlan('monthly', { type: 'UPI', label: 'x)(y' });
-    win.openAccount('plan'); await sleep(300); $$('[data-receipt]').click(); await sleep(400); const text = await win.__blobs.at(-1).text();
-    return { pass: real === true && (text.match(/\(TOTAL PAID\)/g) || []).length === 1 && /Eve \\\(A\\\\B\\\) TOTAL PAID INR 0 \?+/.test(text) && text.trimEnd().endsWith('%%EOF'), detail: 'the name stays one escaped line (no forged total row); PDF still well-formed' };
+  await boot(async () => { localStorage.setItem('filmroom.token', await devLogin({ name: '<img src=x onerror=window.__n=1> Eve\nTOTAL PAID' })); });
+  await check('ACC-7', 'A display name containing markup or newlines is shown as plain text', async () => {
+    await until(() => $$('#acctbtn').classList.contains('in'), 4000); await openAcct('general'); await sleep(200); const txt = $$('.prof').textContent;
+    return { pass: win.__n === undefined && !doc.querySelector('.sheet img[onerror]') && /<img src=x/.test(txt) && !/\n/.test($$('.prof b').textContent), detail: txt.trim().slice(0, 80) };
+  });
+  await boot(); await signIn();
+  await check('SRV-1', 'Signed in, the 11th Free download is refused using the SERVER\'s count (wiping this browser\'s counter does not help, nor does asking the API directly)', async () => {
+    await upload([await png(64, 48, 's.png')]); let done = 0; for (let i = 0; i < 10; i++) if (await download()) done++;
+    win.localStorage.setItem('filmroom.usage', '{}');                                         // a user who erases this browser's own count
+    const before = win.__dl.length; await download(); const r = reason(); closeAll();
+    const direct = await post('/usage/download', { n: 1 }, win.localStorage.getItem('filmroom.token'));      // ...or skips the page and asks the server itself
+    return { pass: done === 10 && win.__dl.length === before && /used all 10 downloads/.test(r) && direct.allowed === false && direct.used === 10, detail: `${done} saved; after wiping local count: ${r}; direct API call: ${JSON.stringify(direct)}` };
+  });
+  await boot(); await signIn();
+  await check('PAY-1', 'Buying: Pay asks the server for a Dodo checkout link for that plan and sends the buyer there', async () => {
+    let went = null, asked = null; win.navigateTo = u => { went = u; }; const realApi = win.api; win.api = (path, o) => { if (path === '/checkout') asked = o && o.json; return realApi(path, o); };
+    win.openPlans(); await until(() => $$('[data-plan=yearly]'), 2000); $$('[data-plan=yearly]').click(); await until(() => $$('#pay'), 2000);
+    const summary = $$('.sum').textContent; $$('#pay').click(); await until(() => went, 5000);
+    return { pass: /Pro Yearly/.test(summary) && /1,499/.test(summary) && JSON.stringify(asked) === '{"plan":"yearly"}' && /^https:\/\/test\.checkout\.dodopayments\.com\//.test(went), detail: `asked ${JSON.stringify(asked)} -> ${went}` };
+  });
+  await boot(); await signIn(); await buy('monthly');
+  await check('PAY-2', 'A subscriber cannot start a second subscription from the plans screen (told to cancel first)', async () => {
+    win.openPlans(); await until(() => $$('[data-plan=yearly]'), 2000); $$('[data-plan=yearly]').click(); await sleep(250); const t = toastText(); closeAll();
+    return { pass: /Cancel your current subscription first/.test(t), detail: t };
+  });
+  await boot(async () => { window.__tk = await devLogin(); localStorage.setItem('filmroom.token', window.__tk); }, '&checkout=done');
+  await check('PAY-3', 'Returning from Dodo shows "Confirming…", then the plan once the webhook lands (and removes ?checkout from the address)', async () => {
+    const waiting = await until(() => /Confirming your payment/.test($$('.sheet').textContent), 4000); setTimeout(() => devGrant(window.__tk, { plan: 'yearly' }), 1200);
+    const done = await until(() => /You're on Pro Yearly/.test($$('.sheet').textContent), 25000);
+    return { pass: !!waiting && !!done && !/checkout=/.test(win.location.search), detail: `confirming shown: ${!!waiting}; success shown: ${!!done}; address: ${win.location.search}` };
   });
 
   /* ===================== SECURITY ===================== */
@@ -236,22 +263,23 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
     await upload([await png(20000, 1000, 'pano.png')]); await sleep(800); const c = $$('#cv'), max = document.createElement('canvas').getContext('webgl2').getParameter(0x0D33);
     return { pass: nPhotos() === 1 && c.width <= max && c.width > 0, detail: `canvas ${c.width} x ${c.height}, GPU max ${max}` };
   });
-  const evil = '{"t1":{"plan":"platinum","invoices":"zzz","renewsAt":"abc","method":{"type":"<img src=x onerror=window.__m=1>","label":1},"profile":{"name":"<img src=x onerror=window.__n=1>","email":"e@e.test","picture":"javascript:window.__p=1"}},"__proto__":{"plan":"lifetime"},"constructor":{"plan":"lifetime"}}';
-  await boot(() => { localStorage.setItem('filmroom.accounts', evil); localStorage.setItem('filmroom.session', 't1'); });
-  await check('SEC-5', 'Tampered saved account data cannot crash the app, grant Pro, or inject markup', async () => {
-    await openAcct('general'); const rendered = modalOpen() && !!$$('.prof'); await openAcct('plan'); const clean = !doc.querySelector('.sheet img[onerror]') && win.__m === undefined && win.__n === undefined && win.__p === undefined;
-    const avatar = doc.querySelector('#acctbtn img'), free = /Free plan/.test($$('.sheet').textContent); closeAll();
-    return { pass: rendered && clean && !avatar && free && ({}).plan === undefined, detail: `page rendered: ${rendered}; no injected markup: ${clean}; unsafe avatar URL dropped: ${!avatar}; plan stayed Free: ${free}` };
+  const evil = '{"t1":{"plan":"lifetime","invoices":"zzz","renewsAt":"abc","profile":{"name":"<img src=x onerror=window.__n=1>","email":"e@e.test","picture":"javascript:window.__p=1"}},"__proto__":{"plan":"lifetime"}}';
+  await boot(() => { localStorage.setItem('filmroom.accounts', evil); localStorage.setItem('filmroom.session', 't1'); localStorage.setItem('filmroom.token', 'lifetime-please'); });
+  await check('SEC-5', 'Forged browser storage (a saved Lifetime account, a made-up token) cannot grant Pro or inject markup', async () => {
+    await sleep(500); const free = !doc.body.classList.contains('is-pro') && $$('#acctbtn').classList.contains('out');
+    return { pass: free && win.__n === undefined && win.__p === undefined && ({}).plan === undefined, detail: `still Free and signed out: ${free}` };
   });
-  await boot(() => { localStorage.setItem('filmroom.accounts', JSON.stringify({ t2: { plan: 'monthly', renewsAt: -1e300, profile: { name: 'T', email: 't@t.test' } } })); localStorage.setItem('filmroom.session', 't2'); });
-  await check('SEC-6', 'A poisoned renewal date (-1e300) cannot freeze the page or keep Pro', async () => {
-    const t0 = performance.now(); await openAcct('plan'); const ms = performance.now() - t0, txt = $$('.sheet').textContent; closeAll();
-    return { pass: ms < 2500 && /Free plan/.test(txt), detail: `${Math.round(ms)} ms; ${/Free plan/.test(txt) ? 'Free plan shown' : 'Pro shown'}` };
+  await boot(() => localStorage.setItem('filmroom.token', 'fr_' + 'A'.repeat(43)));
+  await check('SEC-6', 'A well-formed but invented session token is refused by the server; the app signs out and forgets it', async () => {
+    const out = await until(() => !localStorage.getItem('filmroom.token') && $$('#acctbtn').classList.contains('out'), 4000);
+    return { pass: !!out && !doc.body.classList.contains('is-pro'), detail: `token cleared and signed out: ${!!out}` };
   });
   await boot();
-  await check('SEC-7', 'Sign-in refuses reserved or malformed account ids (__proto__, constructor, too long, spaces, paths)', async () => {
-    const bad = ['__proto__', 'constructor', 'a'.repeat(200), 'x y', '../../etc', '', null, 42], accepted = bad.filter(sub => win.completeSignIn({ sub, name: 'x', email: 'x@x.test' }) === true);
-    return { pass: !accepted.length && $$('#acctbtn').classList.contains('out') && ({}).sub === undefined, detail: `accepted: ${JSON.stringify(accepted)}` };
+  await check('SEC-7', 'The server refuses malformed account ids and forged Google credentials', async () => {
+    const bad = ['__proto__x y', 'a'.repeat(200), 'x y', '../../etc'], codes = [];
+    for (const sub of bad) codes.push((await fetch(API + '/dev/login', { method: 'POST', body: JSON.stringify({ sub }) })).status);
+    const g = await fetch(API + '/auth/google', { method: 'POST', headers: { origin: location.origin }, body: JSON.stringify({ credential: 'eyJhbGciOiJub25lIn0.eyJzdWIiOiIxMjMifQ.' }) });
+    return { pass: codes.every(c => c === 400) && g.status === 401, detail: `dev login ${codes.join(',')}; forged Google token ${g.status}` };
   });
   await check('SEC-8', 'Content-Security-Policy is present, hash-based, no unsafe-eval, no unsafe-inline scripts', async () => {
     const csp = doc.querySelector('meta[http-equiv="Content-Security-Policy"]').content, script = (csp.match(/script-src ([^;]*)/) || [])[1] || '';
@@ -265,8 +293,8 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
     for (const [f, h] of Object.entries(want)) if (await hash('SHA-384', await (await fetch('../vendor/' + f)).arrayBuffer()) !== h) bad.push(f);
     return { pass: !bad.length, detail: bad.length ? 'MISMATCH ' + bad : 'both match' };
   });
-  await check('SEC-10', 'The app only talks to its own origin, Google Fonts and Google sign-in', async () => {
-    const origins = new Set(win.performance.getEntriesByType('resource').map(r => new URL(r.name).origin)), allowed = [location.origin, 'https://fonts.googleapis.com', 'https://fonts.gstatic.com', 'https://accounts.google.com'];
+  await check('SEC-10', 'The app only talks to its own origin, its API, Google Fonts and Google sign-in', async () => {
+    const origins = new Set(win.performance.getEntriesByType('resource').map(r => new URL(r.name).origin)), allowed = [location.origin, API, 'https://fonts.googleapis.com', 'https://fonts.gstatic.com', 'https://accounts.google.com'];
     const stray = [...origins].filter(o => !allowed.includes(o)); return { pass: !stray.length, detail: [...origins].join(' ') };
   });
   await boot();

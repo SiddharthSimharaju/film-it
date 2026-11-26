@@ -4,9 +4,9 @@ Scope: the Filmroom web app (`index.html`), its vendored libraries, the sandboxe
 
 ## What the system is (this decides everything below)
 
-Filmroom is a **static, client-side app**. There is **no backend and no API**: the only network call is the app fetching its own film-look files. Photos are processed in the browser and never uploaded. Accounts, plans and daily counters are kept in the browser's `localStorage`.
+Filmroom is a **static, client-side app** (photos are processed in the browser and never uploaded) plus a **small API** (`server/`, a Cloudflare Worker) that owns identity, plans, billing and the signed-in Free download count. Payments are taken by Dodo Payments; the API creates the checkout and receives Dodo's signed webhook. The first version of this report (22 Nov 2026) was written before the API existed; sections 1 to 3 keep that history and section 4 says what changed.
 
-That is good for privacy and cost, and it means one thing above all: **anything the app "enforces" is enforced on the user's own machine, so a determined user can bypass it.** Section 3 explains what that does and does not allow, and what to build before taking real payments.
+Anything the **page** enforces (per-file limits, export size, formats, guest limits) runs on the user's own machine, so a determined user can bypass it. Anything the **server** enforces (who is Pro, the signed-in daily count, billing) they cannot. Section 4 lists exactly which is which.
 
 ## 1. Findings (VAPT)
 
@@ -34,7 +34,7 @@ I attacked the app the way a hostile user would (console, edited storage, malici
 
 ## 2. Verification and validation (IV&V)
 
-**Verification (built right):** `tests/run.html` drives the real app through its UI. **45 tests, all passing**:
+**Verification (built right):** `tests/run.html` drives the real app through its UI. **45 browser tests at the time (49 now, see section 4)**:
 
 - `BR-*` (23): every business rule in `docs/BUSINESS_RULES.md`, per plan: photo, size, resolution, photo, size and resolution limits, the Free download limit, export cap, formats, looks, ZIP, expiry, cancellation.
 - `ACC-*` (8): the account dialog, account removal and the PDF receipt (including that hostile text cannot forge or break it).
@@ -57,7 +57,24 @@ Not fixable client-side: V-01 and V-02. People who "misuse" the app this way onl
 5. **Hardening:** rate-limit sign-in, webhook and download-ticket routes; strict CORS; request size limits; response headers (`Content-Security-Policy` with `frame-ancestors 'none'`, `X-Content-Type-Options`, `Referrer-Policy`); secrets in environment variables; dependency scanning; logging and alerts.
 6. **Data protection:** keep only Google's id, name and email; provide account removal (the UI exists, the server must honour it); set a retention rule. Check India's DPDP Act requirements before launch.
 
-Until then, treat the in-app plans as **a demo of the product experience, not a payment barrier**.
+Section 4 records what has since been built.
+
+## 4. Update: server-owned plans and Dodo Payments
+
+What was built, against the list in section 3:
+
+| Section 3 item | Status |
+|---|---|
+| 1. Identity | **Done.** The server verifies the Google ID token (RS256 signature against Google's published keys, `aud`, `iss`, `exp`, freshness under 10 minutes, verified email, numeric subject). It issues a random 256-bit session token; only its SHA-256 hash is stored, it lasts 30 days and is revocable (sign out, delete account). *Deviation:* a bearer token in `localStorage` instead of an HttpOnly cookie, because the API lives on `workers.dev` (cross-site to `filmroom.in`, and Safari and Firefox block cross-site cookies). If DNS moves to Cloudflare the API can sit on `api.filmroom.in` and use a cookie. The CSP (no inline or eval script) is what protects the token from script injection. |
+| 2. Plans | **Done.** A plan is granted only by Dodo's webhook: Standard Webhooks HMAC-SHA256 over the raw body, constant-time compare, 5-minute replay window, one-time processing per `webhook-id`. The body only names the object; the facts (status, product, dates) are re-read from Dodo's API, and the product must be one of ours. Checkout sessions are built on the server from the verified account (the browser sends only a plan name), with the account id in Dodo metadata. Refunds and lost disputes revoke Lifetime; failed renewals return the account to Free. |
+| 3. Quotas | **Done for signed-in accounts.** A per-user Durable Object counts Free downloads atomically (15 parallel requests: exactly 10 allowed). The page asks first and saves only if the server agrees. *Remaining:* a signed-out visitor is counted in the browser only, because there is no identity to count against (counting by IP would punish shared mobile networks). A patched page could skip the request and save a file anyway: rendering exports on the server would be the only fix, and it is not worth it for photos the person already has. |
+| 4. Pro files | **Deliberately not done.** Free users preview all 14 looks, which needs the look files; they are CC BY-SA community files. Gating them would break the product and protect nothing. The line that matters, downloading a Pro look, is enforced by the page. |
+| 5. Hardening | **Mostly done.** Strict per-origin CORS, 8 KB body limit, rate limits on sign-in and checkout (Cloudflare rate-limit binding, 20 a minute), invoices only for payments recorded on the caller's own account, `nosniff` and `no-store` on every response, secrets only as Worker secrets, dev-only routes that exist only when `ENABLE_DEV_ROUTES=1` in an untracked file. *Not done:* the page's own response headers (`frame-ancestors`, `X-Content-Type-Options`), which GitHub Pages cannot set. |
+| 6. Data protection | **Partly.** The server keeps the Google id, name, email, avatar URL, plan state and recent payment ids. Deleting the account erases it all and ends every session; Dodo keeps payment records, as it must for tax. A retention rule and an India DPDP check are still yours to do before launch. |
+
+**Tests:** 36 server unit tests (webhook signatures, Google token attacks, plan rules, webhook handling), 24 local end-to-end checks (forged, replayed and unsigned webhooks; someone else's invoice; double subscription; refund; account deletion) and the 49-test browser suite, which now also covers checkout, the return from Dodo, the server-side download cap and forged browser storage.
+
+**Residual risks to know about:** the plan is only as trustworthy as the Dodo API key and webhook secret (keep them as Worker secrets, rotate if leaked); if the webhook endpoint is down Dodo retries, but a buyer may wait a few minutes for Pro (the page says so and keeps checking); the Dodo `payment.succeeded`/`subscription.*` payload shapes were handled defensively but should be confirmed with a real test-mode purchase before going live (see `server/README.md`).
 
 ## Reporting a vulnerability
 

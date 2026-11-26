@@ -63,22 +63,26 @@ What each plan allows, and where each rule lives in the code. Every rule is chec
 | # | Rule | Code | Test |
 |---|---|---|---|
 | A1 | Buying a plan needs a sign-in. Free use does not. | `startCheckout`, `openPlans` | covered by `signIn()` in every paid scenario |
-| A2 | The plan belongs to the account and is restored on sign-in. | `syncPlan`, `completeSignIn` | BR-M1..L2 |
-| A3 | Monthly renews every 30 days, yearly every 365. Missed renewals are caught up (at most 24 invoices). | `syncPlan` | SEC-6 |
-| A4 | Cancelling keeps Pro until the period ends, then the account falls back to Free. Resuming before then undoes it. | `renderCancel`, `syncPlan` | BR-B1, BR-B2 |
+| A2 | The plan belongs to the account, is held by the server and is restored on sign-in. | `setAccount`, `restoreSession`, server `effective()` | BR-M1..L2 |
+| A3 | Renewals are charged by Dodo and reported by webhook. A renewal that is a little late keeps Pro for 3 days; a failed one (`on_hold`) returns the account to Free. | server `effective()`, `webhook.js` | server unit tests, e2e 16-17 |
+| A4 | Cancelling (at the end of the paid period, through Dodo) keeps Pro until that date, then the account falls back to Free. Resuming before then undoes it. | `changeCancel`, server `/billing/cancel`, `effective()` | BR-B1, BR-B2, e2e 11-12 |
 | A5 | Lifetime never expires and cannot be cancelled. | `panePlan` | ACC-1 |
 | A6 | When a plan lapses, the Free limits apply to *new* uploads and exports. Photos already open stay open. | `limits()` | BR-B2 |
-| A7 | An account with an active subscription cannot be removed until it is cancelled. Removing an account clears its saved plan data. | `deleteAccount` | ACC-4, ACC-5 |
-| A8 | Every payment creates an invoice. Its receipt is a one-page PDF with the receipt number, transaction ID, date and time (IST), payment method, billed-to and from details, the billing period, the price split into subtotal and GST (18%, included in the price) and the total paid. Seller details (legal name, address, GSTIN) come from `BUSINESS` in `index.html`: fill them in before launch. | `activatePlan`, `buildReceiptPDF` | ACC-6, ACC-7 |
+| A7 | An account with an active subscription cannot be removed until it is cancelled. Removing an account deletes its server record and ends every session. Payment records stay with Dodo. | `deleteAccount`, server `DELETE /me` | ACC-4, ACC-5, e2e 15, 23 |
+| A8 | Every successful payment is recorded against the account (from Dodo's signed webhook) and shown under Invoices. The Invoice button downloads Dodo's own PDF tax invoice, and only for that account's payments. | webhook `payment.succeeded`, `receiptFor`, server `/billing/invoice/:id` | ACC-6, e2e 7-8 |
 
 ### Daily download counter (Free only)
 | # | Rule | Code | Test |
 |---|---|---|---|
-| C1 | The count is per device per local day and resets at midnight. | `usageNow` | BR-F5, BR-F6 |
-| C2 | One shared counter for guests and every account on the device, so signing in or out can't double the allowance. | `usageNow` | BR-B4 |
-| C3 | Winding the clock back by up to 2 days does not reset the count. | `usageNow` | BR-B3 |
-| C4 | The count moves only when a file was actually saved. | `dl.onclick` | BR-F6 |
+| C1 | The count is per day and resets at midnight (India time on the server, local time for guests). | `usageNow`, server `istDay` | BR-F5, BR-F6 |
+| C2 | Signed in: the **server** counts and refuses the 11th download, atomically, even for parallel requests. Guests are counted in the browser only. | server `consumeDownloads`, `reserveDownloads` | SRV-1, ACC-3 |
+| C3 | On one device the larger of the browser count and the server count applies, so signing in or out can't double the allowance. | `remaining` | BR-B4 |
+| C4 | Winding the clock back by up to 2 days does not reset the guest count. | `usageNow` | BR-B3 |
+| C5 | The server is asked first, and the file is saved only if it agrees. | `dl.onclick`, `downloadAll` | SRV-1 |
 
-## Where the rules are *not* enforced yet
+## What is still not enforced by the server
 
-Every rule above runs in the browser, because the app has no server. That is enough to behave correctly for honest users and to survive broken input, but **a determined person can bypass any of them** (see `SECURITY.md`, findings V-01 and V-02). Before real money is taken, the plan, the counters and the premium files need to move to a server.
+Plans, billing identity and the signed-in daily count are server-owned. Two things remain in the browser, on purpose (details in `SECURITY.md`):
+
+- **Guest limits** (no account, so nothing to count against) and the **per-file limits** (size, megapixels, export size, formats, ZIP) are applied by the page that does the editing. A patched page can ignore them: the person only gets their own photos processed on their own machine.
+- **The Pro look files** are public: free users preview all 14 looks, and the files are CC BY-SA community files. What Free cannot do is download a Pro look, which the page enforces.

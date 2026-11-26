@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-j6O9l7mlZhzWKhM6oQS/L5hs5yF4SgSxTo65/uvPngI=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://accounts.google.com/gsi/; frame-src 'self' https://accounts.google.com/gsi/; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-7FCaglieM0Ts8bj5W2yWOK3g/J8jJNLKA8XahQuOMjs=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://accounts.google.com/gsi/ https://filmroom-api.siddharth-simharaju.workers.dev http://localhost:8787; frame-src 'self' https://accounts.google.com/gsi/; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin">
 <!-- Clickjacking guard: the page stays hidden unless it is the top window or framed by our own origin. -->
 <style id="antiframe">html{display:none!important}</style>
@@ -491,7 +491,7 @@ const FILMS = [
   { id:'POLA', label:'POLAROID 690', iso:'600', body:'#e8e4d8', band:'#d8362b', ink:'#111',    lut:'polaroid-690' },
 ];
 
-// ---------- Plans (MOCK: nothing is charged; swap startCheckout() for Razorpay later) ----------
+// ---------- Plans (prices shown here; what is actually charged is decided by the server, see server/src/plans.js and Dodo Payments) ----------
 const PLANS = {
   free:     { id:'free',     name:'Free',        price:'₹0',     per:'forever',  note:'Try every look on your own photo' },
   monthly:  { id:'monthly',  name:'Pro Monthly', price:'₹149',   per:'/ month',  amount:149,  note:'Cancel anytime',              term:'Billed monthly · renews until cancelled', cta:'Monthly' },
@@ -517,8 +517,8 @@ const HARD = { fileMB:150, megapixels:120, photos:100, zipBytes:1.5e9, decodeMs:
 const limits = () => LIMITS[Object.hasOwn(LIMITS, plan) ? plan : 'free'];
 const lookLocked = f => !limits().allLooks && !FREE_LOOKS.includes(f.id);
 const nf = n => Number(n).toLocaleString('en-IN');
-// Daily counters. They live in this browser for now; a server has to own them before real payments (see SECURITY.md).
-// One shared "device" counter, so signing out and in (or signing in as someone else) can't double the allowance.
+// Daily download counter. Signed-in accounts are counted by the SERVER (it refuses the 11th download); a signed-out visitor is only
+// counted here in this browser, as a nudge. One shared "device" counter, so signing out and in can't double that allowance.
 const USAGE_KEY = 'filmroom.usage';
 const readUsage = () => { try { const o = JSON.parse(localStorage.getItem(USAGE_KEY) || '{}'); return o && typeof o === 'object' && !Array.isArray(o) ? o : {}; } catch (e) { return {}; } };
 const cleanInt = v => (Number.isFinite(+v) && +v >= 0 && +v < 1e7 ? Math.floor(+v) : 0);
@@ -527,12 +527,24 @@ function usageNow() {                                     // the "day" never mov
   const day = new Date(seen).toLocaleDateString('en-CA'), r = all.device && all.device.day === day ? all.device : { day, down:0 };
   r.down = cleanInt(r.down); delete r.up; all.device = r; return { all, r };
 }
-function remaining() { const cap = limits().downloadsPerDay; if (!cap) return Infinity; const { r } = usageNow(); return Math.max(0, cap - r.down); }   // downloads left today (Infinity on plans without a daily cap)
+function remaining() { const cap = limits().downloadsPerDay; if (!cap) return Infinity; const { r } = usageNow(); return Math.max(0, cap - Math.max(r.down, user && acct && acct.usage ? cleanInt(acct.usage.down) : 0)); }   // downloads left today (Infinity on plans without a daily cap)
 function addUsage(kind, n = 1) {
   if (kind !== 'down' || !limits().downloadsPerDay) return;          // only Free has a daily cap; nothing else is counted
   const { all, r } = usageNow(); r.down += n;
   try { localStorage.setItem(USAGE_KEY, JSON.stringify(all)); } catch (e) {}
   refreshUsageUI();
+}
+// Ask permission to save n files. Signed in: the server counts them and may say no. Signed out: counted in this browser. Paid plans: no count.
+async function reserveDownloads(n) {
+  if (!limits().downloadsPerDay) return true;
+  if (!user) { addUsage('down', n); return true; }
+  try {
+    const r = await api('/usage/download', { method:'POST', json:{ n } });
+    if (acct) acct.usage = { ...(acct.usage || {}), down:cleanInt(r.used) };
+    if (!r.allowed) { refreshUsageUI(); blocked(whyDownloads(n)); return false; }
+    addUsage('down', n);                                 // also count on this device, so signing out can't hand back a fresh allowance
+    return true;
+  } catch (e) { toast("Couldn't check your download allowance. Check your connection and try again.", 4500); return false; }
 }
 function refreshUsageUI() {
   if (typeof buildMenu === 'function' && typeof FORMATS !== 'undefined') buildMenu();
@@ -1377,7 +1389,8 @@ dl.onclick = async () => {
     await new Promise(r => setTimeout(r, 30));
     const { blob, f, capped, out, name } = await exportCurrent();
     if (!blob) { toast(`Couldn't create a ${f.label} file for an image this large. Try PNG or JPEG.`, 4500); return; }
-    saveBlob(blob, name); addUsage('down', 1);
+    if (!(await reserveDownloads(1))) return;                                                         // rule: the server counts it first, then we save
+    saveBlob(blob, name);
     toast(capped ? `Saved as ${f.label} at ${out.width} × ${out.height}. Upgrade for full resolution.` : `Saved as ${f.label}`, capped ? 4200 : 1800);
   } finally { exporting = false; }
 };
@@ -1404,11 +1417,12 @@ async function downloadAll() {
     });
     if (tooBig) { toast('That ZIP would be larger than 1.5 GB. Download fewer photos at a time.', 5500); return; }
     if (!files.length) { toast('Couldn\'t export those photos. Try PNG or JPEG.', 4500); return; }
-    saveBlob(makeZip(files), 'filmroom-photos.zip'); addUsage('down', files.length);
+    if (!(await reserveDownloads(files.length))) return;
+    saveBlob(makeZip(files), 'filmroom-photos.zip');
     toast(`Saved ${files.length} photo${files.length > 1 ? 's' : ''} as a ZIP${failed ? ` (${failed} failed)` : ''}${capped ? `. Exports are capped at ${limits().exportPx}px on your plan.` : ''}`, capped || failed ? 4500 : 2200);
   } finally { exporting = false; }
 }
-// ---------- Pricing UI (mock) ----------
+// ---------- Pricing UI ----------
 const TICK = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3L13 4.5"/></svg>';
 function featuresFor(id) {
   const L = LIMITS[id];
@@ -1444,122 +1458,105 @@ function renderPlans(opts = {}) {
   sheet.innerHTML = XBTN + (opts.reason ? `<div class="reason">${LOCK_SVG}${opts.reason}</div>` : '') +
     `<h2>${isPro() ? 'Your plan' : 'Choose your plan'}</h2><p class="sub">Start free. Upgrade when you want every look and full-resolution exports.</p>
     <div class="plans">${['free', 'monthly', 'yearly', 'lifetime'].map(planCard).join('')}</div>
-    <p class="foot">Prices are in ₹ and include GST. <b>Demo mode:</b> no payment is taken.${user ? '' : ' Sign in is required to buy a plan.'}</p>`;
+    <p class="foot">Prices are in ₹ and include GST. Payments are handled securely by Dodo Payments.${user ? '' : ' Sign in is required to buy a plan.'}</p>`;
 }
-// INTEGRATION POINT: open Razorpay Checkout here (create an order/subscription server-side, then verify the payment
-// before calling setPlan). For now this just shows a mock order screen.
+function navigateTo(url) { location.assign(url); }                     // one place that leaves the page for Dodo (tests replace it)
+// ---------- Checkout (Dodo Payments hosted page) ----------
+// This page never decides what is charged or who is Pro. It asks the server (POST /checkout) for a Dodo checkout link for a plan,
+// sends the buyer there, and afterwards asks the server what plan the account has. The plan is only ever granted by Dodo's signed webhook.
 function startCheckout(id) {
   if (!user) { renderSignIn({ next:id }); return; }
-  checkoutPlan = id; const p = PLANS[id], gst = Math.round(p.amount - p.amount / 1.18), fmt = n => '₹' + n.toLocaleString('en-IN');
+  if (acct && acct.hasSubscription && id !== 'lifetime') { toast('Cancel your current subscription first (Account, Plan & billing), then choose a new plan.', 5500); return; }
+  checkoutPlan = id; const p = PLANS[id];
   sheet.innerHTML = XBTN + `<div class="co"><button class="back" data-back="1">← All plans</button><h2>Complete your order</h2><p class="ctext" style="margin:-8px 0 16px;text-align:left">Signed in as <b>${esc(user.email)}</b></p>
-    <div class="sum"><div><b>${p.name}</b><span>${p.term}</span></div><strong>${fmt(p.amount)}</strong></div>
-    <div class="rowl"><span>GST included (18%)</span><span>${fmt(gst)}</span></div>
-    <div class="rowl total"><span>Total today</span><span>${fmt(p.amount)}</span></div>
-    <div class="methods"><button class="chip active" data-method="1">UPI</button><button class="chip" data-method="1">Card</button><button class="chip" data-method="1">Netbanking</button></div>
-    <button class="btn white pay" id="pay" data-pay="1">Pay ${fmt(p.amount)}</button>
-    <p class="demo">Demo mode: nothing is charged. Razorpay checkout will open here.</p></div>`;
+    <div class="sum"><div><b>${p.name}</b><span>${p.term}</span></div><strong>${fmtINR(p.amount)}</strong></div>
+    <div class="rowl"><span>Price includes GST</span><span></span></div>
+    <button class="btn white pay" id="pay" data-pay="1">Continue to payment</button>
+    <p class="demo">You'll finish on Dodo Payments' secure page, where you pick how to pay. The final price and any tax are shown before you pay.</p></div>`;
+}
+async function beginPayment() {
+  const b = $('pay'); if (!b || b.disabled) return; b.disabled = true; b.innerHTML = '<span class="spin"></span>Opening checkout…';
+  try {
+    try { sessionStorage.setItem('filmroom.prevplan', plan); } catch (e) {}
+    const { url } = await api('/checkout', { method:'POST', json:{ plan:checkoutPlan } });
+    if (!/^https:\/\/([a-z0-9-]+\.)?checkout\.dodopayments\.com\//.test(url)) throw new Error('unexpected checkout address');
+    navigateTo(url);
+  } catch (e) { b.disabled = false; b.textContent = 'Continue to payment'; toast(e.status === 409 || e.status === 429 ? e.message : "Couldn't open checkout. Please try again.", 5000); }
+}
+// Back from Dodo (?checkout=done): the webhook may land a moment after the redirect, so ask the server until the plan changes.
+async function handleCheckoutReturn() {
+  if (new URLSearchParams(location.search).get('checkout') !== 'done') return;
+  try { history.replaceState(null, '', location.pathname); } catch (e) {}
+  if (!user) { renderSignIn({}); openModal(); toast('Sign in again to see your plan.', 4000); return; }
+  let was = 'free'; try { was = sessionStorage.getItem('filmroom.prevplan') || 'free'; sessionStorage.removeItem('filmroom.prevplan'); } catch (e) {}
+  sheet.innerHTML = XBTN + '<div class="done"><div class="ok"><span class="spin"></span></div><h2>Confirming your payment…</h2><p>This usually takes a few seconds. You can keep this window open.</p></div>'; openModal();
+  for (let i = 0; i < 25 && plan === was; i++) { await new Promise(r => setTimeout(r, i ? 2000 : 800)); await refreshAccount(); }
+  refreshPlanUI();
+  if (plan !== was && plan !== 'free') renderSuccess(plan);
+  else sheet.innerHTML = XBTN + '<div class="done"><h2>Still confirming</h2><p>Your bank is taking longer than usual. If you were charged, your plan appears here automatically within a few minutes. There is nothing more to do.</p><div class="cact" style="max-width:340px;margin:0 auto"><button class="btn white" data-close="1">Close</button></div></div>';
 }
 function renderSuccess(id) {
-  const p = PLANS[id];
+  const p = PLANS[id], first = acct && acct.invoices && acct.invoices[0];
   sheet.innerHTML = XBTN + `<div class="done"><div class="ok">${TICK}</div><h2>You're on ${p.name}</h2>
     <p>All 14 film looks, full-resolution export and every format are unlocked. Manage billing any time from your account.</p><div class="cact" style="max-width:340px;margin:0 auto"><button class="btn glass" data-acc="plan">View account</button><button class="btn white" data-close="1">Start filming</button></div>
-    ${(rec().invoices[0] || {}).id ? `<p style="margin:16px 0 0"><button class="linkbtn" data-receipt="${esc(rec().invoices[0].id)}">Download receipt (PDF)</button></p>` : ''}</div>`;
+    ${first && first.id ? `<p style="margin:16px 0 0"><button class="linkbtn" data-receipt="${esc(first.id)}">Download invoice (PDF)</button></p>` : ''}</div>`;
 }
-// ---------- Accounts (Google sign-in) ----------
-// Sign-in is a DEMO until you paste a Google OAuth client ID here. With an ID, "Continue with Google" becomes Google's real
-// button. The account/plan data below lives in this browser's localStorage for now: when payments go live it has to move to a
-// server (verify the Google ID token there, and store the plan against the verified Google account id).
-const GOOGLE_CLIENT_ID = new URLSearchParams(location.search).has('demo') ? '' : '215546086872-dttuivggji3jcaif5tglc3uq2ndru0vk.apps.googleusercontent.com';   // add ?demo=1 to the address for the offline demo sign-in (the test suite uses it)
-const DEMO_USER = { sub:'demo-google-user', name:'Demo User', email:'demo.user@example.com', picture:'' };
-const DAY = 86400000, TERM_DAYS = { monthly:30, yearly:365 };
-let user = null, signinNext = null, signinPlans = null;
+// ---------- Accounts: the SERVER owns identity, plan and billing ----------
+// Sign-in: Google gives this page an ID token; the server verifies its signature, issues a revocable session token (kept in this
+// browser) and from then on every request is made with it. The plan shown below is whatever the server says.
+const IS_LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname);
+const DEMO = IS_LOCAL && new URLSearchParams(location.search).has('demo');       // local test runs sign in through the API's dev-only login (not available in production)
+const API_URL = IS_LOCAL ? 'http://localhost:8787' : 'https://filmroom-api.siddharth-simharaju.workers.dev';
+const GOOGLE_CLIENT_ID = DEMO ? '' : '215546086872-dttuivggji3jcaif5tglc3uq2ndru0vk.apps.googleusercontent.com';
+const TOKEN_KEY = 'filmroom.token', TOKEN_RE = /^fr_[A-Za-z0-9_-]{40,50}$/;
+const RECURRING = new Set(['monthly', 'yearly']);
+let user = null, acct = null, sessionToken = null, signinNext = null, signinPlans = null;
+try { const t = localStorage.getItem(TOKEN_KEY); if (t && TOKEN_RE.test(t)) sessionToken = t; } catch (e) {}
+const setToken = t => { sessionToken = t; try { t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY); } catch (e) {} };
 const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 const fmtINR = n => '₹' + Number(n).toLocaleString('en-IN');
 const fmtDate = ms => new Date(ms).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
-const SUB_RE = /^[A-Za-z0-9._-]{1,128}$/, RESERVED = new Set(['__proto__', 'constructor', 'prototype', 'toString', 'valueOf', 'hasOwnProperty']);
-const newRecord = () => ({ plan:'free', since:null, joined:null, renewsAt:null, canceled:false, method:null, invoices:[], profile:null });
-function cleanRecord(r) {                                 // anything read back from storage is untrusted: rebuild it field by field
-  r = r && typeof r === 'object' && !Array.isArray(r) ? r : {};
-  const now = Date.now(), okTime = v => Number.isFinite(v) && v > 0 && v < now + 20 * 365 * DAY;
-  let p = typeof r.plan === 'string' && Object.hasOwn(PLANS, r.plan) ? r.plan : 'free', renewsAt = okTime(+r.renewsAt) ? +r.renewsAt : null;
-  if ((p === 'monthly' || p === 'yearly') && !renewsAt) p = 'free';           // a subscription without a valid renewal date is not trusted
-  if (p === 'free' || p === 'lifetime') renewsAt = null;
-  const invoices = (Array.isArray(r.invoices) ? r.invoices : []).filter(i => i && typeof i === 'object' && typeof i.plan === 'string' && Object.hasOwn(PLANS, i.plan) && i.plan !== 'free' && okTime(+i.date)).slice(0, 50)
-    .map(i => ({ id:cleanText(i.id, 24).replace(/[^A-Za-z0-9-]/g, '') || 'FR-0', date:+i.date, plan:i.plan, name:PLANS[i.plan].name, amount:PLANS[i.plan].amount,
-      txn:cleanText(i.txn, 40).replace(/[^A-Za-z0-9_-]/g, ''), to:okTime(+i.to) ? +i.to : null,
-      method:i.method && typeof i.method === 'object' && ['UPI', 'Card', 'Netbanking'].includes(i.method.type) ? { type:i.method.type, label:cleanText(i.method.label, 40) } : null }));
-  const method = r.method && typeof r.method === 'object' && ['UPI', 'Card', 'Netbanking'].includes(r.method.type) ? { type:r.method.type, label:cleanText(r.method.label, 40) } : null;
-  const profile = r.profile && typeof r.profile === 'object' ? { name:cleanText(r.profile.name, 100), email:cleanText(r.profile.email, 200), picture:safePicture(r.profile.picture) } : null;
-  return { plan:p, since:okTime(+r.since) ? +r.since : null, joined:okTime(+r.joined) ? +r.joined : null, renewsAt, canceled:r.canceled === true, method, invoices, profile };
+async function api(path, { method = 'GET', json, blob = false } = {}) {
+  const r = await fetch(API_URL + path, { method, headers:{ ...(sessionToken ? { authorization:'Bearer ' + sessionToken } : {}), ...(json ? { 'content-type':'application/json' } : {}) }, body:json ? JSON.stringify(json) : undefined });
+  let body = null; try { body = blob && r.ok ? await r.blob() : await r.json(); } catch (e) {}
+  if (r.status === 401 && sessionToken) { setToken(null); setAccount(null); refreshPlanUI(); }          // the session ended (expired, signed out elsewhere, account deleted)
+  if (!r.ok) throw Object.assign(new Error((body && body.message) || 'Request failed'), { status:r.status, code:body && body.error });
+  return body;
 }
-function readAcc() {
-  const out = Object.create(null);                        // no prototype, so odd keys can't touch Object.prototype
-  try { const o = JSON.parse(localStorage.getItem('filmroom.accounts') || '{}'); if (o && typeof o === 'object' && !Array.isArray(o)) for (const k of Object.keys(o)) if (SUB_RE.test(k) && !RESERVED.has(k)) out[k] = cleanRecord(o[k]); } catch (e) {}
-  return out;
+function setAccount(a) {                                  // what the server said about this account (or nothing, when signed out)
+  acct = a && typeof a === 'object' ? a : null;
+  const pr = acct && acct.profile;
+  user = pr ? { name:cleanText(pr.name || pr.email, 100), email:cleanText(pr.email, 200), picture:safePicture(pr.picture) } : null;
+  plan = acct && typeof acct.plan === 'string' && Object.hasOwn(PLANS, acct.plan) ? acct.plan : 'free';
+  if (!user) { acct = null; plan = 'free'; }
 }
-const writeAcc = o => { try { localStorage.setItem('filmroom.accounts', JSON.stringify(Object.fromEntries(Object.entries(o)))); } catch (e) {} };
-const rec = () => (user ? readAcc()[user.sub] || newRecord() : null);
-function saveRec(r) { const a = readAcc(); a[user.sub] = cleanRecord(r); writeAcc(a); }
+const rec = () => acct;
+async function refreshAccount() { if (!sessionToken) return; try { setAccount((await api('/me')).account); refreshPlanUI(); } catch (e) {} }
+async function restoreSession() { if (!sessionToken) { setAccount(null); return; } try { setAccount((await api('/me')).account); } catch (e) { if (e.status === 401) setAccount(null); } }
 function avatarHTML(u, size) {
   const st = `width:${size}px;height:${size}px;font-size:${Math.round(size * .42)}px`;
   const pic = safePicture(u.picture); return pic ? `<img class="av" style="${st}" src="${esc(pic)}" alt="" referrerpolicy="no-referrer" crossorigin="anonymous">` : `<span class="av" style="${st}">${esc((u.name || u.email || '?').trim().charAt(0).toUpperCase())}</span>`;
 }
-function syncPlan() {                                     // set the active plan from the account; handle renewals and expiry
-  if (!user) { plan = 'free'; return; }
-  const r = rec(), now = Date.now(); let changed = false;
-  if ((r.plan === 'monthly' || r.plan === 'yearly') && r.renewsAt && now > r.renewsAt) {
-    changed = true;
-    if (r.canceled) { r.plan = 'free'; r.renewsAt = null; r.canceled = false; }
-    else {                                                // mock auto-renewal: Razorpay would charge the saved method here
-      const per = TERM_DAYS[r.plan] * DAY, n = Math.floor((now - r.renewsAt) / per) + 1, p = PLANS[r.plan];
-      for (let i = Math.max(0, n - 24); i < n; i++) { const d = r.renewsAt + i * per; r.invoices.unshift({ id:invoiceId(d), date:d, plan:r.plan, name:p.name, amount:p.amount, txn:newTxn(), to:d + per, method:r.method }); }
-      r.invoices = r.invoices.slice(0, 50); r.renewsAt += n * per;
-    }
-  }
-  if (changed) saveRec(r);
-  plan = r.plan;
+async function signInWith(path, payload) {               // exchange a Google credential (or the local dev login) for a server session
+  const r = await api(path, { method:'POST', json:payload });
+  setToken(r.token); setAccount(r.account); refreshPlanUI();
 }
-function activatePlan(id, method) {
-  const r = rec(), p = PLANS[id], now = Date.now();
-  r.plan = id; r.since = now; r.canceled = false; r.renewsAt = TERM_DAYS[id] ? now + TERM_DAYS[id] * DAY : null; r.method = method || r.method;
-  r.invoices.unshift({ id:invoiceId(now), date:now, plan:id, name:p.name, amount:p.amount, txn:newTxn(), to:r.renewsAt, method:r.method });
-  saveRec(r); plan = id; refreshPlanUI();
-}
-function completeSignIn(u) {
-  if (!u || typeof u.sub !== 'string' || !SUB_RE.test(u.sub) || RESERVED.has(u.sub)) { toast('Sign-in failed. Please try again.', 3500); return false; }
-  user = { sub:u.sub, name:cleanText(u.name || u.email, 100), email:cleanText(u.email, 200), picture:safePicture(u.picture) };
-  const a = readAcc(), r = a[u.sub] || newRecord(); r.profile = { name:user.name, email:user.email, picture:user.picture }; if (!r.joined) r.joined = Date.now(); a[u.sub] = cleanRecord(r); writeAcc(a);
-  try { localStorage.setItem('filmroom.session', u.sub); } catch (e) {}
-  syncPlan(); refreshPlanUI(); return true;
-}
-function signOut() {
-  user = null; plan = 'free';
-  try { localStorage.removeItem('filmroom.session'); } catch (e) {}
+async function signOut() {
+  const t = sessionToken; setToken(null); setAccount(null);
+  if (t) fetch(API_URL + '/auth/signout', { method:'POST', headers:{ authorization:'Bearer ' + t } }).catch(() => {});     // revoke it server-side too
   if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
   refreshPlanUI();
 }
-function restoreSession() {
-  try { const sub = localStorage.getItem('filmroom.session'), r = typeof sub === 'string' && SUB_RE.test(sub) && !RESERVED.has(sub) ? readAcc()[sub] : null; if (r && r.profile) user = { sub, ...r.profile }; } catch (e) {}
-  syncPlan();
-}
-function parseJwt(t) {                                    // Google returns a signed ID token; we only read the profile out of it here
-  const b = t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-  return JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(b + '='.repeat((4 - b.length % 4) % 4)), c => c.charCodeAt(0))));
-}
-function googleUserFromCredential(cred) {                  // sanity checks only: real verification of the signature has to happen on a server
-  let p; try { p = parseJwt(cred); } catch (e) { return null; }
-  if (!p || p.aud !== GOOGLE_CLIENT_ID || !/^(https:\/\/)?accounts\.google\.com$/.test(p.iss || '') || !(p.exp * 1000 > Date.now()) || p.email_verified === false || !p.sub || !p.email) return null;
-  return { sub:p.sub, name:p.name || p.email, email:p.email, picture:p.picture || '' };
-}
-async function mountGoogleButton(el, onUser) {
+async function mountGoogleButton(el, onDone) {
   if (!(window.google && google.accounts && google.accounts.id)) await loadScript('https://accounts.google.com/gsi/client');
-  google.accounts.id.initialize({ client_id:GOOGLE_CLIENT_ID, callback:r => { const u = googleUserFromCredential(r.credential); if (u) onUser(u); else toast('Couldn\'t verify that Google sign-in. Please try again.', 3500); } });
-  google.accounts.id.renderButton(el, { theme:'filled_black', size:'large', shape:'pill', text:'continue_with', width:336 });
+  google.accounts.id.initialize({ client_id:GOOGLE_CLIENT_ID, callback:r => { signInWith('/auth/google', { credential:r.credential }).then(onDone).catch(() => toast('Couldn\'t verify that Google sign-in. Please try again.', 3500)); } });
+  google.accounts.id.renderButton(el, { theme:'outline', size:'large', shape:'pill', text:'continue_with', width:336 });
 }
 const GLOGO = '<svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>';
 
-function onSignedIn(u) {
-  if (!completeSignIn(u)) return; const next = signinNext, plansAfter = signinPlans; signinNext = null; signinPlans = null;
+function onSignedIn() {
+  if (!user) { toast('Sign-in failed. Please try again.', 3500); return; }
+  const next = signinNext, plansAfter = signinPlans; signinNext = null; signinPlans = null;
   if (next) { toast(`Signed in as ${user.email}`, 2200); startCheckout(next); }
   else if (plansAfter && !isPro()) { toast(`Signed in as ${user.email}`, 2200); renderPlans({ reason:plansAfter.reason }); }
   else if (plansAfter) { closeModal(); toast(`Welcome back. Your ${PLANS[plan].name} plan is active.`, 3000); }
@@ -1570,7 +1567,7 @@ function renderSignIn(opts = {}) {
   const nudge = signinNext || signinPlans;
   sheet.innerHTML = XBTN + `<div class="co"><div class="signin">${opts.reason ? `<div class="reason">${LOCK_SVG}${esc(opts.reason)}</div>` : ''}<h2>${nudge ? 'Sign up to upgrade' : 'Sign in to Filmroom'}</h2>
     <p class="sub">${signinPlans ? 'Pro looks and full-resolution exports come with a plan. Create a free account to get started, or sign in to pick up where you left off.' : signinNext ? 'Create a free account to buy a plan. It stays with you on any device, and you can manage billing any time.' : 'Your plan is tied to your account, so Pro works on any device and you can manage billing any time.'}</p><div class="gbox" id="gbox"></div>
-    <p class="demo">${GOOGLE_CLIENT_ID ? 'We only read your name, email and photo from Google.' : '<b>Demo mode:</b> Google sign-in isn\'t connected yet. This creates a demo account stored in this browser.'}</p></div></div>`;
+    <p class="demo">${GOOGLE_CLIENT_ID ? 'We only read your name, email and photo from Google.' : '<b>Local test mode:</b> signs in as a demo account on your own machine.'}</p></div></div>`;
   const box = $('gbox');
   if (GOOGLE_CLIENT_ID) mountGoogleButton(box, onSignedIn).catch(() => { box.textContent = 'Couldn\'t load Google sign-in. Check your connection and try again.'; });
   else box.innerHTML = `<button class="btn white gbtn" data-demo-signin="1">${GLOGO}Continue with Google</button>`;
@@ -1590,26 +1587,27 @@ function paneGeneral(r) {
     <div class="fieldl">Name</div><div class="field">${esc(user.name)}</div>
     <div class="fieldl">Email</div><div class="field">${esc(user.email)}</div>
     <p class="hint">These come from your Google account, so change them there.</p>
-    <div class="asec">${row('Sign-in method', `${GLOGO}<span>Google</span>`)}${row('Member since', r.joined ? fmtDate(r.joined) : '—')}${row('Current plan', esc(PLANS[r.plan].name))}</div>
+    <div class="asec">${row('Sign-in method', `${GLOGO}<span>Google</span>`)}${row('Member since', r.joined ? fmtDate(r.joined) : '—')}${row('Current plan', esc(PLANS[plan].name))}</div>
     <div class="asec danger"><h4>Danger zone</h4><div class="arow"><span>Delete your account and the plan details saved with it.</span><button class="btn danger sm" data-delete="1">Delete account</button></div></div>`;
 }
 function panePlan(r) {
-  const p = PLANS[r.plan], recurring = !!TERM_DAYS[r.plan], paid = r.plan !== 'free';
-  const status = !paid ? 'You\'re on the Free plan.' : r.plan === 'lifetime' ? 'Lifetime access. It never expires.'
+  const p = PLANS[plan], recurring = RECURRING.has(plan), paid = plan !== 'free';
+  const status = !paid ? 'You\'re on the Free plan.' : plan === 'lifetime' ? 'Lifetime access. It never expires.'
     : r.canceled ? `Cancelled. Pro stays until ${fmtDate(r.renewsAt)}.` : `Renews on ${fmtDate(r.renewsAt)} for ${fmtINR(p.amount)}.`;
-  const inv = r.invoices.map(i => `<div class="arow inv"><span>${fmtDate(i.date)} · ${esc(i.name)}</span><span class="r">${fmtINR(i.amount)}<button class="linkbtn" data-receipt="${esc(i.id)}">Receipt</button></span></div>`).join('');
+  const money = i => i.currency && i.currency !== 'INR' ? `${Number(i.amount).toLocaleString('en-IN')} ${esc(i.currency)}` : fmtINR(i.amount);
+  const inv = (r.invoices || []).map(i => `<div class="arow inv"><span>${fmtDate(i.date)} · ${esc(i.name)}${i.status && i.status !== 'succeeded' ? ` · ${esc(i.status)}` : ''}</span><span class="r">${money(i)}<button class="linkbtn" data-receipt="${esc(i.id)}">Invoice</button></span></div>`).join('');
   const foot = !recurring ? '' : r.canceled
     ? `<div class="cfoot"><span>Your subscription ends on ${fmtDate(r.renewsAt)}. Resume to keep Pro.</span><button class="btn white sm" data-resume="1">Resume subscription</button></div>`
     : `<div class="cfoot"><span>Cancel any time. You keep Pro until the end of the period.</span><button class="btn glass sm cancel" data-cancelsub="1">Cancel subscription</button></div>`;
   return `<div class="acard"><div class="ctop"><div><b>${p.name}${paid ? `<span class="badge2${r.canceled ? ' warn' : ''}">${r.canceled ? 'ENDING' : 'ACTIVE'}</span>` : ''}</b><div class="st">${status}</div></div>
       <button class="btn glass sm" data-changeplan="1">${paid ? 'Change plan' : 'Upgrade'}</button></div>${foot}</div>
-    <div class="asec"><h4>Payment method</h4>${row('On file', r.method ? `${esc(r.method.type)} · ${esc(r.method.label)}${paid ? '<button class="linkbtn" data-pm="1">Update</button>' : ''}` : 'None')}</div>
+    <div class="asec"><h4>Payment method</h4>${row('Handled by', paid ? 'Dodo Payments<button class="linkbtn" data-pm="1">Manage billing</button>' : 'Dodo Payments')}</div>
     <div class="asec"><h4>Invoices</h4>${inv || '<div class="arow"><span>No invoices yet</span><span></span></div>'}</div>
-    <p class="hint">Demo mode: no payments are processed.</p>`;
+    <p class="hint">Payments and invoices are handled by Dodo Payments.</p>`;
 }
 function paneUsage() {
-  const L = limits(), U = usageNow().r, fmts = L.formats.map(k => FORMATS[k].label).join(', ');
-  return `<div class="asec first"><h4>Today</h4>${L.downloadsPerDay ? meter('Downloads', U.down, L.downloadsPerDay) : row('Downloads', 'Unlimited')}${meter('Photos open', photos.length, L.photos)}${L.downloadsPerDay ? '<p class="hint">The download count resets at midnight.</p>' : ''}</div>
+  const L = limits(), used = L.downloadsPerDay ? L.downloadsPerDay - remaining() : 0, fmts = L.formats.map(k => FORMATS[k].label).join(', ');
+  return `<div class="asec first"><h4>Today</h4>${L.downloadsPerDay ? meter('Downloads', used, L.downloadsPerDay) : row('Downloads', 'Unlimited')}${meter('Photos open', photos.length, L.photos)}${L.downloadsPerDay ? '<p class="hint">The download count resets at midnight.</p>' : ''}</div>
     <div class="asec"><h4>What your ${esc(PLANS[plan].name)} plan allows</h4>
       ${row('Downloads per day', L.downloadsPerDay ? L.downloadsPerDay : 'Unlimited')}${row('File size', `up to ${L.fileMB} MB`)}${row('Resolution', `up to ${L.megapixels} megapixels`)}${row('Export size', L.exportPx ? `up to ${L.exportPx}px` : 'Full resolution')}
       ${row('Export formats', esc(fmts))}${row('Film looks', L.allLooks ? 'All 14' : '5, plus Original')}${row('Download all (ZIP)', L.zipMax ? `up to ${L.zipMax} photos` : 'Not included')}</div>`;
@@ -1624,102 +1622,47 @@ function renderAccount() {
     <section class="apane" role="tabpanel"><h2>${titles[acctTab]}</h2>${acctTab === 'plan' ? panePlan(r) : acctTab === 'usage' ? paneUsage() : paneGeneral(r)}</section></div>`;
 }
 function renderDelete() {
-  const r = rec(), live = (r.plan === 'monthly' || r.plan === 'yearly') && !r.canceled;
+  const r = rec(), live = RECURRING.has(plan) && !r.canceled;
   sheet.innerHTML = XBTN + `<div class="co"><button class="back" data-acc="1">← Account</button><h2>Delete your account?</h2>
-    <p class="ctext" style="margin:0;text-align:left">${live ? `You have an active <b>${esc(PLANS[r.plan].name)}</b> subscription. Cancel it first (Plan &amp; billing), then you can delete your account.`
-      : `This removes <b>${esc(user.email)}</b> and its plan details and invoices from this browser.${r.plan === 'lifetime' ? ' <b>You will lose your Lifetime access.</b>' : ''} This can't be undone.`}</p>
+    <p class="ctext" style="margin:0;text-align:left">${live ? `You have an active <b>${esc(PLANS[plan].name)}</b> subscription. Cancel it first (Plan &amp; billing), then you can delete your account.`
+      : `This removes <b>${esc(user.email)}</b> and its plan details from Filmroom. Payment records stay with Dodo Payments as the law requires.${plan === 'lifetime' ? ' <b>You will lose your Lifetime access.</b>' : ''} This can't be undone.`}</p>
     <div class="cact"><button class="btn glass" data-acc="1">Keep my account</button>${live ? '' : '<button class="btn danger" data-confirmdelete="1">Delete account</button>'}</div></div>`;
 }
-function deleteAccount() {
-  const r = rec(); if (!user || (r && (r.plan === 'monthly' || r.plan === 'yearly') && !r.canceled)) return false;
-  const a = readAcc(); delete a[user.sub]; writeAcc(a); signOut(); closeModal(); toast('Your account was deleted.', 3500); return true;
+async function deleteAccount() {
+  if (!user) return false;
+  try { await api('/me', { method:'DELETE' }); } catch (e) { toast(e.status === 409 ? e.message : "Couldn't delete your account. Please try again.", 5000); return false; }
+  setToken(null); setAccount(null); refreshPlanUI(); closeModal(); toast('Your account was deleted.', 3500); return true;
 }
 new MutationObserver(() => sheet.classList.toggle('acctsheet', !!sheet.querySelector(':scope > .acctwrap'))).observe(sheet, { childList:true });
 function renderCancel() {
-  const r = rec(), p = PLANS[r.plan];
+  const r = rec(), p = PLANS[plan];
   sheet.innerHTML = XBTN + `<div class="co"><button class="back" data-acc="1">← Plan &amp; billing</button><h2>Cancel ${p.name}?</h2>
     <p class="ctext" style="margin:0;text-align:left">You'll keep Pro until <b>${fmtDate(r.renewsAt)}</b>. After that you'll go back to the Free plan. You can resume any time before then.</p>
     <div class="cact"><button class="btn glass" data-acc="1">Keep my plan</button><button class="btn danger" data-confirmcancel="1">Cancel subscription</button></div></div>`;
 }
 function openAccount(tab) { acctTab = tab || 'general'; renderAccount(); openModal(); }
-// ---------- Receipts (a real one-page PDF, built in the browser) ----------
-// Seller details printed on receipts. Fill these in before launch: an Indian GST invoice needs the legal name, address and GSTIN.
-const BUSINESS = { name:'Filmroom', legalName:'', address:[], gstin:'', support:'' };
-const ymd = ms => new Date(ms).toLocaleDateString('en-CA').replace(/-/g, '');
-const invoiceId = ms => `FR-${ymd(ms)}-${(ms % 1679616).toString(36).toUpperCase().padStart(4, '0')}`;
-const newTxn = () => { const a = new Uint8Array(12); crypto.getRandomValues(a); return 'pay_demo_' + [...a].map(b => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join(''); };   // a real Razorpay payment id (pay_...) replaces this
-const AFM = s => s.split(',').map(Number);                // Helvetica character widths (1/1000 em) for ASCII 32..126, to right-align text
-const HELV = AFM('278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584');
-const HELVB = AFM('278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584');
-const pdfText = t => String(t == null ? '' : t).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\x20-\x7e]/g, '?');   // the standard PDF fonts are Latin-only
-const pdfEsc = t => pdfText(t).replace(/[\\()]/g, '\\$&');
-const textW = (t, size, bold) => { const W = bold ? HELVB : HELV; let n = 0; for (const ch of pdfText(t)) n += W[ch.charCodeAt(0) - 32]; return n * size / 1000; };
-const money = n => Number(n).toLocaleString('en-IN', { minimumFractionDigits:2, maximumFractionDigits:2 });
-const istStamp = ms => new Date(ms).toLocaleString('en-IN', { timeZone:'Asia/Kolkata', day:'numeric', month:'short', year:'numeric', hour:'numeric', minute:'2-digit', hour12:true }).replace(',', '') + ' IST';
-function buildReceiptPDF(i, u) {
-  const ops = [], hex = h => [(h >> 16) & 255, (h >> 8) & 255, h & 255].map(v => (v / 255).toFixed(3)).join(' ');
-  const rect = (x, y, w, h, c) => ops.push(`${hex(c)} rg ${x} ${y} ${w} ${h} re f`);
-  const line = (x1, y1, x2, y2, c = 0xdcdde8, wd = .7) => ops.push(`${hex(c)} RG ${wd} w ${x1} ${y1} m ${x2} ${y2} l S`);
-  const box = (x, y, w, h, c, wd = 1) => ops.push(`${hex(c)} RG ${wd} w ${x} ${y} ${w} ${h} re S`);
-  const text = (x, y, s, size = 10, o = {}) => { const w = textW(s, size, o.bold), px = o.align === 'right' ? x - w : o.align === 'center' ? x - w / 2 : x;
-    ops.push(`BT ${hex(o.color == null ? 0x15152b : o.color)} rg /${o.bold ? 'F2' : 'F1'} ${size} Tf ${px.toFixed(2)} ${y} Td (${pdfEsc(s)}) Tj ET`); };
-  const field = (x, y, label, value, o = {}) => { text(x, y, label, 7.5, { bold:true, color:0x8a8ca8 }); text(x, y - 15, value, o.size || 10.5, { bold:!!o.bold }); };
-  const NAVY = 0x0a0a3d, BLUE = 0x5865f2, GREY = 0x6b6d86, L = 48, R = 547;
-  const txn = i.txn || 'pay_demo_' + i.id, demo = /^pay_demo_/.test(txn);
-  const base = Math.round(i.amount / 1.18 * 100) / 100, gst = Math.round((i.amount - base) * 100) / 100;
-  const period = i.plan === 'lifetime' ? 'Lifetime access' : `${fmtDate(i.date)} to ${fmtDate(i.to || i.date + (TERM_DAYS[i.plan] || 0) * DAY)}`;
-  const term = i.plan === 'lifetime' ? 'One-time payment' : i.plan === 'yearly' ? 'Billed yearly' : 'Billed monthly';
-  // header band
-  rect(0, 742, 595, 100, NAVY); rect(0, 739, 595, 3, BLUE);
-  text(L, 790, BUSINESS.name, 26, { bold:true, color:0xffffff }); text(L, 770, 'Film looks for your photos', 9.5, { color:0xb8bcff });
-  text(R, 794, 'PAYMENT RECEIPT', 13, { bold:true, color:0xffffff, align:'right' }); text(R, 775, 'No. ' + i.id, 10, { color:0xdfe1ff, align:'right' });
-  // status + key facts
-  rect(L, 690, 70, 22, 0x12a150); text(L + 35, 697, 'PAID', 10.5, { bold:true, color:0xffffff, align:'center' });
-  text(L + 82, 697, `${money(i.amount)} INR received`, 10.5, { color:GREY });
-  line(L, 672, R, 672);
-  field(L, 652, 'RECEIPT NUMBER', i.id, { bold:true }); field(220, 652, 'DATE AND TIME', istStamp(i.date)); field(400, 652, 'TRANSACTION ID', txn, { size:9.5, bold:true });
-  field(L, 604, 'PAYMENT METHOD', i.method ? `${i.method.type} - ${i.method.label}` : 'Not recorded'); field(220, 604, 'CURRENCY', 'INR (Indian Rupee)'); field(400, 604, 'PAYMENT STATUS', 'Paid in full');
-  line(L, 566, R, 566);
-  // parties
-  text(L, 544, 'BILLED TO', 7.5, { bold:true, color:0x8a8ca8 }); text(L, 527, u.name, 12, { bold:true }); text(L, 512, u.email, 10, { color:GREY });
-  text(320, 544, 'FROM', 7.5, { bold:true, color:0x8a8ca8 }); text(320, 527, BUSINESS.legalName || BUSINESS.name, 12, { bold:true });
-  let sy = 512; for (const a of BUSINESS.address) { text(320, sy, a, 10, { color:GREY }); sy -= 13; } if (BUSINESS.gstin) text(320, sy, 'GSTIN: ' + BUSINESS.gstin, 10, { color:GREY });
-  // line items
-  rect(L, 452, R - L, 26, 0xf0f1fb); text(L + 12, 461, 'DESCRIPTION', 8, { bold:true, color:GREY }); text(300, 461, 'PERIOD', 8, { bold:true, color:GREY }); text(R - 12, 461, 'AMOUNT (INR)', 8, { bold:true, color:GREY, align:'right' });
-  text(L + 12, 428, i.name, 11.5, { bold:true }); text(L + 12, 413, term + ' - GST included in the price', 8.5, { color:GREY }); text(300, 428, period, 10); text(R - 12, 428, money(base), 11, { align:'right' });
-  line(L, 396, R, 396);
-  // totals
-  text(380, 372, 'Subtotal (excluding GST)', 10, { color:GREY }); text(R - 12, 372, money(base), 10.5, { align:'right' });
-  text(380, 354, 'GST at 18% (included)', 10, { color:GREY }); text(R - 12, 354, money(gst), 10.5, { align:'right' });
-  rect(330, 296, R - 330, 40, NAVY); text(344, 311, 'TOTAL PAID', 10, { bold:true, color:0xffffff }); text(R - 14, 310, `INR ${money(i.amount)}`, 14, { bold:true, color:0xffffff, align:'right' });
-  // notice
-  if (demo) { rect(L, 222, R - L, 46, 0xfff4e0); box(L, 222, R - L, 46, 0xf0b35a, .8); text(L + 14, 249, 'DEMO RECEIPT', 10, { bold:true, color:0x9a5b00 }); text(L + 14, 234, 'No payment was processed. This receipt was generated in demo mode and is not a tax document.', 9, { color:0x7a5200 }); }
-  // footer
-  line(L, 110, R, 110); text(L, 92, 'Thank you for choosing ' + BUSINESS.name + '.', 10.5, { bold:true }); text(L, 77, 'Please keep this receipt for your records.', 9, { color:GREY });
-  if (BUSINESS.support) text(L, 63, 'Questions? ' + BUSINESS.support, 9, { color:GREY });
-  text(R, 77, 'Generated on ' + istStamp(Date.now()), 8.5, { color:GREY, align:'right' }); text(R, 63, 'Page 1 of 1', 8.5, { color:GREY, align:'right' });
-  const content = ops.join('\n');
-  const objs = ['<< /Type /Catalog /Pages 2 0 R >>', '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
-    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> /Contents 4 0 R >>',
-    `<< /Length ${content.length} >>\nstream\n${content}\nendstream`,
-    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>', '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>',
-    `<< /Title (${pdfEsc(BUSINESS.name + ' receipt ' + i.id)}) /Producer (${pdfEsc(BUSINESS.name)}) /CreationDate (D:${new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14)}Z) >>`];
-  let out = '%PDF-1.4\n'; const offs = [];
-  objs.forEach((o, k) => { offs.push(out.length); out += `${k + 1} 0 obj\n${o}\nendobj\n`; });
-  const xref = out.length;
-  out += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n${offs.map(o => String(o).padStart(10, '0') + ' 00000 n \n').join('')}trailer\n<< /Size ${objs.length + 1} /Root 1 0 R /Info 7 0 R >>\nstartxref\n${xref}\n%%EOF`;
-  return new Blob([Uint8Array.from(out, c => c.charCodeAt(0))], { type:'application/pdf' });
+// ---------- Invoices: Dodo Payments issues the tax invoice; the server hands out only the buyer's own ----------
+async function receiptFor(id) {
+  if (!user || !/^pay_[A-Za-z0-9_-]{1,64}$/.test(id)) return;
+  try { saveBlob(await api('/billing/invoice/' + id, { blob:true }), `filmroom-invoice-${safeName(id)}.pdf`); }
+  catch (e) { toast("Couldn't get that invoice. Try again in a moment.", 3500); }
 }
-function receiptFor(id) {
-  const i = rec().invoices.find(x => x.id === id); if (!i || !user) return;
-  saveBlob(buildReceiptPDF(i, user), `${safeName(BUSINESS.name)}-receipt-${safeName(i.id)}.pdf`);
+async function openBilling() {
+  try { const { url } = await api('/billing/portal', { method:'POST' }); if (!/^https:\/\/([a-z0-9-]+\.)*dodopayments\.com\//.test(url)) throw new Error('unexpected address'); navigateTo(url); }
+  catch (e) { toast(e.status === 404 ? e.message : "Couldn't open billing. Please try again.", 4500); }
+}
+async function changeCancel(cancel) {
+  try {
+    const r = await api(cancel ? '/billing/cancel' : '/billing/resume', { method:'POST' }); setAccount(r.account); refreshPlanUI(); renderAccount();
+    toast(cancel ? `Cancelled. Pro stays until ${fmtDate(acct.renewsAt)}.` : 'Subscription resumed', cancel ? 3200 : 2200);
+  } catch (e) { toast(e.message || "Couldn't update your subscription. Please try again.", 4500); }
 }
 
 $('modal').addEventListener('click', e => {
   const t = e.target;
   if (t === $('modal') || t.closest('[data-close]')) return closeModal();
   const pb = t.closest('[data-plan]'); if (pb) return startCheckout(pb.dataset.plan);
-  if (t.closest('[data-demo-signin]')) { const b = t.closest('[data-demo-signin]'); b.disabled = true; b.innerHTML = '<span class="spin"></span>Signing in…'; setTimeout(() => onSignedIn(DEMO_USER), 700); return; }
+  if (t.closest('[data-demo-signin]')) { const b = t.closest('[data-demo-signin]'); b.disabled = true; b.innerHTML = '<span class="spin"></span>Signing in…'; signInWith('/dev/login', { sub:'demo-google-user', email:'demo.user@example.com', name:'Demo User' }).then(onSignedIn).catch(() => { b.disabled = false; b.innerHTML = GLOGO + 'Continue with Google'; toast('Sign-in failed. Is the local API running?', 3500); }); return; }
   if (t.closest('[data-signout]')) { signOut(); closeModal(); toast('Signed out'); return; }
   const at = t.closest('[data-atab]'); if (at) { acctTab = at.dataset.atab; return renderAccount(); }
   const ac = t.closest('[data-acc]'); if (ac) { if (ac.dataset.acc === 'plan') acctTab = 'plan'; return renderAccount(); }
@@ -1727,23 +1670,19 @@ $('modal').addEventListener('click', e => {
   if (t.closest('[data-confirmdelete]')) { deleteAccount(); return; }
   if (t.closest('[data-changeplan]')) return renderPlans({});
   if (t.closest('[data-cancelsub]')) return renderCancel();
-  if (t.closest('[data-confirmcancel]')) { const r = rec(); r.canceled = true; saveRec(r); renderAccount(); toast(`Cancelled. Pro stays until ${fmtDate(r.renewsAt)}.`, 3200); return; }
-  if (t.closest('[data-resume]')) { const r = rec(); r.canceled = false; saveRec(r); renderAccount(); toast('Subscription resumed', 2200); return; }
+  if (t.closest('[data-confirmcancel]')) return changeCancel(true);
+  if (t.closest('[data-resume]')) return changeCancel(false);
   const rc = t.closest('[data-receipt]'); if (rc) return receiptFor(rc.dataset.receipt);
-  if (t.closest('[data-pm]')) { toast('Updating your payment method will open Razorpay once it\'s connected.', 3500); return; }
+  if (t.closest('[data-pm]')) return openBilling();
   if (t.closest('[data-back]')) return renderPlans(lastOpts);
-  if (t.closest('[data-free]')) { if (!user) return renderSignIn(); const r = rec(); if (r.plan === 'lifetime') toast('Lifetime plans don\'t expire.'); else if (r.plan === 'free') return; else if (r.canceled) toast(`Already cancelled. Pro stays until ${fmtDate(r.renewsAt)}.`, 3200); else renderCancel(); return; }
-  const m = t.closest('[data-method]'); if (m) { sheet.querySelectorAll('[data-method]').forEach(x => x.classList.toggle('active', x === m)); return; }
-  if (t.closest('[data-pay]')) {
-    const b = $('pay'); b.disabled = true; b.innerHTML = '<span class="spin"></span>Processing…';
-    const type = (sheet.querySelector('[data-method].active') || {}).textContent || 'UPI', label = { UPI:'demo@upi', Card:'Visa •••• 4242', Netbanking:'Demo Bank' }[type] || 'Demo';
-    setTimeout(() => { activatePlan(checkoutPlan, { type, label }); renderSuccess(checkoutPlan); }, 1100);
-  }
+  if (t.closest('[data-free]')) { if (!user) return renderSignIn(); const r = rec(); if (plan === 'lifetime') toast('Lifetime plans don\'t expire.'); else if (plan === 'free') return; else if (r.canceled) toast(`Already cancelled. Pro stays until ${fmtDate(r.renewsAt)}.`, 3200); else renderCancel(); return; }
+  if (t.closest('[data-pay]')) return beginPayment();
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('modal').classList.contains('open')) closeModal(); });
 $('acctbtn').onclick = () => { if (user) openAccount(); else { renderSignIn(); openModal(); } };
-restoreSession();
 refreshPlanUI();
+restoreSession().then(() => { refreshPlanUI(); handleCheckoutReturn(); });
+window.addEventListener('focus', () => { if (user) refreshAccount(); });
 [[amt, 'amtv'], [grn, 'grnv']].forEach(([el, out]) => {
   const paint = () => el.style.setProperty('--p', (el.value - el.min) / (el.max - el.min) * 100 + '%'); paint();
   el.addEventListener('input', () => { $(out).textContent = el.value + '%'; paint(); if (before) setBefore(false); else render(); });

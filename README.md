@@ -18,9 +18,9 @@ Give any photo the look of classic Fujifilm and Polaroid film stocks, add grain,
 - **Any format out:** the same format as the original, or PNG, JPEG, WebP, TIFF and BMP (AVIF where the browser supports it). Browsers can't write HEIC, so those photos save as JPEG.
 - **Full resolution:** processing happens on the GPU at the photo's original size.
 
-## Plans (mock for now)
+## Plans and payments
 
-Pricing is built into the UI, but **no payments are processed**. Plan state is kept in the browser's `localStorage`, and the checkout screen is a demo.
+Payments are handled by [Dodo Payments](https://dodopayments.com) (hosted checkout, tax and invoices). A small API in [`server/`](server/) (a Cloudflare Worker) verifies the Google sign-in, creates the checkout, receives Dodo's signed webhook and is the only thing that can grant a plan. The page only asks the server what plan the account has. Setup, deployment and the test-to-live checklist are in [server/README.md](server/README.md).
 
 | | Free | Pro Monthly | Pro Yearly | Lifetime |
 |---|---|---|---|---|
@@ -32,25 +32,23 @@ Pricing is built into the UI, but **no payments are processed**. Plan state is k
 | Export size and formats | 1024 px, JPEG and PNG | Original size, all formats | Same | Same |
 | "Download all" ZIP | not included | up to 25 photos | up to 25 | up to 25 |
 
-Every rule, where it is enforced and the test that proves it is in [docs/BUSINESS_RULES.md](docs/BUSINESS_RULES.md). The numbers live in one table (`LIMITS` in `index.html`). Locked looks show a lock on their cartridge, and hitting any limit opens the plan picker (Free) or shows a plain message (paid). To wire up real payments, replace `startCheckout()` in `index.html`: create the order or subscription on a server, verify the payment, then call `activatePlan()`.
+Every rule, where it is enforced and the test that proves it is in [docs/BUSINESS_RULES.md](docs/BUSINESS_RULES.md). The numbers live in one table (`LIMITS` in `index.html`). Locked looks show a lock on their cartridge, and hitting any limit opens the plan picker (Free) or shows a plain message (paid).
 
 ## Security and tests
 
-The app is client-side only, so plans and limits behave correctly for honest users but **can be bypassed by a determined one** until a server owns them. [SECURITY.md](SECURITY.md) has the full penetration-test and verification report, what was fixed, and what to build before taking real payments.
+Identity, plans, billing and the signed-in Free download count are owned by the server, so a plan can't be granted from the browser. What a determined user can still do, and why, is in [SECURITY.md](SECURITY.md), together with the penetration-test and verification report.
 
-To run the 45 automated tests (business rules and security): `python3 -m http.server 8731`, then open <http://localhost:8731/tests/run.html>. After editing any inline script, run `python3 tools/update-csp.py` to refresh the content-security policy's script hashes.
+Tests (all local, no network, no money):
+
+- **Server unit tests (36):** `cd server && npm test`. Webhook signatures, Google token checks, plan rules, webhook handling.
+- **Server end-to-end (24):** with the Worker and `node server/test/mock-dodo.mjs` running, `node server/test/e2e-local.mjs`. The whole purchase, renewal, cancel, refund and delete flow against a mock Dodo.
+- **Browser suite (49):** same two processes plus `python3 -m http.server 8731`, then open <http://localhost:8731/tests/run.html> (`?only=ACC-7,SRV-1` runs just those). After editing any inline script, run `python3 tools/update-csp.py` to refresh the content-security policy.
 
 ## Accounts (Google sign-in)
 
-Plans belong to an account. Buying a plan needs a sign-in. The account dialog has three tabs: **General** (profile, sign-in method, delete account), **Plan & billing** (change plan, cancel or resume, payment method, invoices with a downloadable PDF receipt) and **Usage** (today's uploads and downloads against the plan's limits).
+Plans belong to an account. Buying a plan needs a sign-in. The account dialog has three tabs: **General** (profile, sign-in method, delete account), **Plan & billing** (change plan, cancel or resume, billing portal, invoices as PDF) and **Usage** (today's downloads against the plan's limits).
 
-Sign-in is a **demo** until you add a Google OAuth client ID:
-
-1. In Google Cloud Console, create an **OAuth client ID** of type *Web application*.
-2. Add your site (`https://filmroom.in` and `https://www.filmroom.in`) and `http://localhost:8731` under *Authorized JavaScript origins*.
-3. Paste the client ID into `GOOGLE_CLIENT_ID` near the top of the accounts code in `index.html`. "Continue with Google" then becomes Google's real button.
-
-For now account and plan data is stored in the browser. Before real payments, move it to a server: verify the Google ID token there and store the plan against the verified account.
+"Continue with Google" gives the page a Google ID token. The server checks its signature, audience, issuer, expiry and freshness, then issues a revocable session token that the page keeps and sends with each request. Google sign-in needs `https://filmroom.in` (and `http://localhost:8731` for local work) under *Authorized JavaScript origins* of the OAuth client.
 
 ## How it works
 
