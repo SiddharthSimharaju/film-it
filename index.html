@@ -411,9 +411,14 @@
     #controls .ctl { display:grid; grid-template-columns:46px minmax(0,1fr) 40px; align-items:center; gap:8px; font-size:14px; }     /* label | slider | value, so both tracks line up */
     #controls .ctl input[type=range] { width:100%; min-width:0; } #controls .ctl output { text-align:right; min-width:0; }
     /* compact, but still easy to grab: a 34px-tall touch area around a slim track, a 22px thumb, rows close together */
-    input[type=range] { height:34px; touch-action:pan-y; background-size:100% 5px !important; background-position:center !important; background-repeat:no-repeat !important; border-radius:0; -webkit-tap-highlight-color:transparent; }
-    #ang { background-image:linear-gradient(rgba(255,255,255,.2), rgba(255,255,255,.2)) !important; background-color:transparent !important; }
-    input[type=range]::-webkit-slider-thumb { width:22px; height:22px; box-shadow:0 2px 6px rgba(0,0,0,.45); }
+    /* the invisible 34px box is the touch area; the visible track is its own slim, ROUNDED bar drawn on the track part (a gradient painted on the box itself would have square ends) */
+    input[type=range] { height:34px; touch-action:pan-y; background:transparent !important; border-radius:0; -webkit-tap-highlight-color:transparent; }
+    input[type=range]::-webkit-slider-runnable-track { height:5px; border-radius:3px; background:linear-gradient(to right, #fff var(--p,0%), rgba(255,255,255,.2) var(--p,0%)); }
+    input[type=range]::-moz-range-track { height:5px; border-radius:3px; background:linear-gradient(to right, #fff var(--p,0%), rgba(255,255,255,.2) var(--p,0%)); }
+    .adj input[type=range]::-webkit-slider-runnable-track { background:linear-gradient(to right, rgba(255,255,255,.2) var(--a,50%), #fff var(--a,50%), #fff var(--b,50%), rgba(255,255,255,.2) var(--b,50%)); }
+    .adj input[type=range]::-moz-range-track { background:linear-gradient(to right, rgba(255,255,255,.2) var(--a,50%), #fff var(--a,50%), #fff var(--b,50%), rgba(255,255,255,.2) var(--b,50%)); }
+    #ang::-webkit-slider-runnable-track, #ang::-moz-range-track { background:rgba(255,255,255,.2); }
+    input[type=range]::-webkit-slider-thumb { width:22px; height:22px; margin-top:-8.5px; box-shadow:0 2px 6px rgba(0,0,0,.45); }      /* (track 5px - thumb 22px) / 2: centred on the track */
     input[type=range]::-moz-range-thumb { width:22px; height:22px; }
     .adjpanel.on { gap:0 18px; } .adj .ah { margin-bottom:-2px; font-size:13px; } .adj input[type=range] { height:34px; } .adjpanel .btn { height:30px; font-size:13px; margin-top:2px; }
     .croppanel.on { gap:3px 10px; } .croppanel .ctl { gap:8px; font-size:14px; } .chip { padding:6px 12px; font-size:12.5px; border-radius:11px; }

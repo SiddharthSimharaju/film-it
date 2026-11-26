@@ -337,6 +337,23 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
     return { pass: film && adj && ang, detail: `film ${film} (sliders ${Math.round(a.height)}px, panel ${Math.round(filmH)}px), adjustments ${adj} (panel ${Math.round(adjH)}px), crop ${ang} (panel ${Math.round(cropH)}px)` };
   });
 
+  await check('MOB-12', 'Phone: the slider bar is drawn on the track itself as a slim bar with rounded ends (Chrome and Firefox), not painted on the tall touch box, whose ends would be square; the touch box itself has no background', async () => {
+    // browsers do not report slider-track styles through getComputedStyle, so read the CSS rules that apply at this width
+    const rules = []; const walk = list => { for (const r of list) { if (r.cssRules && r.media) { if (win.matchMedia(r.media.mediaText).matches) walk(r.cssRules); } else if (r.selectorText) rules.push(r); } };
+    for (const s of doc.styleSheets) { try { walk(s.cssRules); } catch (e) {} }
+    const last = sel => rules.filter(r => r.selectorText.split(',').some(x => x.trim() === sel)).pop();
+    const px = v => parseFloat(v) || 0;
+    const r = rules.filter(x => x.selectorText.split(',').some(y => y.trim() === 'input[type="range"]::-webkit-slider-runnable-track') && x.style.borderRadius).pop();
+    const wk = r && { h: px(r.style.height), r: px(r.style.borderRadius) };
+    const box = rules.filter(x => x.selectorText.trim() === 'input[type="range"]' && x.style.height === '34px').pop();
+    const boxClear = !!(box && /transparent/.test(box.style.getPropertyValue('background')));
+    // Chrome drops Firefox-only selectors while parsing, so Firefox's track rule is checked in the page source
+    const src = await (await fetch(win.location.pathname.replace(/[^/]*$/, '') + '../index.html')).text();
+    const ff = /input\[type=range\]::-moz-range-track\s*\{[^}]*height:\s*[3-8]px;[^}]*border-radius:\s*[2-9]px/.test(src);
+    const ok = wk && wk.h >= 3 && wk.h <= 8 && wk.r >= 2 && boxClear && ff;
+    return { pass: !!ok, detail: `Chrome track ${wk ? wk.h + 'px high, radius ' + wk.r + 'px' : 'MISSING'}; Firefox track rounded ${ff}; touch box transparent ${boxClear}` };
+  });
+
   /* ===================== SMOOTH SLIDERS ===================== */
   await boot(); await signIn(); await buy('monthly');
   await check('SLIDE-1', 'Dragging a slider draws a lighter preview (long side up to 1400 px) and returns to full resolution when it stops; an export straight after a drag is still full resolution', async () => {
