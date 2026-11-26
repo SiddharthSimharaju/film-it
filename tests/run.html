@@ -297,12 +297,12 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
     return { pass: shown('#legalbar') && !shown('#controls') && shown('#upbtn') && shown('.shelf'), detail: `terms bar ${shown('#legalbar')}, sliders hidden ${!shown('#controls')}, upload button ${shown('#upbtn')}` };
   });
 
-  await check('MOB-7', 'Small phones (320 to 430 px): the header is icons only (logo mark, download, sign in) and nothing overlaps or runs off the right edge', async () => {
+  await check('MOB-7', 'Small phones (320 to 430 px): the logo keeps its FILMROOM name, the buttons are icons only, and nothing overlaps or runs off the right edge', async () => {
     const out = []; let ok = true;
     for (const w of [320, 360, 390, 430]) {
       fPhone.style.width = w + 'px'; await sleep(450);
       const l = R('.logo'), d = R('#dl'), c = R('#dlcaret'), a = R('#acctbtn');
-      const fits = l.width < 40 && l.right < d.left - 8 && d.right <= c.left + 1 && c.right < a.left && a.right <= w && R('.nav').top > Math.max(d.bottom, a.bottom);
+      const fits = l.width > 100 && R('#dl').width < 60 && R('#acctbtn').width < 50 && l.right < d.left - 8 && d.right <= c.left + 1 && c.right < a.left && a.right <= w && R('.nav').top > Math.max(d.bottom, a.bottom);
       ok = ok && fits; out.push(`${w}:${fits ? 'ok' : 'OVERLAP'}`);
     }
     fPhone.style.width = '390px'; await sleep(300); return { pass: ok, detail: out.join(' ') };

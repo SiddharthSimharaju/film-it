@@ -417,9 +417,8 @@
     .strip { padding:2px 6px 12px; } .film { flex:0 0 80px; gap:4px; font-size:11px; }
     .film svg, .film img { width:64px; height:70px; } .film.active::after { bottom:-8px; }
   }
-  /* small phones: no room for words, so the header is icons only (the logo mark without its name, a download icon, a person icon for Sign in) */
+  /* small phones: the buttons are icons only (download arrow, person for Sign in) so the FILMROOM name still fits next to the logo mark */
   @media (max-width:480px) {
-    .logo { font-size:0; gap:0; } .logo svg { width:30px; height:30px; }
     .topr { gap:6px; }
     .topr #dl { font-size:0; gap:0; padding:0 13px; } .topr #dl svg { width:20px; height:20px; } .split .caret { padding:0 10px; }
     .acct.out { width:40px; padding:0; justify-content:center; gap:0; } .acct.out span { display:none; } .acct.out svg { width:20px; height:20px; }
