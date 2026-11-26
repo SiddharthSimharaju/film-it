@@ -43,6 +43,7 @@ export function subFromDodo(d, plan) {
   return {
     id: d.subscription_id, plan, status: String(d.status || ''),
     nextBillingDate: ms(d.next_billing_date),
+    scheduled: d.scheduled_change ? { plan: plan === 'yearly' ? 'monthly' : 'yearly', at: ms(d.next_billing_date) } : null,       // a plan switch Dodo will apply at the next billing date
     cancelAtPeriodEnd: d.cancel_at_next_billing_date === true,
     // when access really stops: the grace deadline of a failed renewal, an explicit expiry, or (for a cancelled sub) the end of the paid period
     endsAt: ms(d.past_due_ends_at) || ms(d.expires_at) || (d.status === 'cancelled' ? ms(d.next_billing_date) : null),

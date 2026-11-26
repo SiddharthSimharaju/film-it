@@ -5,11 +5,19 @@ const subs = {};
 http.createServer((req, res) => {
   let body = ''; req.on('data', c => body += c); req.on('end', () => {
     const send = (o, s = 200) => { res.writeHead(s, { 'content-type': 'application/json' }); res.end(JSON.stringify(o)); };
+    if (req.url === '/__reset') { for (const k of Object.keys(subs)) subs[k] = undefined; return send({ ok: true }); }         // tests start each case from a clean slate
     if (req.headers.authorization !== 'Bearer dummy_local_key') return send({ error: 'auth' }, 401);
     let m;
     if (req.method === 'POST' && req.url === '/checkouts') return send({ session_id: 'cks_mock', checkout_url: 'https://test.checkout.dodopayments.com/session/cks_mock' });
+    const sub = id => subs[id] ||= { subscription_id: id, product_id: 'pdt_mock', status: 'active', next_billing_date: new Date(Date.now() + 30 * 864e5).toISOString(), cancel_at_next_billing_date: false, scheduled_change: null };
+    if ((m = req.url.match(/^\/subscriptions\/(sub_dev[\w-]*)\/change-plan(\/preview|\/scheduled)?$/))) {
+      const s = sub(m[1]);
+      if (m[2] === '/preview') return send({ immediate_charge: { summary: { total_amount: 135099, currency: 'INR' } }, new_plan: { next_billing_date: new Date(Date.now() + 365 * 864e5).toISOString() } });
+      if (m[2] === '/scheduled') { s.scheduled_change = null; res.writeHead(204); return res.end(); }
+      const b = JSON.parse(body); s.scheduled_change = b.effective_at === 'next_billing_date' ? { product_id: b.product_id } : null; return send({ payment_id: 'pay_mock_change' });
+    }
     if ((m = req.url.match(/^\/subscriptions\/(sub_dev[\w-]*)$/))) {
-      const s = subs[m[1]] ||= { subscription_id: m[1], product_id: 'pdt_mock', status: 'active', next_billing_date: new Date(Date.now() + 30 * 864e5).toISOString(), cancel_at_next_billing_date: false };
+      const s = sub(m[1]);
       if (req.method === 'PATCH') Object.assign(s, JSON.parse(body)); return send(s);
     }
     if (req.url.startsWith('/invoices/payments/')) { res.writeHead(200, { 'content-type': 'application/pdf' }); return res.end('%PDF-1.4 mock invoice'); }

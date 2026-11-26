@@ -31,7 +31,7 @@ const check = async (id, name, fn) => { if (ONLY.length && !ONLY.includes(id)) r
 
 // ---------- harness helpers ----------
 async function boot(setup, query = '') {                    // fresh app, fresh server-side test account; optional (async) set-up first
-  document.getElementById('host').innerHTML = ''; localStorage.clear(); await post('/dev/reset', { sub: 'demo-google-user' }); if (setup) await setup();
+  document.getElementById('host').innerHTML = ''; localStorage.clear(); await post('/dev/reset', { sub: 'demo-google-user' }); await fetch('http://localhost:8799/__reset', { method: 'POST', mode: 'no-cors' }).catch(() => {}); if (setup) await setup();
   const f = document.createElement('iframe'); f.src = '../index.html?demo=1' + query + '&t=' + Date.now(); document.getElementById('host').appendChild(f);
   await new Promise(r => f.onload = r); win = f.contentWindow; doc = win.document;
   await until(() => doc.querySelectorAll('#strip .film img').length === 15, 8000);
@@ -231,9 +231,26 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
     return { pass: /Pro Yearly/.test(summary) && /1,499/.test(summary) && JSON.stringify(asked) === '{"plan":"yearly"}' && /^https:\/\/test\.checkout\.dodopayments\.com\//.test(went), detail: `asked ${JSON.stringify(asked)} -> ${went}` };
   });
   await boot(); await signIn(); await buy('monthly');
-  await check('PAY-2', 'A subscriber cannot start a second subscription from the plans screen (told to cancel first)', async () => {
-    win.openPlans(); await until(() => $$('[data-plan=yearly]'), 2000); $$('[data-plan=yearly]').click(); await sleep(250); const t = toastText(); closeAll();
-    return { pass: /Cancel your current subscription first/.test(t), detail: t };
+  await check('PAY-2', 'A Monthly subscriber can switch to Yearly: the price comes from Dodo, and the plan changes once Dodo confirms', async () => {
+    win.openPlans(); await until(() => $$('[data-switch=yearly]'), 2000); const noBuy = !$$('[data-plan=yearly]'); $$('[data-switch=yearly]').click();
+    await until(() => $$('#pay'), 4000); const sum = $$('.sheet').textContent, priced = /Due today/.test(sum) && /1,350\.99/.test(sum);
+    $$('#pay').click(); const waiting = await until(() => /Switching to Pro Yearly/.test($$('.sheet').textContent), 4000);
+    setTimeout(() => devGrant(win.localStorage.getItem('filmroom.token'), { plan: 'yearly' }), 1200);                          // stands in for Dodo's webhook
+    const done = await until(() => /You're on Pro Yearly/.test($$('.sheet').textContent), 25000); closeAll();
+    return { pass: noBuy && priced && !!waiting && !!done, detail: `no second purchase offered: ${noBuy}; price shown: ${priced}; waiting screen: ${!!waiting}; success: ${!!done}` };
+  });
+  await boot(); await signIn(); await buy('yearly');
+  await check('PAY-4', 'A Yearly subscriber can schedule a switch to Monthly (nothing charged now), see it pending, and undo it', async () => {
+    win.openPlans(); await until(() => $$('[data-switch=monthly]'), 2000); $$('[data-switch=monthly]').click(); await until(() => $$('#pay'), 4000);
+    const free = /Nothing to pay today/.test($$('.sheet').textContent); $$('#pay').click();
+    const pending = await until(() => /Switching to Pro Monthly on/.test($$('.sheet').textContent), 5000), undo = !!$$('[data-unschedule]');
+    if (undo) { $$('[data-unschedule]').click(); await until(() => !/Switching to Pro Monthly/.test($$('.sheet').textContent), 4000); }
+    const cleared = !/Switching to Pro Monthly/.test($$('.sheet').textContent); closeAll();
+    return { pass: free && !!pending && undo && cleared, detail: `nothing due now: ${free}; pending shown: ${!!pending}; undo offered: ${undo}; cleared: ${cleared}` };
+  });
+  await boot(); await signIn(); await buy('monthly');
+  await check('PAY-5', 'Messages are never hidden behind a window (toasts sit above the plans window)', async () => {
+    const z = el => +getComputedStyle(el).zIndex || 0; return { pass: z($$('#toast')) > z($$('#modal')), detail: `toast z-index ${z($$('#toast'))}, window z-index ${z($$('#modal'))}` };
   });
   await boot(async () => { window.__tk = await devLogin(); localStorage.setItem('filmroom.token', window.__tk); }, '&checkout=done');
   await check('PAY-3', 'Returning from Dodo shows "Confirming…", then the plan once the webhook lands (and removes ?checkout from the address)', async () => {

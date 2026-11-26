@@ -17,6 +17,8 @@ export class Account extends DurableObject {
       profile: rec.profile, joined: rec.joined,
       plan: eff.plan, status: eff.status, renewsAt: eff.renewsAt, canceled: eff.canceled,
       hasSubscription: !!(rec.sub && rec.sub.id && (eff.plan === 'monthly' || eff.plan === 'yearly')),
+      scheduledPlan: rec.sub && rec.sub.scheduled && (eff.plan === 'monthly' || eff.plan === 'yearly') ? rec.sub.scheduled.plan : null,
+      scheduledAt: rec.sub && rec.sub.scheduled ? rec.sub.scheduled.at : null,
       invoices: rec.payments.map(p => ({ id: p.id, date: p.at, plan: p.plan, name: PLANS[p.plan]?.name || p.plan, amount: p.amount, currency: p.currency, status: p.status })),
       usage: { day, down: rec.usage.day === day ? rec.usage.down : 0, cap: eff.plan === 'free' ? FREE_DAILY_DOWNLOADS : 0 },
     };

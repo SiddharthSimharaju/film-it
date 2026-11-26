@@ -121,3 +121,11 @@ test('webhook: unknown event types and empty bodies are ignored without error', 
   const w = world(); for (const e of [{ type: 'license_key.created', data: {} }, {}, null, { type: 'subscription.active', data: {} }]) await processEvent(e, w.deps);
   assert.equal(w.store.size, 0);
 });
+
+test('subFromDodo: a scheduled plan switch is remembered as the OTHER recurring plan; none means null', () => {
+  const base = { subscription_id: 's', status: 'active', next_billing_date: '2026-12-26T00:00:00Z' };
+  assert.deepEqual(subFromDodo({ ...base, scheduled_change: { product_id: 'x' } }, 'yearly').scheduled, { plan: 'monthly', at: Date.parse('2026-12-26T00:00:00Z') });
+  assert.equal(subFromDodo({ ...base, scheduled_change: { product_id: 'x' } }, 'monthly').scheduled.plan, 'yearly');
+  assert.equal(subFromDodo({ ...base, scheduled_change: null }, 'yearly').scheduled, null);
+  assert.equal(subFromDodo(base, 'yearly').scheduled, null);
+});

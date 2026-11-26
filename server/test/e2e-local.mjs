@@ -17,6 +17,12 @@ const mock = http.createServer((req, res) => {
     if (req.headers.authorization !== 'Bearer dummy_local_key') return send({ error: 'auth' }, 401);
     if (req.method === 'POST' && req.url === '/checkouts') { const b = JSON.parse(body); db.lastCheckout = b; return send({ session_id: 'cks_1', checkout_url: 'https://test.checkout.dodopayments.com/session/cks_1' }); }
     let x;
+    if ((x = m(/^\/subscriptions\/([\w-]+)\/change-plan(\/preview|\/scheduled)?$/))) {
+      const s = db.subs[x[1]]; if (!s) return send({}, 404);
+      if (x[2] === '/preview') return send({ immediate_charge: { summary: { total_amount: 135099, currency: 'INR' } }, new_plan: { next_billing_date: future(365) } });
+      if (x[2] === '/scheduled') { s.scheduled_change = null; db.calls.push('UNSCHEDULED'); res.writeHead(204); return res.end(); }
+      const b = JSON.parse(body); db.lastChange = b; s.scheduled_change = b.effective_at === 'next_billing_date' ? { product_id: b.product_id } : null; return send({ payment_id: 'pay_chg' });
+    }
     if ((x = m(/^\/subscriptions\/([\w-]+)$/))) {
       const s = db.subs[x[1]]; if (!s) return send({}, 404);
       if (req.method === 'PATCH') Object.assign(s, JSON.parse(body)); return send(s);
@@ -111,6 +117,26 @@ try {
   const t3 = await login('leaver', 'leaver@example.com'); assert.equal((await call('/me', { token: t3, method: 'DELETE' })).status, 200);
   assert.equal((await call('/me', { token: t3 })).status, 401); ok('deleting an account ends every session');
   const t4 = await login('signer', 'signer@example.com'); await call('/auth/signout', { token: t4, method: 'POST' }); assert.equal((await call('/me', { token: t4 })).status, 401); ok('sign out revokes the session server-side');
+
+  // ---- switching plans: Yearly -> Monthly is scheduled for the next billing date (nothing charged now) ----
+  r = await call('/billing/change-plan/preview', { token: t, method: 'POST', json: { plan: 'monthly' } }); assert.equal(r.status, 200); assert.equal(r.body.kind, 'downgrade'); ok('preview of Yearly -> Monthly says it starts at the next billing date');
+  r = await call('/billing/change-plan', { token: t, method: 'POST', json: { plan: 'monthly' } }); assert.equal(r.status, 200);
+  assert.equal(db.lastChange.product_id, PROD.monthly); assert.equal(db.lastChange.proration_billing_mode, 'full_immediately'); assert.equal(db.lastChange.effective_at, 'next_billing_date');
+  assert.deepEqual([r.body.account.plan, r.body.account.scheduledPlan], ['yearly', 'monthly']); ok('Yearly -> Monthly is scheduled at Dodo, the account stays Yearly and shows the pending switch');
+  r = await call('/billing/change-plan/cancel', { token: t, method: 'POST' }); assert.equal(r.status, 200); assert.equal(r.body.account.scheduledPlan, null); ok('the scheduled switch can be cancelled');
+  r = await call('/billing/change-plan', { token: t, method: 'POST', json: { plan: 'yearly' } }); assert.equal(r.status, 409); assert.equal(r.body.error, 'same_plan'); ok('switching to the plan you are already on is refused');
+  r = await call('/billing/change-plan', { token: t, method: 'POST', json: { plan: 'lifetime' } }); assert.equal(r.status, 400); ok('Lifetime is bought through checkout, not switched');
+  r = await call('/billing/change-plan', { token: other, method: 'POST', json: { plan: 'yearly' } }); assert.equal(r.status, 409); ok('someone without a subscription cannot switch');
+  // ---- Monthly -> Yearly starts now with Dodo's own prorated amount ----
+  const tm = await login('monthly1', 'monthly1@example.com');
+  db.subs.sub_M = { subscription_id: 'sub_M', product_id: PROD.monthly, status: 'active', next_billing_date: future(20), metadata: { sub: 'monthly1' }, customer: { customer_id: 'cus_M', email: 'monthly1@example.com' } };
+  await webhook('subscription.active', { subscription_id: 'sub_M' }); assert.equal((await call('/me', { token: tm })).body.account.plan, 'monthly');
+  r = await call('/billing/change-plan/preview', { token: tm, method: 'POST', json: { plan: 'yearly' } }); assert.equal(r.status, 200);
+  assert.deepEqual([r.body.kind, r.body.chargeNow, r.body.currency], ['upgrade', 1350.99, 'INR']); ok("preview of Monthly -> Yearly shows Dodo's prorated amount (₹1,350.99)");
+  r = await call('/billing/change-plan', { token: tm, method: 'POST', json: { plan: 'yearly', product_id: 'pdt_FREE', proration_billing_mode: 'do_not_bill' } }); assert.equal(r.status, 200);
+  assert.equal(db.lastChange.product_id, PROD.yearly); assert.equal(db.lastChange.proration_billing_mode, 'prorated_immediately'); assert.equal(db.lastChange.effective_at, 'immediately');
+  ok('Monthly -> Yearly: product and proration come from the server, the browser cannot pick a cheaper mode');
+  db.subs.sub_M.product_id = PROD.yearly; await webhook('subscription.plan_changed', { subscription_id: 'sub_M' }); assert.equal((await call('/me', { token: tm })).body.account.plan, 'yearly'); ok("Dodo's plan_changed webhook moves the account to Yearly");
 
   console.log(`\n${n} checks passed`);
 } catch (e) { console.error('\nFAILED:', e.message, '\n', e.stack.split('\n').slice(0, 4).join('\n')); process.exitCode = 1; }

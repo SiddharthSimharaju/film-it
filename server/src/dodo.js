@@ -15,6 +15,9 @@ export const createCheckout = (env, body) => call(env, 'POST', '/checkouts', bod
 export const getSubscription = (env, id) => call(env, 'GET', `/subscriptions/${encodeURIComponent(id)}`);
 export const getPayment = (env, id) => call(env, 'GET', `/payments/${encodeURIComponent(id)}`);
 export const setCancelAtPeriodEnd = (env, id, on) => call(env, 'PATCH', `/subscriptions/${encodeURIComponent(id)}`, { cancel_at_next_billing_date: !!on });
+export const previewChangePlan = (env, id, body) => call(env, 'POST', `/subscriptions/${encodeURIComponent(id)}/change-plan/preview`, body);
+export const changePlan = (env, id, body) => call(env, 'POST', `/subscriptions/${encodeURIComponent(id)}/change-plan`, body);
+export const cancelScheduledChange = (env, id) => call(env, 'DELETE', `/subscriptions/${encodeURIComponent(id)}/change-plan/scheduled`, null, true);
 export const portalLink = (env, customerId, returnUrl) => call(env, 'POST', `/customers/${encodeURIComponent(customerId)}/customer-portal/session`, returnUrl ? { return_url: returnUrl } : undefined);
 export const invoicePdf = (env, paymentId) => call(env, 'GET', `/invoices/payments/${encodeURIComponent(paymentId)}`, null, true);
 

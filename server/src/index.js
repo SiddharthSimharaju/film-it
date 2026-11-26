@@ -107,6 +107,18 @@ const routes = {
   'POST /billing/cancel': (req, env, a) => setCancel(env, a, true),
   'POST /billing/resume': (req, env, a) => setCancel(env, a, false),
 
+  'POST /billing/change-plan/preview': (req, env, a) => changePlan(req, env, a, true),
+  'POST /billing/change-plan': (req, env, a) => changePlan(req, env, a, false),
+  'POST /billing/change-plan/cancel': async (req, env, a) => {
+    const acct = accountFor(env)(a.sub), rec = await acct.raw();
+    if (!rec.sub || !rec.sub.scheduled) return fail(409, 'nothing_scheduled', 'There is no plan switch scheduled.');
+    try {
+      await dodo.cancelScheduledChange(env, rec.sub.id);
+      await acct.setSub(subFromDodo(await dodo.getSubscription(env, rec.sub.id), rec.sub.plan));
+      return json({ account: await acct.view() });
+    } catch (e) { console.error('unschedule failed', e.status, e.body); return dodoErr(e); }
+  },
+
   'POST /billing/portal': async (req, env, a) => {
     const rec = await accountFor(env)(a.sub).raw();
     if (!rec.customerId) return fail(404, 'no_customer', 'There is no billing profile yet. It is created with your first purchase.');
@@ -118,6 +130,34 @@ const routes = {
     return json(await accountFor(env)(a.sub).consumeDownloads(n));
   },
 };
+
+// Monthly <-> Yearly for someone who already subscribes. Dodo's rules: a LONGER plan (monthly -> yearly) starts now, charging the new price minus credit for the
+// unused time; a SHORTER plan (yearly -> monthly) can only start at the next billing date, so it is scheduled and nothing is charged now.
+async function changePlan(req, env, a, previewOnly) {
+  if (await limited(env, 'RL', 'cp:' + a.sub)) return fail(429, 'rate_limited', 'Too many attempts. Try again in a minute.');
+  const { plan: to } = await readJson(req);
+  const acct = accountFor(env)(a.sub), rec = await acct.raw(), v = await acct.view();
+  if (to !== 'monthly' && to !== 'yearly') return fail(400, 'bad_plan', 'You can switch between Monthly and Yearly here.');
+  if (!v.hasSubscription || !rec.sub || rec.sub.status !== 'active') return fail(409, 'no_subscription', 'You do not have an active subscription to switch.');
+  if (v.canceled) return fail(409, 'cancelling', 'Your subscription is set to end. Resume it first, then switch plans.');
+  const from = rec.sub.plan; if (from === to) return fail(409, 'same_plan', 'You are already on that plan.');
+  const upgrade = from === 'monthly';                        // monthly -> yearly
+  const body = { product_id: productIds(env)[to], quantity: 1, cancel_scheduled_change_plan: true,
+    ...(upgrade ? { proration_billing_mode: 'prorated_immediately', effective_at: 'immediately', on_payment_failure: 'prevent_change', return_url: `${env.SITE_URL}/?checkout=done` }
+                : { proration_billing_mode: 'full_immediately', effective_at: 'next_billing_date' }) };
+  if (!body.product_id) return fail(500, 'not_configured', 'This plan is not available right now.');
+  try {
+    if (previewOnly) {
+      if (!upgrade) return json({ kind: 'downgrade', from, to, effectiveAt: v.renewsAt });
+      const p = await dodo.previewChangePlan(env, rec.sub.id, body), sum = p.immediate_charge && p.immediate_charge.summary || {};
+      return json({ kind: 'upgrade', from, to, chargeNow: Number(sum.total_amount) / 100, currency: String(sum.currency || 'INR'), nextBillingDate: p.new_plan && Date.parse(p.new_plan.next_billing_date) || null });
+    }
+    const r = await dodo.changePlan(env, rec.sub.id, body);
+    if (!upgrade) { await acct.setSub(subFromDodo(await dodo.getSubscription(env, rec.sub.id), from)); return json({ kind: 'downgrade', account: await acct.view() }); }
+    const link = r && r.payment_link;                         // the saved card needs an extra step (for example a bank check): send them to finish it
+    return json({ kind: 'upgrade', url: typeof link === 'string' && /^https:\/\/([a-z0-9-]+\.)*dodopayments\.com\//.test(link) ? link : null });
+  } catch (e) { console.error('change plan failed', e.status, e.body); return dodoErr(e); }
+}
 
 async function setCancel(env, a, on) {
   const acct = accountFor(env)(a.sub), rec = await acct.raw(), v = await acct.view();

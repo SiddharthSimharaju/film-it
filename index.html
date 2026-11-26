@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-y7fA60ikEClKYf+vHqx9nRYGTM8/uuc0MAppj/CkezM=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://accounts.google.com/gsi/ https://filmroom-api.siddharth-simharaju.workers.dev http://localhost:8787; frame-src 'self' https://accounts.google.com/gsi/; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-Xi94jF3mByjPMr70S0WADXFcw4/ge1aK6AweTo5iJ1o=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://accounts.google.com/gsi/ https://filmroom-api.siddharth-simharaju.workers.dev http://localhost:8787; frame-src 'self' https://accounts.google.com/gsi/; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin">
 <!-- Clickjacking guard: the page stays hidden unless it is the top window or framed by our own origin. -->
 <style id="antiframe">html{display:none!important}</style>
@@ -146,7 +146,7 @@
   .mi .ck { width:16px; height:16px; opacity:0; } .mi.sel .ck { opacity:1; }
   .mq { margin:6px 4px 4px; padding:12px 12px 8px; border-top:1px solid var(--glass-line); display:none; }
   .mq.on { display:block; } .mq .ctl { justify-content:space-between; font-size:13px; } .mq input[type=range] { width:150px; }
-  .toast { position:fixed; left:50%; bottom:200px; transform:translate(-50%,12px); padding:11px 18px; border-radius:14px; z-index:40; opacity:0; pointer-events:none;
+  .toast { position:fixed; left:50%; bottom:200px; transform:translate(-50%,12px); padding:11px 18px; border-radius:14px; z-index:90; opacity:0; pointer-events:none;
     background:rgba(255,255,255,.95); color:var(--ink); font-weight:600; font-size:14px; transition:opacity .2s, transform .2s; max-width:80vw; text-align:center; }
   .toast.on { opacity:1; transform:translate(-50%,0); }
 
@@ -1511,8 +1511,11 @@ function refreshPlanUI() {
 }
 function planCard(id) {
   const p = PLANS[id], cur = plan === id, hot = id === 'yearly', pro = id !== 'free';
+  const swap = !!(acct && acct.hasSubscription) && RECURRING.has(id) && !cur;              // a subscriber moving between Monthly and Yearly
   const cta = cur ? '<button class="btn glass" disabled>Current plan</button>'
     : id === 'free' ? '<button class="btn glass" data-free="1">Switch to Free</button>'
+    : swap && acct.scheduledPlan === id ? `<button class="btn glass" disabled>Starts ${fmtDate(acct.scheduledAt)}</button>`
+    : swap ? `<button class="btn ${hot ? 'white' : 'blurple'}" data-switch="${id}">Switch to ${p.cta}</button>`
     : `<button class="btn ${hot ? 'white' : 'blurple'}" data-plan="${id}">${isPro() ? 'Switch to' : 'Get'} ${p.cta}</button>`;
   return `<div class="plan${hot ? ' hot' : ''}">${p.badge ? `<div class="badge">${p.badge}</div>` : ''}
     <h3>${p.name}</h3><div class="price"><b>${p.price}</b><span>${p.per}</span></div><div class="pn">${p.note}</div>${cta}
@@ -1531,13 +1534,51 @@ function navigateTo(url) { location.assign(url); }                     // one pl
 // sends the buyer there, and afterwards asks the server what plan the account has. The plan is only ever granted by Dodo's signed webhook.
 function startCheckout(id) {
   if (!user) { renderSignIn({ next:id }); return; }
-  if (acct && acct.hasSubscription && id !== 'lifetime') { toast('Cancel your current subscription first (Account, Plan & billing), then choose a new plan.', 5500); return; }
+  if (acct && acct.hasSubscription && RECURRING.has(id)) { renderSwitch(id); return; }          // already subscribed: this is a switch, not a new purchase
   checkoutPlan = id; const p = PLANS[id];
   sheet.innerHTML = XBTN + `<div class="co"><button class="back" data-back="1">← All plans</button><h2>Complete your order</h2><p class="ctext" style="margin:-8px 0 16px;text-align:left">Signed in as <b>${esc(user.email)}</b></p>
     <div class="sum"><div><b>${p.name}</b><span>${p.term}</span></div><strong>${fmtINR(p.amount)}</strong></div>
     <div class="rowl"><span>Price includes GST</span><span></span></div>
     <button class="btn white pay" id="pay" data-pay="1">Continue to payment</button>
     <p class="demo">You'll finish on Dodo Payments' secure page, where you pick how to pay. The final price and any tax are shown before you pay.</p></div>`;
+}
+// ---------- Switching between Monthly and Yearly (for someone who already subscribes) ----------
+// Monthly -> Yearly starts now: the server asks Dodo for the exact amount (the yearly price minus credit for the unused part of the current period) and
+// charges the saved payment method. Yearly -> Monthly can only start at the next billing date, so it is scheduled and nothing is charged today.
+let switchTo = null;
+const fmtMoney = (n, cur) => !cur || cur === 'INR' ? fmtINR(n) : `${Number(n).toLocaleString('en-IN')} ${cur}`;
+async function renderSwitch(id) {
+  switchTo = id; const p = PLANS[id], from = PLANS[plan];
+  const shell = body => { sheet.innerHTML = XBTN + `<div class="co"><button class="back" data-back="1">← All plans</button><h2>Switch to ${p.name}</h2>${body}<p class="swerr" id="swerr" role="alert" style="color:#ff9aa2;text-align:left;margin:12px 0 0"></p></div>`; };
+  shell('<p class="ctext" style="text-align:left"><span class="spin" style="display:inline-block;vertical-align:-3px;margin-right:8px"></span>Checking the price…</p>');
+  try {
+    const q = await api('/billing/change-plan/preview', { method:'POST', json:{ plan:id } });
+    if (switchTo !== id) return;
+    shell(q.kind === 'upgrade'
+      ? `<div class="sum"><div><b>Due today</b><span>${p.name} (${fmtINR(p.amount)}) minus credit for the unused part of your ${from.name} period</span></div><strong>${fmtMoney(q.chargeNow, q.currency)}</strong></div>
+         <p class="ctext" style="text-align:left">Charged to the payment method you already use. ${p.name} starts today and renews on <b>${fmtDate(q.nextBillingDate)}</b> for ${fmtINR(p.amount)}.</p>
+         <button class="btn white pay" id="pay" data-switchgo="1">Pay ${fmtMoney(q.chargeNow, q.currency)} and switch</button>`
+      : `<div class="sum"><div><b>Nothing to pay today</b><span>${from.name} stays active until ${fmtDate(q.effectiveAt)}</span></div><strong>${fmtINR(0)}</strong></div>
+         <p class="ctext" style="text-align:left">On <b>${fmtDate(q.effectiveAt)}</b> you move to ${p.name} at ${fmtINR(p.amount)} ${p.per}. You keep every Pro feature until then, and you can change your mind before that date.</p>
+         <button class="btn white pay" id="pay" data-switchgo="1">Schedule the switch</button>`);
+  } catch (e) { if (switchTo === id) { shell(''); $('swerr').textContent = e.message || "Couldn't check the price. Please try again."; } }
+}
+async function confirmSwitch() {
+  const b = $('pay'); if (!b || b.disabled || !switchTo) return;
+  const id = switchTo, label = b.textContent; b.disabled = true; b.innerHTML = '<span class="spin"></span>Working…'; track('plan_change', { from:plan, to:id });
+  try {
+    const r = await api('/billing/change-plan', { method:'POST', json:{ plan:id } });
+    if (r.kind === 'downgrade') { setAccount(r.account); refreshPlanUI(); acctTab = 'plan'; renderAccount(); toast(`Scheduled. You move to ${PLANS[id].name} on ${fmtDate(acct.scheduledAt || acct.renewsAt)}.`, 5000); return; }
+    if (r.url) { navigateTo(r.url); return; }                      // the bank asked for an extra step: Dodo's page finishes it
+    sheet.innerHTML = XBTN + `<div class="done"><div class="ok"><span class="spin"></span></div><h2>Switching to ${PLANS[id].name}…</h2><p>This usually takes a few seconds. You can keep this window open.</p></div>`;
+    for (let i = 0; i < 25 && plan !== id; i++) { await new Promise(res => setTimeout(res, i ? 2000 : 800)); await refreshAccount(); }
+    if (plan === id) { trackPurchase(id); renderSuccess(id); }
+    else sheet.innerHTML = XBTN + '<div class="done"><h2>Still confirming</h2><p>Your bank is taking longer than usual. If you were charged, your new plan appears here automatically within a few minutes. There is nothing more to do.</p><div class="cact" style="max-width:340px;margin:0 auto"><button class="btn white" data-close="1">Close</button></div></div>';
+  } catch (e) { b.disabled = false; b.textContent = label; const m = $('swerr'); if (m) m.textContent = e.message || "Couldn't switch plans. Please try again."; }
+}
+async function unschedule() {
+  try { const r = await api('/billing/change-plan/cancel', { method:'POST' }); setAccount(r.account); refreshPlanUI(); renderAccount(); toast(`Okay, you stay on ${PLANS[plan].name}.`, 3000); }
+  catch (e) { toast(e.message || "Couldn't cancel the switch. Please try again.", 4500); }
 }
 async function beginPayment() {
   const b = $('pay'); if (!b || b.disabled) return; b.disabled = true; b.innerHTML = '<span class="spin"></span>Opening checkout…';
@@ -1663,12 +1704,13 @@ function panePlan(r) {
   const p = PLANS[plan], recurring = RECURRING.has(plan), paid = plan !== 'free';
   const status = !paid ? 'You\'re on the Free plan.' : plan === 'lifetime' ? 'Lifetime access. It never expires.'
     : r.canceled ? `Cancelled. Pro stays until ${fmtDate(r.renewsAt)}.` : `Renews on ${fmtDate(r.renewsAt)} for ${fmtINR(p.amount)}.`;
+  const sched = r.scheduledPlan && PLANS[r.scheduledPlan] ? ` Switching to ${PLANS[r.scheduledPlan].name} on ${fmtDate(r.scheduledAt || r.renewsAt)}. <button class="linkbtn" data-unschedule="1">Keep ${p.name}</button>` : '';
   const money = i => i.currency && i.currency !== 'INR' ? `${Number(i.amount).toLocaleString('en-IN')} ${esc(i.currency)}` : fmtINR(i.amount);
   const inv = (r.invoices || []).map(i => `<div class="arow inv"><span>${fmtDate(i.date)} · ${esc(i.name)}${i.status && i.status !== 'succeeded' ? ` · ${esc(i.status)}` : ''}</span><span class="r">${money(i)}<button class="linkbtn" data-receipt="${esc(i.id)}">Invoice</button></span></div>`).join('');
   const foot = !recurring ? '' : r.canceled
     ? `<div class="cfoot"><span>Your subscription ends on ${fmtDate(r.renewsAt)}. Resume to keep Pro.</span><button class="btn white sm" data-resume="1">Resume subscription</button></div>`
     : `<div class="cfoot"><span>Cancel any time. You keep Pro until the end of the period.</span><button class="btn glass sm cancel" data-cancelsub="1">Cancel subscription</button></div>`;
-  return `<div class="acard"><div class="ctop"><div><b>${p.name}${paid ? `<span class="badge2${r.canceled ? ' warn' : ''}">${r.canceled ? 'ENDING' : 'ACTIVE'}</span>` : ''}</b><div class="st">${status}</div></div>
+  return `<div class="acard"><div class="ctop"><div><b>${p.name}${paid ? `<span class="badge2${r.canceled ? ' warn' : ''}">${r.canceled ? 'ENDING' : 'ACTIVE'}</span>` : ''}</b><div class="st">${status}${sched}</div></div>
       <button class="btn glass sm" data-changeplan="1">${paid ? 'Change plan' : 'Upgrade'}</button></div>${foot}</div>
     <div class="asec"><h4>Payment method</h4>${row('Handled by', paid ? 'Dodo Payments<button class="linkbtn" data-pm="1">Manage billing</button>' : 'Dodo Payments')}</div>
     <div class="asec"><h4>Invoices</h4>${inv || '<div class="arow"><span>No invoices yet</span><span></span></div>'}</div>
@@ -1738,6 +1780,9 @@ $('modal').addEventListener('click', e => {
   if (t.closest('[data-delete]')) return renderDelete();
   if (t.closest('[data-confirmdelete]')) { deleteAccount(); return; }
   if (t.closest('[data-changeplan]')) return renderPlans({});
+  const sw = t.closest('[data-switch]'); if (sw) { if (RECURRING.has(sw.dataset.switch)) renderSwitch(sw.dataset.switch); return; }
+  if (t.closest('[data-switchgo]')) return confirmSwitch();
+  if (t.closest('[data-unschedule]')) return unschedule();
   if (t.closest('[data-cancelsub]')) return renderCancel();
   if (t.closest('[data-confirmcancel]')) return changeCancel(true);
   if (t.closest('[data-resume]')) return changeCancel(false);

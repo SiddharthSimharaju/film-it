@@ -44,9 +44,9 @@ Identity, plans, billing and the signed-in Free download count are owned by the 
 
 Tests (all local, no network, no money):
 
-- **Server unit tests (36):** `cd server && npm test`. Webhook signatures, Google token checks, plan rules, webhook handling.
-- **Server end-to-end (24):** with the Worker and `node server/test/mock-dodo.mjs` running, `node server/test/e2e-local.mjs`. The whole purchase, renewal, cancel, refund and delete flow against a mock Dodo.
-- **Browser suite (52):** same two processes plus `python3 -m http.server 8731`, then open <http://localhost:8731/tests/run.html> (`?only=ACC-7,SRV-1` runs just those). After editing any inline script, run `python3 tools/update-csp.py` to refresh the content-security policy.
+- **Server unit tests (37):** `cd server && npm test`. Webhook signatures, Google token checks, plan rules, webhook handling.
+- **Server end-to-end (33):** with the Worker and `node server/test/mock-dodo.mjs` running, `node server/test/e2e-local.mjs`. The whole purchase, renewal, cancel, refund and delete flow against a mock Dodo.
+- **Browser suite (57):** same two processes plus `python3 -m http.server 8731`, then open <http://localhost:8731/tests/run.html> (`?only=ACC-7,SRV-1` runs just those). After editing any inline script, run `python3 tools/update-csp.py` to refresh the content-security policy.
 
 ## Accounts (Google sign-in)
 

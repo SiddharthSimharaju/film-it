@@ -71,6 +71,8 @@ What each plan allows, and where each rule lives in the code. Every rule is chec
 | A7 | An account with an active subscription cannot be removed until it is cancelled. Removing an account deletes its server record and ends every session. Payment records stay with Dodo. | `deleteAccount`, server `DELETE /me` | ACC-4, ACC-5, e2e 15, 23 |
 | A8 | Every successful payment is recorded against the account (from Dodo's signed webhook) and shown under Invoices. The Invoice button downloads Dodo's own PDF tax invoice, and only for that account's payments. | webhook `payment.succeeded`, `receiptFor`, server `/billing/invoice/:id` | ACC-6, e2e 7-8 |
 
+| A11 | A subscriber can switch between Monthly and Yearly. **Monthly to Yearly** starts now: the server asks Dodo for the exact prorated amount (the yearly price minus credit for the unused part of the period), shows it, and charges the saved payment method only after the person confirms. **Yearly to Monthly** is scheduled for the next billing date, nothing is charged now, the account keeps Yearly until then, the pending switch is shown, and it can be undone. Product and proration mode are chosen by the server. Switching is refused with no subscription, on a subscription that is set to end (resume first), or to the plan already held. Lifetime is bought through checkout. | `renderSwitch`, `confirmSwitch`, `unschedule`, server `/billing/change-plan*` | PAY-2, PAY-4, e2e 25-33 |
+
 ### Daily download counter (Free only)
 | # | Rule | Code | Test |
 |---|---|---|---|
