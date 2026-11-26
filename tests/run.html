@@ -83,8 +83,8 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
     return { pass: ok, detail: `${done} downloads, left: ${left}; ${r}` };
   });
   await boot();
-  await check('BR-F7', 'Free: exports are capped at 2048px (3000 x 2000 becomes 2048 x 1365)', async () => {
-    await upload([await png(3000, 2000, 'big.png')]); await download(); const [w, h] = await blobDims(win.__blobs.at(-1)); return { pass: w === 2048 && h === 1365, detail: `${w} x ${h}` };
+  await check('BR-F7', 'Free: exports are capped at 1024px (3000 x 2000 becomes 1024 x 683)', async () => {
+    await upload([await png(3000, 2000, 'big.png')]); await download(); const [w, h] = await blobDims(win.__blobs.at(-1)); return { pass: w === 1024 && h === 683, detail: `${w} x ${h}` };
   });
   await check('BR-F8', 'Free: only JPEG and PNG; TIFF and BMP are Pro items that open the upgrade nudge', async () => {
     $$('#dlcaret').click(); await sleep(150); const locked = $all('#dlmenu .mi.locked[data-f]').map(b => b.dataset.f).sort().join(',');
@@ -167,7 +167,7 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
   await boot(); await signIn();
   await check('ACC-3', 'Usage tab shows the real counts (1 download, 2 photos open) and this plan\'s limits; no upload counter', async () => {
     await upload([await png(8, 8, 'a.png'), await png(8, 8, 'b.png')]); await download(); await openAcct('usage'); const t = $$('.apane').textContent.replace(/\s+/g, ' '); closeAll();
-    return { pass: !/Uploads/.test(t) && /Downloads\s*1 \/ 10/.test(t) && /Photos open\s*2 \/ 5/.test(t) && /Downloads per day\s*10/.test(t) && /File size\s*up to 20 MB/.test(t) && /Export size\s*up to 2048px/.test(t) && /Download all \(ZIP\)\s*Not included/.test(t), detail: t.slice(0, 240) };
+    return { pass: !/Uploads/.test(t) && /Downloads\s*1 \/ 10/.test(t) && /Photos open\s*2 \/ 5/.test(t) && /Downloads per day\s*10/.test(t) && /File size\s*up to 20 MB/.test(t) && /Export size\s*up to 1024px/.test(t) && /Download all \(ZIP\)\s*Not included/.test(t), detail: t.slice(0, 240) };
   });
   await boot(); await signIn(); await buy('monthly');
   await check('ACC-4', 'Account removal: refused while a subscription is active; allowed after cancelling; clears the saved data and signs out', async () => {
@@ -193,7 +193,7 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
     const has = s => text.includes(s), id = (text.match(/No\. (FR-\d{8}-[0-9A-Z]{4})/) || [])[1];
     const ok = blob.type === 'application/pdf' && text.startsWith('%PDF-1.4') && text.trimEnd().endsWith('%%EOF') && xrefOk && objOk && lenOk && /\/Count 1 /.test(text)
       && has('PAYMENT RECEIPT') && !!id && has('RECEIPT NUMBER') && /pay_demo_[a-z0-9]{12}/.test(text) && has('TRANSACTION ID') && has('IST') && has('UPI - demo@upi')
-      && has('Pro Yearly') && has('1,694.07') && has('304.93') && has('INR 1,999.00') && has('DEMO RECEIPT') && name === `Filmroom-receipt-${id}.pdf`;
+      && has('Pro Yearly') && has('1,270.34') && has('228.66') && has('INR 1,499.00') && has('DEMO RECEIPT') && name === `Filmroom-receipt-${id}.pdf`;
     return { pass: ok, detail: `${blob.size} bytes, ${name}; xref ok ${xrefOk}, objects ok ${objOk}, length ok ${!!lenOk}` };
   });
   await boot();

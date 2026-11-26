@@ -20,13 +20,13 @@ What each plan allows, and where each rule lives in the code. Every rule is chec
 
 | | Free | Pro Monthly | Pro Yearly | Lifetime |
 |---|---|---|---|---|
-| **Price (₹, GST included)** | 0 | 199 / month | 1,999 / year | 3,999 once |
+| **Price (₹, GST included)** | 0 | 149 / month | 1,499 / year | 3,499 once |
 | Photos open at once | 5 | 25 | 50 | 100 |
 | Largest single file | 20 MB | 60 MB | 100 MB | 150 MB |
 | Largest resolution | 24 MP | 60 MP | 100 MP | 120 MP |
 | Downloads per day | 10 | unlimited | unlimited | unlimited |
 | "Download all" ZIP | not included | up to 25 photos | up to 50 | up to 100 |
-| Export size | 2048 px (long side) | original size | original size | original size |
+| Export size | 1024 px (long side) | original size | original size | original size |
 | Export formats | JPEG, PNG | JPEG, PNG, WebP, AVIF*, TIFF, BMP | same | same |
 | Film looks you can download | Original + 5 | all 14 | all 14 | all 14 |
 | Crop, straighten, adjustments, grain, apply-look-to-all | yes | yes | yes | yes |
@@ -52,7 +52,7 @@ What each plan allows, and where each rule lives in the code. Every rule is chec
 | # | Rule | Code | Test |
 |---|---|---|---|
 | D1 | Free: at most 10 downloads a day, and the download menu shows how many are left. Paid plans: unlimited, with no counter. | `dl.onclick`, `remaining()` | BR-F6, BR-M5 |
-| D2 | Exports are capped at *plan.exportPx* on the long side (Free: 2048 px). Other plans export at the original size. | `exportSource` | BR-F7, BR-M3 |
+| D2 | Exports are capped at *plan.exportPx* on the long side (Free: 1024 px). Other plans export at the original size. | `exportSource` | BR-F7, BR-M3 |
 | D3 | Only the formats in *plan.formats* can be saved. Locked formats are shown with a PRO tag and open the upgrade nudge. | `resolveFmt`, `buildMenu` | BR-F8, BR-M2, BR-Y2, BR-L2 |
 | D4 | Pro looks can be previewed on any photo but only downloaded on a paid plan. | `lookLocked` | BR-F9 |
 | D5 | "Download all" needs a plan with a ZIP allowance and no more photos than *plan.zipMax*. | `downloadAll` | BR-F10, BR-M4 |

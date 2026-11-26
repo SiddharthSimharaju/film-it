@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-Vo5QMCk7rN3v3fCaTpwMvNwqzcDqyRpNOf8nCfC9pHk=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://accounts.google.com/gsi/; frame-src 'self' https://accounts.google.com/gsi/; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-KwuezcHS9IhEbUhxQZ6NANIMcARM4P+Iy+czbUIqxHs=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://accounts.google.com/gsi/; frame-src 'self' https://accounts.google.com/gsi/; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin">
 <!-- Clickjacking guard: the page stays hidden unless it is the top window or framed by our own origin. -->
 <style id="antiframe">html{display:none!important}</style>
@@ -300,6 +300,11 @@
   }
   .co.wide { max-width:560px; }
   .signin { text-align:center; } .signin h2 { text-align:center; } .signin .sub { margin:10px auto 24px; max-width:340px; }
+  /* the sign-in dialog is a narrow, tall card, not a wide banner */
+  .sheet:has(.signin) { width:min(400px,100%); padding:52px 32px 34px; }
+  .sheet:has(.signin) h2 { font-size:28px; padding:0; }
+  .sheet:has(.signin) .gbtn { max-width:none; }
+  .signin .demo { margin:16px 0 0; font-size:13px; line-height:1.5; color:var(--muted); }
   .gbox { display:flex; justify-content:center; min-height:46px; } .gbtn { width:100%; max-width:320px; height:50px; gap:12px; }
   .ahead { display:flex; align-items:center; gap:16px; margin:4px 0 22px; } .ahead b { display:block; font-size:20px; letter-spacing:-.03em; } .ahead span { color:var(--muted); }
   .asec { padding:18px 0; border-top:1px solid rgba(255,255,255,.12); } .asec h4 { margin:0 0 12px; font-size:14px; font-weight:600; color:var(--muted); letter-spacing:.02em; }
@@ -451,9 +456,9 @@ const FILMS = [
 // ---------- Plans (MOCK: nothing is charged; swap startCheckout() for Razorpay later) ----------
 const PLANS = {
   free:     { id:'free',     name:'Free',        price:'₹0',     per:'forever',  note:'Try every look on your own photo' },
-  monthly:  { id:'monthly',  name:'Pro Monthly', price:'₹199',   per:'/ month',  amount:199,  note:'Cancel anytime',              term:'Billed monthly · renews until cancelled', cta:'Monthly' },
-  yearly:   { id:'yearly',   name:'Pro Yearly',  price:'₹1,999', per:'/ year',   amount:1999, note:'₹167 a month · 2 months free',     term:'Billed yearly · renews until cancelled',  cta:'Yearly', badge:'Best value' },
-  lifetime: { id:'lifetime', name:'Lifetime',    price:'₹3,999', per:'once',     amount:3999, note:'One payment, yours forever',  term:'One-time payment',                        cta:'Lifetime' },
+  monthly:  { id:'monthly',  name:'Pro Monthly', price:'₹149',   per:'/ month',  amount:149,  note:'Cancel anytime',              term:'Billed monthly · renews until cancelled', cta:'Monthly' },
+  yearly:   { id:'yearly',   name:'Pro Yearly',  price:'₹1,499', per:'/ year',   amount:1499, note:'₹125 a month · 2 months free',     term:'Billed yearly · renews until cancelled',  cta:'Yearly', badge:'Best value' },
+  lifetime: { id:'lifetime', name:'Lifetime',    price:'₹3,499', per:'once',     amount:3499, note:'One payment, yours forever',  term:'One-time payment',                        cta:'Lifetime' },
 };
 const FREE_LOOKS = ['ORIG', 'PROV', 'VELV', 'REAL', 'S400', 'ACRS'];   // Original + the first 5 looks are free; everything else is Pro
 let plan = 'free';                                 // comes from the signed-in account (see Accounts below)
@@ -464,7 +469,7 @@ const isPro = () => plan !== 'free';
 const MB = 1048576, ALL_FORMATS = ['png', 'jpeg', 'webp', 'avif', 'tiff', 'bmp'];
 const LIMITS = {
   //            photos open at once | max size of one file | max megapixels | downloads/day (0 = unlimited) | photos per "Download all" ZIP | export size cap (px, 0 = original size)
-  free:     { photos:5,   fileMB:20,  megapixels:24,  downloadsPerDay:10,  zipMax:0,     exportPx:2048, formats:['png', 'jpeg'], allLooks:false },
+  free:     { photos:5,   fileMB:20,  megapixels:24,  downloadsPerDay:10,  zipMax:0,     exportPx:1024, formats:['png', 'jpeg'], allLooks:false },
   monthly:  { photos:25,  fileMB:60,  megapixels:60,  downloadsPerDay:0,   zipMax:25,   exportPx:0,    formats:ALL_FORMATS,     allLooks:true },
   yearly:   { photos:50,  fileMB:100, megapixels:100, downloadsPerDay:0,   zipMax:50,   exportPx:0,    formats:ALL_FORMATS,     allLooks:true },
   lifetime: { photos:100, fileMB:150, megapixels:120, downloadsPerDay:0,   zipMax:100, exportPx:0,    formats:ALL_FORMATS,     allLooks:true },

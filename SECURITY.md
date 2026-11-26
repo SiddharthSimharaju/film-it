@@ -44,7 +44,7 @@ Run it: `python3 -m http.server 8731`, open `http://localhost:8731/tests/run.htm
 
 Two bugs in my own work were caught this way (the usage-clock check and a stale class name) and fixed.
 
-**Validation (right thing built):** the rules map to how the product is sold. Free is generous enough to try every look and finish a few photos, but cannot be used as a free bulk exporter (no ZIP, 2048 px cap, 10 downloads a day). Paid plans are different in a way people can see, and each limit is shown in the pricing cards, the download menu and the account Usage tab.
+**Validation (right thing built):** the rules map to how the product is sold. Free is generous enough to try every look and finish a few photos, but cannot be used as a free bulk exporter (no ZIP, 1024 px cap, 10 downloads a day). Paid plans are different in a way people can see, and each limit is shown in the pricing cards, the download menu and the account Usage tab.
 
 ## 3. What cannot be fixed in the browser, and what to build
 
