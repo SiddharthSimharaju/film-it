@@ -277,6 +277,12 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
     const f = $$('.co .fine'), t = f ? f.textContent : '', hrefs = f ? [...f.querySelectorAll('a')].map(a => a.getAttribute('href')) : []; closeAll();
     return { pass: /Renews automatically until you cancel/.test(t) && /Terms of Service/.test(t) && hrefs.includes('terms/#refunds'), detail: t.trim().slice(0, 140) };
   });
+  await boot();
+  await check('LEG-5', 'The landing screen itself shows Terms and Privacy links in the page HTML (what Google\'s branding check and crawlers look for)', async () => {
+    const t = doc.querySelector('.intro a[href="terms/"]'), p = doc.querySelector('.intro a[href="privacy/"]');
+    const raw = await (await fetch('../index.html')).text(), inHtml = /<p class="legal"><a href="terms\/">Terms of Service<\/a>.*<a href="privacy\/">Privacy Policy<\/a>/.test(raw);
+    return { pass: !!t && !!p && inHtml && getComputedStyle(t).display !== 'none' && t.getBoundingClientRect().width > 0, detail: `terms link ${!!t}, privacy link ${!!p}, present in the served HTML ${inHtml}` };
+  });
   await boot(); await signIn();
   await check('LEG-4', 'The Account page lists the Terms and Privacy links', async () => {
     await openAcct('general'); const l = [...doc.querySelectorAll('.apane a.lnk')].map(a => a.getAttribute('href')); closeAll();
