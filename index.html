@@ -397,8 +397,8 @@
     .nav { grid-area:nav; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:4px; padding:4px; border-radius:16px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1); }
     .navbtn { padding:9px 4px; font-size:14px; text-align:center; border-radius:12px; }
 
-    .stage { padding:2px 8px 6px; } .drop { border-radius:22px; }
-    .photos { padding:0 12px 6px; gap:8px; } .pt { width:42px; height:42px; border-radius:11px; } .pact .btn.sm { height:36px; font-size:13px; padding:0 12px; }
+    .stage { padding:2px 8px 4px; } .drop { border-radius:22px; }
+    .photos { padding:0 12px 4px; gap:8px; } .pt { width:36px; height:36px; border-radius:10px; } .thumbs { padding:2px 3px; } .pact .btn.sm { height:30px; font-size:12.5px; padding:0 11px; border-radius:11px; }
 
     .dock { padding:0 8px; }
     body:not(.has) .dock { min-height:46px; }                          /* keeps room for the Terms / Privacy bar before a photo is open */
@@ -406,24 +406,26 @@
     body.has.fedit #controls:not(.hide) { display:grid; }              /* a film was tapped: sliders replace the shelf */
     body.has.fedit .shelf, body[data-tab="crop"] .shelf, body[data-tab="adjust"] .shelf { display:none; }       /* the photo gets that room back */
     /* the Film, Adjustments and Crop panels all stretch to the full width (the dock already has the side padding) and never touch the screen edge or the iPhone home bar */
-    .dock > .card:not(.legalbar) { width:100%; margin-bottom:calc(14px + env(safe-area-inset-bottom, 0px)); }
-    #controls { padding:8px 14px 8px; gap:4px; grid-template-columns:minmax(0,1fr); border-radius:20px; }
-    #controls .ctl { display:grid; grid-template-columns:54px minmax(0,1fr) 44px; align-items:center; gap:10px; }     /* label | slider | value, so both tracks line up */
-    #controls .ctl input[type=range] { width:100%; min-width:0; } #controls .ctl output { text-align:right; }
-    /* sliders you can actually grab with a finger: a 44px-tall touch area around a slim track, a big thumb, and room between rows */
-    input[type=range] { height:40px; touch-action:pan-y; background-size:100% 6px !important; background-position:center !important; background-repeat:no-repeat !important; border-radius:0; -webkit-tap-highlight-color:transparent; }
+    .dock > .card:not(.legalbar) { width:100%; padding:6px 12px 8px; border-radius:18px; margin-bottom:calc(12px + env(safe-area-inset-bottom, 0px)); }
+    #controls { gap:0; grid-template-columns:minmax(0,1fr); }
+    #controls .ctl { display:grid; grid-template-columns:46px minmax(0,1fr) 40px; align-items:center; gap:8px; font-size:14px; }     /* label | slider | value, so both tracks line up */
+    #controls .ctl input[type=range] { width:100%; min-width:0; } #controls .ctl output { text-align:right; min-width:0; }
+    /* compact, but still easy to grab: a 34px-tall touch area around a slim track, a 22px thumb, rows close together */
+    input[type=range] { height:34px; touch-action:pan-y; background-size:100% 5px !important; background-position:center !important; background-repeat:no-repeat !important; border-radius:0; -webkit-tap-highlight-color:transparent; }
     #ang { background-image:linear-gradient(rgba(255,255,255,.2), rgba(255,255,255,.2)) !important; background-color:transparent !important; }
-    input[type=range]::-webkit-slider-thumb { width:24px; height:24px; box-shadow:0 2px 8px rgba(0,0,0,.45); }
-    input[type=range]::-moz-range-thumb { width:24px; height:24px; }
-    .adjpanel.on { gap:0 22px; } .adj .ah { margin-bottom:0; } .adj input[type=range] { height:40px; }
-    .croppanel.on { gap:6px 12px; } .croppanel .ctl { gap:10px; }
-    .cthead { display:flex; align-items:center; justify-content:space-between; }
-    .cthead b { font-size:13px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#fff; }
-    .ctlx { width:34px; height:34px; border-radius:50%; border:0; padding:0; cursor:pointer; color:#fff; background:rgba(255,255,255,.16); display:grid; place-items:center; }
+    input[type=range]::-webkit-slider-thumb { width:22px; height:22px; box-shadow:0 2px 6px rgba(0,0,0,.45); }
+    input[type=range]::-moz-range-thumb { width:22px; height:22px; }
+    .adjpanel.on { gap:0 18px; } .adj .ah { margin-bottom:-2px; font-size:13px; } .adj input[type=range] { height:34px; } .adjpanel .btn { height:30px; font-size:13px; margin-top:2px; }
+    .croppanel.on { gap:3px 10px; } .croppanel .ctl { gap:8px; font-size:14px; } .chip { padding:6px 12px; font-size:12.5px; border-radius:11px; }
+    .croppanel .btn.sm { height:30px; font-size:13px; padding:0 12px; } .cropact { gap:6px; }
+    .cthead { display:flex; align-items:center; justify-content:space-between; min-height:28px; }
+    .cthead b { font-size:12px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#fff; }
+    .ctlx { width:28px; height:28px; border-radius:50%; border:0; padding:0; cursor:pointer; color:#fff; background:rgba(255,255,255,.16); display:grid; place-items:center; } .ctlx svg { width:12px; height:12px; }
 
     .shelf { padding-bottom:env(safe-area-inset-bottom, 0px); }
     .strip { padding:2px 6px 12px; } .film { flex:0 0 80px; gap:4px; font-size:11px; }
-    .film svg, .film img { width:64px; height:70px; } .film.active::after { bottom:-8px; }
+    .film > img, .film > svg { width:64px; height:70px; } .film.active::after { bottom:-8px; }          /* the cartridge only: the lock badge inside the button keeps its own small size */
+    .lockbadge { top:2px; right:8px; width:20px; height:20px; } .lockbadge svg { width:11px; height:11px; }
   }
   /* small phones: the buttons are icons only (download arrow, person for Sign in) so the FILMROOM name still fits next to the logo mark */
   @media (max-width:480px) {

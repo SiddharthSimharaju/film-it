@@ -307,12 +307,19 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
     }
     fPhone.style.width = '390px'; await sleep(300); return { pass: ok, detail: out.join(' ') };
   });
-  await check('MOB-8', 'Phone: the bottom card never touches the edge of the screen (Crop, Adjustments and the film sliders all keep at least 12 px)', async () => {
+  await check('MOB-11', 'Phone: the Pro lock badges on the film cartridges stay small (not cartridge-sized) and sit on their cartridge', async () => {
+    const locks = [...doc.querySelectorAll('#strip .lockbadge')], carts = [...doc.querySelectorAll('#strip .film > img')];
+    const small = locks.length >= 8 && locks.every(l => { const b = l.getBoundingClientRect(), s = l.querySelector('svg').getBoundingClientRect(); return b.width <= 24 && s.width <= 14 && s.height <= 14; });
+    const cartOk = carts.every(c => { const b = c.getBoundingClientRect(); return b.width >= 50 && b.width <= 66; });
+    const near = locks.every(l => { const f = l.closest('.film').getBoundingClientRect(), b = l.getBoundingClientRect(); return b.right <= f.right + 1 && b.top >= f.top - 1; });
+    return { pass: small && cartOk && near, detail: `${locks.length} locks, largest badge ${Math.round(Math.max(...locks.map(l => l.getBoundingClientRect().width)))}px, largest icon ${Math.round(Math.max(...locks.map(l => l.querySelector('svg').getBoundingClientRect().width)))}px, cartridges ${Math.round(carts[0].getBoundingClientRect().width)}px wide` };
+  });
+  await check('MOB-8', 'Phone: the bottom card never touches the edge of the screen (Crop, Adjustments and the film sliders all keep at least 10 px)', async () => {
     const gaps = {}; const lowest = () => Math.max(...[...doc.querySelectorAll('.dock > .card, .croppanel')].filter(e => getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().height > 0 && e.id !== 'legalbar').map(e => e.getBoundingClientRect().bottom));
     await upload([await png(1200, 1600, 'gap.png')]); await sleep(700);
     lookBtn('S400').click(); await sleep(400); gaps.film = 700 - lowest(); $$('#ctlclose').click(); await sleep(200);
     $$('#cropbtn').click(); await sleep(700); gaps.crop = 700 - lowest(); $$('#adjstab').click(); await sleep(600); gaps.adjust = 700 - lowest(); $$('#adjtab').click(); await sleep(300);
-    return { pass: Object.values(gaps).every(g => g >= 12), detail: Object.entries(gaps).map(([k, v]) => `${k} ${Math.round(v)}px`).join(', ') };
+    return { pass: Object.values(gaps).every(g => g >= 10), detail: Object.entries(gaps).map(([k, v]) => `${k} ${Math.round(v)}px`).join(', ') };
   });
 
   await check('MOB-9', 'Phone: the Film, Adjustments and Crop panels all stretch to the full width with side padding', async () => {
@@ -323,11 +330,11 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
     const ok = Object.values(w).every(([l, wd]) => l >= 4 && l <= 14 && wd >= 360 && wd <= 380);
     return { pass: ok, detail: Object.entries(w).map(([k, [l, wd]]) => `${k}: starts ${l}px, ${wd}px wide`).join('; ') };
   });
-  await check('MOB-10', 'Phone: every slider has a touch area at least 34 px tall on screen (the page renders at 90%) and the two film sliders are at least 36 px apart, with a thumb no bigger than 28 px', async () => {
-    lookBtn('S400').click(); await sleep(400); const a = R('#amt'), g = R('#grn'); const film = [a, g].every(b => b.height >= 34) && (g.top + g.height / 2) - (a.top + a.height / 2) >= 36; $$('#ctlclose').click(); await sleep(200);
-    $$('#adjstab').click(); await sleep(600); const adj = [...doc.querySelectorAll('#adjpanel input[type=range]')].every(e => e.getBoundingClientRect().height >= 34);
-    $$('#cropbtn').click(); await sleep(800); const ang = R('#ang').height >= 34; $$('#adjtab').click(); await sleep(400);
-    return { pass: film && adj && ang, detail: `film ${film} (heights ${Math.round(a.height)}/${Math.round(g.height)}), adjustments ${adj}, angle ${ang}` };
+  await check('MOB-10', 'Phone: sliders stay easy to grab but compact: a touch area at least 30 px tall on screen (the page renders at 90%), the two film sliders at least 30 px apart, and each panel short (film and crop under 125 px, adjustments under 160)', async () => {
+    lookBtn('S400').click(); await sleep(400); const a = R('#amt'), g = R('#grn'); const filmH = R('#controls').height; const film = [a, g].every(b => b.height >= 30) && (g.top + g.height / 2) - (a.top + a.height / 2) >= 30 && filmH < 125; $$('#ctlclose').click(); await sleep(200);
+    $$('#adjstab').click(); await sleep(600); const adjH = R('#adjpanel').height; const adj = [...doc.querySelectorAll('#adjpanel input[type=range]')].every(e => e.getBoundingClientRect().height >= 30) && adjH < 160;
+    $$('#cropbtn').click(); await sleep(800); const cropH = R('#croppanel').height; const ang = R('#ang').height >= 30 && cropH < 125; $$('#adjtab').click(); await sleep(400);
+    return { pass: film && adj && ang, detail: `film ${film} (sliders ${Math.round(a.height)}px, panel ${Math.round(filmH)}px), adjustments ${adj} (panel ${Math.round(adjH)}px), crop ${ang} (panel ${Math.round(cropH)}px)` };
   });
 
   /* ===================== SMOOTH SLIDERS ===================== */
