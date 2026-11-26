@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-KwuezcHS9IhEbUhxQZ6NANIMcARM4P+Iy+czbUIqxHs=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://accounts.google.com/gsi/; frame-src 'self' https://accounts.google.com/gsi/; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-RiJhg37/mAAdy8+bsf6BFDwvz4vppxb74NB/5NWwDX4=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://accounts.google.com/gsi/; frame-src 'self' https://accounts.google.com/gsi/; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin">
 <!-- Clickjacking guard: the page stays hidden unless it is the top window or framed by our own origin. -->
 <style id="antiframe">html{display:none!important}</style>
@@ -77,8 +77,16 @@
   .replace:hover { background:rgba(255,255,255,.22); } body.has .replace { display:block; }
   .caption { position:absolute; left:16px; bottom:16px; display:none; align-items:center; gap:10px; padding:8px 14px; border-radius:13px;
     background:rgba(0,0,0,.45); backdrop-filter:blur(12px); font-size:13px; font-weight:600; }
+  .caption #filmpill { text-transform:uppercase; letter-spacing:.01em; }
   .caption i { width:3px; height:3px; border-radius:50%; background:var(--muted); } .caption #fdim { color:var(--muted); font-weight:500; }
   body.has .caption { display:flex; } .drop:has(.overlay.on) .caption { display:none; }
+  /* before / after switch, top right of the photo */
+  .ba { position:absolute; top:16px; right:16px; display:none; gap:2px; padding:4px; border-radius:13px; z-index:3; }
+  .ba button { display:grid; place-items:center; width:40px; height:30px; padding:0; border:0; background:transparent; color:var(--muted); border-radius:9px; cursor:pointer; transition:background .15s, color .15s; }
+  .ba svg { width:18px; height:18px; }
+  .ba button:hover { color:#fff; } .ba button.on { background:#fff; color:#07072e; }
+  .ba button:focus-visible { outline:2px solid #fff; outline-offset:1px; }
+  body.has .ba { display:flex; } .drop:has(.overlay.on) .ba { display:none; }
   .tag { display:none !important; }
 
   /* control dock */
@@ -197,7 +205,7 @@
     -webkit-backdrop-filter:blur(26px) saturate(170%); backdrop-filter:blur(26px) saturate(170%); }
   .drop:hover { border-color:rgba(160,170,255,.5); }
   .drop.over, body.has .drop.over { border-color:rgba(140,152,255,.85); box-shadow:var(--glass-shadow), 0 0 0 4px rgba(88,101,242,.28); }
-  .caption, .replace { background:linear-gradient(140deg,rgba(255,255,255,.22),rgba(255,255,255,.07)); border:1px solid rgba(255,255,255,.24);
+  .caption, .replace, .ba { background:linear-gradient(140deg,rgba(255,255,255,.22),rgba(255,255,255,.07)); border:1px solid rgba(255,255,255,.24);
     box-shadow:inset 0 1px 0 rgba(255,255,255,.34), 0 8px 24px rgba(0,0,20,.35); -webkit-backdrop-filter:blur(18px) saturate(170%); backdrop-filter:blur(18px) saturate(170%); }
   .replace:hover { background:linear-gradient(140deg,rgba(255,255,255,.3),rgba(255,255,255,.12)); }
   .menu { background:linear-gradient(140deg,rgba(255,255,255,.17),rgba(255,255,255,.05)), rgba(8,8,44,.72); border:1px solid var(--glass-edge);
@@ -392,6 +400,7 @@
         <i class="h se" data-h="se"></i><i class="h s" data-h="s"></i><i class="h sw" data-h="sw"></i><i class="h w" data-h="w"></i>
       </div></div>
       <div class="caption"><span id="filmpill">Original</span><span class="protag" id="protag">PRO</span><i></i><span id="fdim"></span></div>
+      <div class="ba" id="ba" role="group" aria-label="Compare with the original"><button type="button" data-v="0" aria-pressed="false" aria-label="Before (original)" title="Before"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4" width="15" height="12" rx="3"/><circle cx="7.5" cy="8.5" r="1.3"/><path d="M3 14l4-3.5 3 2.5 3-3 4 3.5"/></svg></button><button type="button" data-v="1" class="on" aria-pressed="true" aria-label="After (edited)" title="After"><svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 2.5l1.6 4.4 4.4 1.6-4.4 1.6L10 14.5 8.4 10.1 4 8.5l4.4-1.6z"/><path d="M15.5 12.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg></button></div>
       <span class="tag" id="tag"></span>
     </div>
   </main>
@@ -688,7 +697,15 @@ FILMS.forEach((f, i) => {
   strip.appendChild(b);
 });
 
+let before = false;                                  // true = show the untouched photo (same crop), for comparing
+function setBefore(v, quiet) {
+  before = !!v;
+  document.querySelectorAll('#ba button').forEach(b => { const on = (b.dataset.v === '0') === before; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+  if (hasImage && !quiet) render();
+}
+document.getElementById('ba').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setBefore(b.dataset.v === '0'); });
 function select(f, btn) {
+  if (before) setBefore(false);
   current = f;
   strip.querySelectorAll('.film').forEach(x => x.classList.toggle('active', x === btn));
   render();
@@ -698,7 +715,7 @@ async function render() {
   if (!hasImage) return;
   const my = ++token;
   tag.textContent = current.label;
-  $('filmpill').textContent = $('filmname').textContent = current.label; updateProTag();
+  $('filmpill').textContent = before ? 'Original' : current.label; $('filmname').textContent = current.label; updateProTag();
   $('filmmeta').textContent = current.lut ? `ISO ${current.iso} · colour lookup from real film` : 'No film look applied';
   let t = null;
   if (current.lut) { t = await getLut(current.lut); if (my !== token) return; }
@@ -714,10 +731,11 @@ async function render() {
   if (cv.width !== cw || cv.height !== ch) { cv.width = cw; cv.height = ch; }
   if (t) { gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, t); }
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, imgTex);
-  gl.uniform1i(uUseLut, current.lut ? 1 : 0);
+  const edited = !before;                             // 'Before' skips the look, adjustments and grain but keeps the crop
+  gl.uniform1i(uUseLut, edited && current.lut ? 1 : 0);
   gl.uniform1f(uMix, amt.value / 100);
-  gl.uniform4f(U.uAdj, adj.exposure / 100, adj.contrast / 100, adj.highlights / 100, adj.shadows / 100);
-  gl.uniform1f(uGrain, grn.value / 100);
+  if (edited) gl.uniform4f(U.uAdj, adj.exposure / 100, adj.contrast / 100, adj.highlights / 100, adj.shadows / 100); else gl.uniform4f(U.uAdj, 0, 0, 0, 0);
+  gl.uniform1f(uGrain, edited ? grn.value / 100 : 0);
   gl.uniform1f(uSize, Math.max(1.2, Math.max(reg.w, reg.h) / 1600) * reg.scale);  // grain scales with resolution
   gl.uniform2f(U.uSrc, src.w, src.h); gl.uniform2f(U.uReg, reg.w, reg.h); gl.uniform2f(U.uCen, reg.cx, reg.cy);
   gl.uniform2f(U.uRot, Math.cos(rad(geo.angle)), Math.sin(rad(geo.angle)));
@@ -896,6 +914,7 @@ $('auto').onclick = () => {
 
 function enterCrop() {
   if (!hasImage) return;
+  setBefore(false, true);
   snapshot = { geo:{ angle:geo.angle, crop:geo.crop && { ...geo.crop } }, chipKey, flip, autoFit };
   if (!geo.crop) geo.crop = { cx:0, cy:0, w:src.w, h:src.h };
   editing = true; ang.value = geo.angle; $('angv').textContent = geo.angle.toFixed(1) + '°'; cropmsg.textContent = '';
@@ -934,7 +953,7 @@ const fmtAdj = v => (v > 0 ? '+' : v < 0 ? '\u2212' : '') + Math.abs(v);
 function paintAdj(el) { const p = (+el.value + 100) / 2; el.style.setProperty('--a', Math.min(p, 50) + '%'); el.style.setProperty('--b', Math.max(p, 50) + '%'); }
 document.querySelectorAll('#adjpanel input[type=range]').forEach(el => {
   paintAdj(el);
-  el.addEventListener('input', () => { adj[el.dataset.k] = +el.value; $('av-' + el.dataset.k).textContent = fmtAdj(+el.value); paintAdj(el); render(); });
+  el.addEventListener('input', () => { adj[el.dataset.k] = +el.value; $('av-' + el.dataset.k).textContent = fmtAdj(+el.value); paintAdj(el); if (before) setBefore(false); else render(); });
   el.addEventListener('dblclick', () => { el.value = 0; el.dispatchEvent(new Event('input')); });
 });
 function resetAdj() {
@@ -1046,6 +1065,7 @@ async function getBitmap(p) { return clampBitmap(await createImageBitmap(p.blob,
 async function activate(i, o = {}) {
   const p = photos[i]; if (!p || (busy && !o.batch)) return;
   if (editing) await exitCrop(true);
+  setBefore(false, true);
   if (cur >= 0 && photos[cur]) photos[cur].state = snap();
   const my = ++actToken;
   let bmp; try { bmp = o.bmp ? await clampBitmap(o.bmp) : await getBitmap(p); } catch (e) { toast(`Couldn't reopen ${p.name}.`, 3500); return; }
@@ -1306,6 +1326,7 @@ function saveBlob(blob, name) {
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 async function exportCurrent() {                         // encode whatever is on screen right now, with the current format settings
+  if (before) { setBefore(false, true); await render(); }   // never export the 'Before' view as if it were the edit
   const key = resolveFmt(), f = FORMATS[key], { c:out, capped } = exportSource();
   let blob;
   try {
@@ -1693,7 +1714,7 @@ restoreSession();
 refreshPlanUI();
 [[amt, 'amtv'], [grn, 'grnv']].forEach(([el, out]) => {
   const paint = () => el.style.setProperty('--p', (el.value - el.min) / (el.max - el.min) * 100 + '%'); paint();
-  el.addEventListener('input', () => { $(out).textContent = el.value + '%'; paint(); render(); });
+  el.addEventListener('input', () => { $(out).textContent = el.value + '%'; paint(); if (before) setBefore(false); else render(); });
   el.addEventListener('dblclick', () => { el.value = el.defaultValue; el.dispatchEvent(new Event('input')); });
 });
 initGL();

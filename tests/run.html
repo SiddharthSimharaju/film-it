@@ -86,6 +86,15 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
   await check('BR-F7', 'Free: exports are capped at 1024px (3000 x 2000 becomes 1024 x 683)', async () => {
     await upload([await png(3000, 2000, 'big.png')]); await download(); const [w, h] = await blobDims(win.__blobs.at(-1)); return { pass: w === 1024 && h === 683, detail: `${w} x ${h}` };
   });
+  await check('ACC-8', 'Before/After switch: Before shows the untouched photo, and Download always saves the edit', async () => {
+    await boot(); await upload([await png(64, 48, 'ba.png')]);
+    $all('.film').find(f => /VELVIA/i.test(f.textContent)).click(); await sleep(500);
+    const grab = () => $$('#cv').toDataURL(), side = () => $$('#ba button.on').dataset.v;
+    const after = grab(); $$('#ba button[data-v="0"]').click(); await sleep(500);
+    const before = grab(), showsBefore = side() === '0';
+    await download(); const backToAfter = side() === '1';
+    return { pass: after !== before && showsBefore && backToAfter, detail: `differs ${after !== before}, before shown ${showsBefore}, reset by download ${backToAfter}` };
+  });
   await check('BR-F8', 'Free: only JPEG and PNG; TIFF and BMP are Pro items that open the upgrade nudge', async () => {
     $$('#dlcaret').click(); await sleep(150); const locked = $all('#dlmenu .mi.locked[data-f]').map(b => b.dataset.f).sort().join(',');
     $$('#dlmenu .mi[data-f=tiff]').click(); await sleep(250); const r = reason(); closeAll(); return { pass: /tiff/.test(locked) && /bmp/.test(locked) && /TIFF export is a Pro feature/.test(r), detail: `locked: ${locked}; ${r}` };
