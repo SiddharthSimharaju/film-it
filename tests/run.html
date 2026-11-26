@@ -259,6 +259,44 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
     return { pass: !!waiting && !!done && !/checkout=/.test(win.location.search), detail: `confirming shown: ${!!waiting}; success shown: ${!!done}; address: ${win.location.search}` };
   });
 
+  /* ===================== PHONE LAYOUT (390 x 700, like the iPhone browser area) ===================== */
+  const fPhone = await boot(); fPhone.style.width = '390px'; fPhone.style.height = '700px'; await sleep(500);
+  const R = s => $$(s).getBoundingClientRect(), shown = s => { const e = $$(s), st = getComputedStyle(e), b = e.getBoundingClientRect(); return st.display !== 'none' && st.visibility !== 'hidden' && b.width > 0 && b.height > 0; };
+  await upload([await png(1200, 1600, 'portrait.png')]); await sleep(900);
+  await check('MOB-1', 'Phone: the header has breathing room (not stuck to the top), the buttons fit, and the tabs sit on their own row below them', async () => {
+    const dl = R('#dl'), acct = R('#acctbtn'), nav = R('.nav'), logo = R('.logo');
+    const ok = dl.top >= 10 && acct.right <= 386 && dl.right < acct.left && logo.right < dl.left && nav.top >= Math.max(dl.bottom, acct.bottom) + 6 && nav.width > 330;
+    return { pass: ok, detail: `buttons top ${Math.round(dl.top)}px, sign-in right edge ${Math.round(acct.right)}/390, tabs start ${Math.round(nav.top)} (buttons end ${Math.round(dl.bottom)}), tabs ${Math.round(nav.width)}px wide` };
+  });
+  await check('MOB-2', 'Phone: a portrait photo is shown big (at least 310 x 420 px on a 390 x 700 screen; it was 252 x 336)', async () => {
+    const c = R('#cv'); return { pass: c.width >= 310 && c.height >= 420, detail: `photo ${Math.round(c.width)} x ${Math.round(c.height)}` };
+  });
+  await check('MOB-3', 'Phone: browsing shows the film shelf; tapping a film swaps it for that film\'s Filter / Grain sliders with its name and an X; the X brings the shelf back', async () => {
+    const browse = shown('.shelf') && !shown('#controls');
+    lookBtn('S400').click(); await sleep(500);
+    const editing = !shown('.shelf') && shown('#controls') && shown('#amt') && shown('#grn') && /SUPERIA 400/i.test($$('#ctlname').textContent) && shown('#ctlclose');
+    const photoWhileEditing = R('#cv').height;
+    $$('#ctlclose').click(); await sleep(400);
+    const back = shown('.shelf') && !shown('#controls');
+    return { pass: browse && editing && back && photoWhileEditing >= 420, detail: `browse: shelf only ${browse}; tapped: sliders+name+X ${editing} (photo ${Math.round(photoWhileEditing)}px tall); after X: shelf back ${back}` };
+  });
+  await check('MOB-4', 'Phone: sliders line up (both tracks start at the same place) and fit the screen', async () => {
+    lookBtn('VELV').click(); await sleep(400); const a = R('#amt'), g = R('#grn'), card = R('#controls');
+    const ok = Math.abs(a.left - g.left) < 2 && Math.abs(a.right - g.right) < 2 && a.width > 200 && card.right <= 390 && card.left >= 0; $$('#ctlclose').click(); await sleep(300);
+    return { pass: ok, detail: `filter track ${Math.round(a.left)}-${Math.round(a.right)}, grain track ${Math.round(g.left)}-${Math.round(g.right)}` };
+  });
+  await check('MOB-5', 'Phone: the Crop and Adjustments tabs hide the film shelf (more room for the photo), the crop frame lines up with the photo, and Film brings the shelf back', async () => {
+    lookBtn('S400').click(); await sleep(300); const before = R('#cv').height;
+    $$('#cropbtn').click(); await sleep(900); const crop = !shown('.shelf') && !shown('#controls'), c = R('#cv'), b = R('#cb'), aligned = Math.abs(c.left - b.left) < 3 && Math.abs(c.width - b.width) < 4 && Math.abs(c.height - b.height) < 4;
+    $$('#adjstab').click(); await sleep(700); const adj = !shown('.shelf') && shown('#adjpanel');
+    $$('#adjtab').click(); await sleep(600); const film = shown('.shelf') && !shown('#controls');
+    return { pass: crop && aligned && adj && film, detail: `crop: shelf hidden ${crop}, frame aligned ${aligned}; adjustments: shelf hidden + panel ${adj}; Film: shelf back, no sliders ${film}` };
+  });
+  await check('MOB-6', 'Phone: with no photo the layout is the intro, upload button and Terms / Privacy bar (no sliders)', async () => {
+    $$('#thumbs .pt .rm').click(); await until(() => $$('#cyes'), 1500); $$('#cyes').click(); await sleep(600);
+    return { pass: shown('#legalbar') && !shown('#controls') && shown('#upbtn') && shown('.shelf'), detail: `terms bar ${shown('#legalbar')}, sliders hidden ${!shown('#controls')}, upload button ${shown('#upbtn')}` };
+  });
+
   /* ===================== LEGAL: Terms and Privacy ===================== */
   await boot();
   await check('LEG-1', 'The sign-in screen says "By continuing, you agree to…" with Terms and Privacy links that open in a new tab', async () => {

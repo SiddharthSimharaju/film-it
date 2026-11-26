@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-9JmK1Gj1BELG/qqjsXuKVVaJPAroBiMY9u6Sf3Zx09A=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client https://www.googletagmanager.com/gtag/js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://accounts.google.com/gsi/ https://filmroom-api.siddharth-simharaju.workers.dev http://localhost:8787 https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; frame-src 'self' https://accounts.google.com/gsi/; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-7LJODplV15bIAQ98WULni5oOq4ycHHZdQAG/UecLfHQ=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client https://www.googletagmanager.com/gtag/js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://accounts.google.com/gsi/ https://filmroom-api.siddharth-simharaju.workers.dev http://localhost:8787 https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; frame-src 'self' https://accounts.google.com/gsi/; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin">
 <!-- Clickjacking guard: the page stays hidden unless it is the top window or framed by our own origin. -->
 <style id="antiframe">html{display:none!important}</style>
@@ -383,6 +383,39 @@
   .consent { position:fixed; left:16px; bottom:16px; z-index:60; max-width:340px; padding:14px 16px; border-radius:16px; background:rgba(10,10,61,.97); border:1px solid rgba(255,255,255,.14); color:#e8e8f5; font-size:13px; line-height:1.5; box-shadow:0 10px 30px rgba(0,0,0,.45); }
   .consent p { margin:0 0 12px; } .consent b { color:#fff; } .consent .cbtns { display:flex; gap:8px; }
   @media (max-width:560px) { .consent { left:10px; right:10px; bottom:10px; max-width:none; } }
+
+  /* ===================== phone layout (640px wide and under) =====================
+     The photo gets the screen. The header is a roomy row of buttons with the Film / Crop / Adjustments tabs under it. Browsing films shows the shelf;
+     tapping a film swaps the shelf for that film's Filter / Grain sliders, with a close button that brings the shelf back. */
+  .cthead { display:none; }
+  @media (max-width:640px) {
+    .app { grid-template-rows:auto minmax(0,1fr) auto auto auto; }
+    .top { grid-template-columns:minmax(0,1fr) auto; grid-template-areas:"logo actions" "nav nav"; gap:14px 8px; align-items:center; padding:calc(12px + env(safe-area-inset-top, 0px)) 12px 6px; }
+    .logo { grid-area:logo; font-size:15px; gap:7px; min-width:0; } .logo svg { width:22px; height:22px; }
+    .topr { grid-area:actions; display:flex; align-items:center; gap:8px; justify-self:end; }
+    .topr .btn { height:40px; font-size:14px; } .topr .btn.sm { padding:0 14px; } .split .caret { padding:0 10px; } .acct { height:40px; padding:0 16px; }
+    .nav { grid-area:nav; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:4px; padding:4px; border-radius:16px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1); }
+    .navbtn { padding:9px 4px; font-size:14px; text-align:center; border-radius:12px; }
+
+    .stage { padding:2px 8px 6px; } .drop { border-radius:22px; }
+    .photos { padding:0 12px 6px; gap:8px; } .pt { width:42px; height:42px; border-radius:11px; } .pact .btn.sm { height:36px; font-size:13px; padding:0 12px; }
+
+    .dock { padding:0 8px; }
+    body:not(.has) .dock { min-height:46px; }                          /* keeps room for the Terms / Privacy bar before a photo is open */
+    #controls { display:none; }                                         /* browsing films: no sliders */
+    body.has.fedit #controls:not(.hide) { display:grid; }              /* a film was tapped: sliders replace the shelf */
+    body.has.fedit .shelf, body[data-tab="crop"] .shelf, body[data-tab="adjust"] .shelf { display:none; }       /* the photo gets that room back */
+    #controls { width:100%; margin-bottom:8px; padding:8px 14px 10px; gap:2px; grid-template-columns:minmax(0,1fr); border-radius:20px; }
+    #controls .ctl { display:grid; grid-template-columns:54px minmax(0,1fr) 44px; align-items:center; gap:10px; }     /* label | slider | value, so both tracks line up */
+    #controls .ctl input[type=range] { width:100%; min-width:0; } #controls .ctl output { text-align:right; }
+    .cthead { display:flex; align-items:center; justify-content:space-between; }
+    .cthead b { font-size:13px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#fff; }
+    .ctlx { width:34px; height:34px; border-radius:50%; border:0; padding:0; cursor:pointer; color:#fff; background:rgba(255,255,255,.16); display:grid; place-items:center; }
+
+    .shelf { padding-bottom:env(safe-area-inset-bottom, 0px); }
+    .strip { padding:2px 6px 12px; } .film { flex:0 0 80px; gap:4px; font-size:11px; }
+    .film svg, .film img { width:64px; height:70px; } .film.active::after { bottom:-8px; }
+  }
 </style>
 </head>
 <body>
@@ -457,6 +490,7 @@
   <div class="dock">
     <div class="card legalbar" id="legalbar"><a href="terms/">Terms of Service</a><span aria-hidden="true">·</span><a href="privacy/">Privacy Policy</a></div>
     <div class="card controls off" id="controls">
+      <div class="cthead"><b id="ctlname">Original</b><button type="button" class="ctlx" id="ctlclose" aria-label="Back to all films"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9"/></svg></button></div>
       <label class="ctl">Filter<input type="range" id="amt" min="0" max="100" value="100"><output id="amtv">100%</output></label>
       <label class="ctl">Grain<input type="range" id="grn" min="0" max="100" value="40"><output id="grnv">40%</output></label>
     </div>
@@ -832,8 +866,12 @@ function setBefore(v, quiet) {
   if (hasImage && !quiet) render();
 }
 document.getElementById('ba').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setBefore(b.dataset.v === '0'); });
+// Phone only: tapping a film replaces the shelf with that film's Filter / Grain sliders; the X on them brings the shelf back (CSS does the rest from body.fedit).
+const isPhone = () => window.matchMedia('(max-width:640px)').matches;
+function setFilmEdit(on) { document.body.classList.toggle('fedit', !!on); }
 function select(f, btn) {
   if (before) setBefore(false);
+  if (isPhone()) setFilmEdit(true);
   current = f; track('look_selected', { look:f.id, locked:lookLocked(f), has_photo:hasImage });
   strip.querySelectorAll('.film').forEach(x => x.classList.toggle('active', x === btn));
   render(); warmAround(f);
@@ -842,7 +880,7 @@ function select(f, btn) {
 async function render() {
   if (!hasImage) return;
   const my = ++token;
-  tag.textContent = current.label;
+  tag.textContent = current.label; $('ctlname').textContent = current.label;
   $('filmpill').textContent = before ? 'Original' : current.label; $('filmname').textContent = current.label; updateProTag();
   $('filmmeta').textContent = current.lut ? `ISO ${current.iso} · colour lookup from real film` : 'No film look applied';
   let t = null;
@@ -1069,10 +1107,14 @@ function resetCrop() {
 // ---------- Tabs: Film | Crop | Adjustments ----------
 let tab = 'film';
 const adj = { exposure:0, contrast:0, highlights:0, shadows:0 };
+$('ctlclose').onclick = () => setFilmEdit(false);
 function applyTab() {
+  if (tab !== 'film') setFilmEdit(false);                  // leaving the Film tab: the shelf is back when you return
+  document.body.dataset.tab = tab;                         // lets the phone layout hide the film shelf outside the Film tab
   controls.classList.toggle('hide', tab !== 'film');
   $('adjpanel').classList.toggle('on', tab === 'adjust');
   $('adjtab').classList.toggle('on', tab === 'film'); cropbtn.classList.toggle('on', tab === 'crop'); $('adjstab').classList.toggle('on', tab === 'adjust');
+  requestAnimationFrame(() => { if (editing) layout(); });  // the stage can change size with the tab (phone: the shelf hides), so re-measure the crop frame against the photo
 }
 cropbtn.onclick = () => { if (!editing) enterCrop(); tab = 'crop'; applyTab(); };
 $('adjtab').onclick = async () => { if (editing) await exitCrop(true); tab = 'film'; applyTab(); };
@@ -1310,7 +1352,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('confirm
 function resetEmpty() {
   hasImage = false; cur = -1; clearTimeout(thumbT);
   if (imgTex) { gl.deleteTexture(imgTex); imgTex = null; } if (srcBmp && srcBmp.close) srcBmp.close(); srcBmp = null;
-  drop.classList.remove('has'); document.body.classList.remove('has');
+  drop.classList.remove('has'); document.body.classList.remove('has'); setFilmEdit(false);
   dl.disabled = true; $('dlcaret').disabled = true; cropbtn.disabled = true; $('adjtab').disabled = true; $('adjstab').disabled = true; controls.classList.add('off');
   origKey = null; origLabel = ''; tab = 'film'; applyState(defaultState()); applyTab(); renderPhotos(); updateProTag();
 }
