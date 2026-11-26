@@ -35,6 +35,7 @@ policy = "; ".join([
     f"img-src 'self' data: blob: https://*.googleusercontent.com{GA_IMG}",
     f"connect-src 'self' https://accounts.google.com/gsi/ {api_prod} {api_local}{GA_CONNECT}",   # the API: production Worker, and the local one for tests
     "frame-src 'self' https://accounts.google.com/gsi/",   # 'self' = the sandboxed HEIC converter page
+    "worker-src 'self'",                    # sw.js: caches the film-look files only
     "object-src 'none'",
     "base-uri 'none'",
     "form-action 'none'",

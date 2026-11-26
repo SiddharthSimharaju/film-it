@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-qbPm61RFHRpeB/oA3HpZdqKsIipr79LuVhKx+oOWURc=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://accounts.google.com/gsi/ https://filmroom-api.siddharth-simharaju.workers.dev http://localhost:8787; frame-src 'self' https://accounts.google.com/gsi/; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-y7fA60ikEClKYf+vHqx9nRYGTM8/uuc0MAppj/CkezM=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com; connect-src 'self' https://accounts.google.com/gsi/ https://filmroom-api.siddharth-simharaju.workers.dev http://localhost:8787; frame-src 'self' https://accounts.google.com/gsi/; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin">
 <!-- Clickjacking guard: the page stays hidden unless it is the top window or framed by our own origin. -->
 <style id="antiframe">html{display:none!important}</style>
@@ -727,7 +727,7 @@ void main(){
 
 const gl = cv.getContext('webgl2', { preserveDrawingBuffer:true, antialias:false, premultipliedAlpha:false, alpha:false });
 let prog, imgTex, uUseLut, uMix, uGrain, uSize, U = {};
-const lutCache = {};
+const lutCache = {}, lutBytes = {};
 function initGL() {
   if (!gl) { alert('Filmroom needs WebGL2 (any current browser).'); return; }
   const mk = (t, src) => { const s = gl.createShader(t); gl.shaderSource(s, src); gl.compileShader(s);
@@ -754,11 +754,35 @@ function upload(unit, bmp, mip) {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   return t;
 }
-async function getLut(name) {
-  if (!lutCache[name]) lutCache[name] = fetch(`luts/${name}.png`).then(r => r.blob())
-    .then(b => createImageBitmap(b, { colorSpaceConversion:'none', premultiplyAlpha:'none' })).then(bmp => upload(1, bmp));
+// ---------- Film looks are fetched BEFORE they are clicked, so picking one is instant ----------
+// Each look is a 1728 x 1728 colour table (0.2 to 2 MB, 18 MB for all 14). They are exact: shrinking them visibly changes some looks (measured), so
+// instead of making them smaller we get them early: (1) after the page loads, all 14 download quietly in the background, most likely picks first;
+// (2) once a photo is open, the first few are also decoded and uploaded to the GPU in idle time; (3) sw.js keeps them for next time, even offline.
+// A look you click before its turn is fetched at once and shares the same download. Skipped on Data Saver and slow connections (on demand only).
+const LUT_VER = '1';                                       // bump (and CACHE in sw.js) when a file in luts/ changes
+const fetchLut = (name, urgent) => lutBytes[name] || (lutBytes[name] = fetch(`luts/${name}.png?v=${LUT_VER}`, { priority:urgent ? 'high' : 'low' })
+  .then(r => { if (!r.ok) throw new Error('look ' + name); return r.blob(); }).catch(e => { delete lutBytes[name]; throw e; }));
+function getLut(name, urgent = true) {
+  if (!lutCache[name]) lutCache[name] = fetchLut(name, urgent).then(b => createImageBitmap(b, { colorSpaceConversion:'none', premultiplyAlpha:'none' }))
+    .then(bmp => { const t = upload(1, bmp); if (bmp.close) bmp.close(); return t; }).catch(e => { delete lutCache[name]; throw e; });   // a failed download can be retried by the next click
   return lutCache[name];
 }
+const idle = (fn, ms = 2000) => (window.requestIdleCallback ? requestIdleCallback(fn, { timeout:ms }) : setTimeout(fn, 200));
+const leanConnection = () => { const c = navigator.connection; return !!c && (c.saveData === true || /(^|-)(2g|3g)$/.test(c.effectiveType || '')); };
+function prefetchLuts() {                                  // bytes only (cheap): two downloads at a time, in strip order (free looks first)
+  if (leanConnection()) return;
+  const names = FILMS.filter(f => f.lut).map(f => f.lut); let next = 0;
+  const lane = async () => { while (next < names.length) { try { await fetchLut(names[next++], false); } catch (e) {} } };
+  lane(); lane();
+}
+// Decoded, a look is ~12 MB of GPU memory. A desktop-class machine (8 GB or more, not a phone) gets all 14 ready; anything else gets the first 6
+// and the neighbours of whatever look is picked (people flick through the strip in order), so a phone never holds looks nobody chose.
+const roomy = (navigator.deviceMemory || 0) >= 8 && !/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+const lookFiles = () => FILMS.filter(f => f.lut);
+const warmOne = f => idle(() => getLut(f.lut, false).catch(() => {}), 4000);
+let warmed = false;
+function warmLuts() { if (warmed || leanConnection()) return; warmed = true; lookFiles().slice(0, roomy ? 99 : 6).forEach(warmOne); }
+function warmAround(f) { const a = lookFiles(), i = a.indexOf(f); if (i < 0 || roomy || leanConnection()) return; [i + 1, i - 1, i + 2, i - 2].forEach(k => a[k] && warmOne(a[k])); }
 
 // ---------- App ----------
 let hasImage = false, current = FILMS[0], fileName = 'filmroom', token = 0;
@@ -787,7 +811,7 @@ function select(f, btn) {
   if (before) setBefore(false);
   current = f; track('look_selected', { look:f.id, locked:lookLocked(f), has_photo:hasImage });
   strip.querySelectorAll('.film').forEach(x => x.classList.toggle('active', x === btn));
-  render();
+  render(); warmAround(f);
 }
 
 async function render() {
@@ -1158,6 +1182,7 @@ async function activate(i, o = {}) {
   document.body.classList.add('has'); controls.classList.remove('off');
   applyTab(); renderPhotos();
   await render();
+  warmLuts();
 }
 // ---------- Input hygiene ----------
 const cleanText = (t, n = 100) => String(t == null ? '' : t).replace(/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/g, ' ').trim().slice(0, n);   // no control chars or newlines
@@ -1726,6 +1751,8 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('modal')
 $('acctbtn').onclick = () => { if (user) openAccount(); else { renderSignIn(); openModal(); } };
 refreshPlanUI();
 restoreSession().then(() => { refreshPlanUI(); handleCheckoutReturn(); });
+idle(prefetchLuts, 3000);                                                   // after the page is up: fetch every look in the background
+if ('serviceWorker' in navigator && !IS_LOCAL) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));   // keeps the looks for next time
 window.addEventListener('focus', () => { if (user) refreshAccount(); });
 [[amt, 'amtv'], [grn, 'grnv']].forEach(([el, out]) => {
   const paint = () => el.style.setProperty('--p', (el.value - el.min) / (el.max - el.min) * 100 + '%'); paint();

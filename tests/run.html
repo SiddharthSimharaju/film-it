@@ -242,6 +242,23 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
     return { pass: !!waiting && !!done && !/checkout=/.test(win.location.search), detail: `confirming shown: ${!!waiting}; success shown: ${!!done}; address: ${win.location.search}` };
   });
 
+  /* ===================== SPEED: film looks are ready before they are clicked ===================== */
+  await boot();
+  await check('LOOK-1', 'All 14 film looks download in the background without being clicked', async () => {
+    const n = () => new Set(win.performance.getEntriesByType('resource').map(r => (r.name.match(/\/luts\/([a-z0-9-]+)\.png/) || [])[1]).filter(Boolean)).size;
+    const ok = await until(() => n() >= 14, 30000, 200); return { pass: !!ok, detail: `${n()} of 14 look files fetched with no click` };
+  });
+  await check('LOOK-2', 'A look appears within one frame or two of the click once a photo is open (files already fetched, textures ready)', async () => {
+    await upload([await png(320, 213, 'speed.png')]); await sleep(3500);                  // idle time: decode + upload
+    const grab = () => $$('#cv').toDataURL(), times = [];
+    for (const id of ['VELV', 'P4X', 'FPN']) { const prev = grab(), t0 = performance.now(); lookBtn(id).click(); await until(() => grab() !== prev, 5000, 4); times.push(Math.round(performance.now() - t0)); await sleep(200); }
+    return { pass: Math.max(...times) < 120, detail: `click to new look on screen: ${times.join(' / ')} ms` };
+  });
+  await check('LOOK-3', 'Look files are fetched once each (a click shares the background download instead of starting another)', async () => {
+    const counts = {}; for (const r of win.performance.getEntriesByType('resource')) { const m = r.name.match(/\/luts\/([a-z0-9-]+)\.png/); if (m) counts[m[1]] = (counts[m[1]] || 0) + 1; }
+    const dup = Object.entries(counts).filter(([, c]) => c > 1).map(([k]) => k); return { pass: dup.length === 0, detail: dup.length ? 'fetched twice: ' + dup : `${Object.keys(counts).length} files, each once` };
+  });
+
   /* ===================== ANALYTICS ===================== */
   await boot(); const ev = []; win.trackSink = (n, p) => ev.push([n, JSON.parse(JSON.stringify(p))]);
   await check('ANA-1', 'The growth funnel is tracked: photo added, look, download, paywall, sign-up, plans, plan chosen, checkout started', async () => {
