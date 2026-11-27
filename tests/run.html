@@ -354,6 +354,48 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
     return { pass: !!ok, detail: `Chrome track ${wk ? wk.h + 'px high, radius ' + wk.r + 'px' : 'MISSING'}; Firefox track rounded ${ff}; touch box transparent ${boxClear}` };
   });
 
+  /* ===================== PHONE ACCESSIBILITY ===================== */
+  await check('A11Y-1', 'Phone: small controls have a 44 px hit area (a point 21 px above and below the centre still lands on the control), no text is under 11 px on screen, and film labels stay on one line', async () => {
+    $$('#adjtab').click(); await sleep(400);
+    const sel = ['#adjtab', '#cropbtn', '#adjstab', '#dl', '#dlcaret', '#acctbtn', '#ba button[data-v="0"]', '#ba button[data-v="1"]', '#addphotos'], bad = [];
+    for (const s of sel) { const e = $$(s), b = e.getBoundingClientRect(), cx = b.left + b.width / 2, cy = b.top + b.height / 2;
+      for (const dy of [-21, 21]) { const hit = doc.elementFromPoint(cx, cy + dy); if (!hit || !(e === hit || e.contains(hit))) bad.push(s + (dy < 0 ? ' above' : ' below')); } }
+    let small = []; doc.querySelectorAll('body *').forEach(e => { const st = getComputedStyle(e), b = e.getBoundingClientRect(); if (!b.width || st.visibility === 'hidden' || st.display === 'none') return;
+      if (![...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim())) return; const fs = parseFloat(st.fontSize) * 0.9; if (fs > 0 && fs < 11) small.push(e.textContent.trim().slice(0, 16) + ' ' + fs.toFixed(1)); });
+    const oneLine = [...doc.querySelectorAll('#strip .film span')].every(sp => sp.getBoundingClientRect().height < 20);
+    return { pass: !bad.length && !small.length && oneLine, detail: `hit areas missing: ${bad.join(', ') || 'none'}; text under 11 px: ${small.slice(0, 4).join(', ') || 'none'}; film labels on one line ${oneLine}` };
+  });
+  await check('A11Y-2', 'Screen readers: every slider has a name and announces its value, the film and tool buttons say which one is on, the photo is labelled, and a Pro film says so', async () => {
+    lookBtn('S400').click(); await sleep(500);
+    const sliders = [...doc.querySelectorAll('input[type=range]')].filter(e => e.id !== 'q'), named = sliders.every(e => (e.getAttribute('aria-label') || (e.labels && e.labels[0] && e.labels[0].textContent) || '').trim());
+    const valued = sliders.every(e => { const o = e.closest('label, .adj').querySelector('output'); return e.getAttribute('aria-valuetext') === o.textContent; });
+    const g = $$('#grn'); g.value = 63; g.dispatchEvent(new Event('input')); await sleep(80); const live = $$('#grn').getAttribute('aria-valuetext') === '63%';
+    const pressed = [...doc.querySelectorAll('#strip .film')].every(b => b.getAttribute('aria-pressed') === String(b.classList.contains('active')));
+    const tabs = ['#adjtab', '#cropbtn', '#adjstab'].every(s => $$(s).getAttribute('aria-pressed') === String($$(s).classList.contains('on')));
+    const photo = /Superia 400|SUPERIA 400/i.test($$('#cv').getAttribute('aria-label') || '') && $$('#cv').getAttribute('role') === 'img';
+    const pro = (lookBtn('ASTI').getAttribute('aria-label') || '').includes('Pro look');
+    $$('#ctlclose').click(); await sleep(200);
+    return { pass: named && valued && live && pressed && tabs && photo && pro, detail: `named ${named}, value read out ${valued}, updates while sliding ${live}, film pressed state ${pressed}, tool pressed state ${tabs}, photo label "${$$('#cv').getAttribute('aria-label')}" ${photo}, Pro film announced ${pro}` };
+  });
+  await check('A11Y-3', 'Pinch zoom stays on and notch safe areas are used; animations stop for people who ask for reduced motion; controls have no tap delay', async () => {
+    const vp = doc.querySelector('meta[name=viewport]').content, rules = [...doc.styleSheets].flatMap(s => { try { return [...s.cssRules]; } catch (e) { return []; } });
+    const zoomOk = /viewport-fit=cover/.test(vp) && !/user-scalable\s*=\s*(no|0)|maximum-scale/.test(vp);
+    const reduced = rules.some(r => r.media && /prefers-reduced-motion:\s*reduce/.test(r.media.mediaText) && [...r.cssRules].some(x => /transition-duration/.test(x.cssText)));
+    const noDelay = getComputedStyle($$('#dl')).touchAction === 'manipulation';
+    return { pass: zoomOk && reduced && noDelay, detail: `viewport "${vp}" ok ${zoomOk}; reduced-motion rule ${reduced}; buttons touch-action ${getComputedStyle($$('#dl')).touchAction}` };
+  });
+  await check('A11Y-4', 'Dialogs: focus moves into the dialog, Tab cycles inside it instead of the page behind, and Escape returns focus to the button that opened it', async () => {
+    const opener = $$('#acctbtn'); opener.focus(); opener.click(); await sleep(500);
+    if (!modalOpen()) return { pass: false, detail: 'the dialog did not open' };
+    const m = $$('#modal'), inside = m.contains(doc.activeElement);
+    const f = [...m.querySelectorAll('button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])')].filter(x => !x.disabled && x.getBoundingClientRect().width > 0), last = f[f.length - 1], first = f[0];
+    last.focus(); doc.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true })); const wrapped = doc.activeElement === first;
+    first.focus(); doc.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true })); const wrappedBack = doc.activeElement === last;
+    doc.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); await sleep(300);
+    const back = !modalOpen() && doc.activeElement === opener;
+    return { pass: inside && wrapped && wrappedBack && back, detail: `focus moved inside ${inside}; Tab at the end wraps to the start ${wrapped}; Shift+Tab at the start wraps to the end ${wrappedBack}; closed and focus back on the opener ${back}` };
+  });
+
   /* ===================== UPLOAD BUTTON ===================== */
   await boot();
   await check('UPL-1', 'The Upload button opens the file picker exactly once (a second call made iPhones drop the chosen photo); tapping the empty drop area still opens it once; the "Drop images here / or" lines are hidden on touch screens', async () => {
