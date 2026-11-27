@@ -365,6 +365,28 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
     const oneLine = [...doc.querySelectorAll('#strip .film span')].every(sp => sp.getBoundingClientRect().height < 20);
     return { pass: !bad.length && !small.length && oneLine, detail: `hit areas missing: ${bad.join(', ') || 'none'}; text under 11 px: ${small.slice(0, 4).join(', ') || 'none'}; film labels on one line ${oneLine}` };
   });
+  await check('MOB-13', 'Phone: the film name and photo size label is not drawn over the photo', async () => {
+    const c = $$('.caption'), st = getComputedStyle(c); return { pass: st.display === 'none' && c.getBoundingClientRect().width === 0, detail: `caption display ${st.display}` };
+  });
+  await check('MOB-14', 'Phone: a long press does not start text selection or the Copy / Look Up menu on the editor (touch screens), while dialogs keep copyable text; and the Google button is sized to fit inside the dialog padding', async () => {
+    const rules = [...doc.styleSheets].flatMap(s => { try { return [...s.cssRules]; } catch (e) { return []; } }).filter(r => r.media && /pointer:\s*coarse/.test(r.media.mediaText)).flatMap(r => [...r.cssRules]);
+    const src = await (await fetch(win.location.pathname.replace(/[^/]*$/, '') + '../index.html')).text(), callout = /body \{[^}]*-webkit-touch-callout:none/.test(src);   // Chrome ignores this iOS-only property, so read it from the source
+    const body = rules.find(r => r.selectorText === 'body' && /none/.test(r.style.getPropertyValue('user-select'))), sheet = rules.find(r => r.selectorText === '.sheet' && /text/.test(r.style.getPropertyValue('user-select')));
+    const noSel = !!body && callout && !!sheet;
+    let got = null; win.google = { accounts: { id: { initialize() {}, renderButton(el, o) { got = o; } } } };
+    const mk = w => { const d = doc.createElement('div'); d.style.cssText = `width:${w}px;position:absolute;left:0;top:0`; doc.body.appendChild(d); return d; };
+    const small = mk(250), big = mk(600); await win.mountGoogleButton(small, () => {}); const w1 = got.width; await win.mountGoogleButton(big, () => {}); const w2 = got.width; small.remove(); big.remove();
+    return { pass: noSel && w1 <= 250 && w1 >= 200 && w2 === 336, detail: `selection and callout off on touch ${noSel}; Google button width in a 250 px box ${w1}, in a 600 px box ${w2}` };
+  });
+  await check('MOB-15', 'The download format menu stays fully on screen: when it would run off the left or right edge it is centred on the screen (checked at 300, 340, 390 and 1280 px wide)', async () => {
+    const res = []; let ok = true;
+    for (const w of [300, 340, 390, 1280]) {
+      fPhone.style.width = w + 'px'; await sleep(450); const m = $$('#dlmenu'); m.classList.add('open'); win.placeMenu(); await sleep(60);
+      const r = m.getBoundingClientRect(), vw = win.innerWidth, fits = r.left >= -0.5 && r.right <= vw + 0.5; ok = ok && fits; res.push(`${w}px: ${Math.round(r.left)}..${Math.round(r.right)} of ${vw} ${fits ? 'ok' : 'CUT OFF'}`);
+      m.classList.remove('open'); win.placeMenu();
+    }
+    fPhone.style.width = '390px'; await sleep(300); return { pass: ok, detail: res.join('; ') };
+  });
   await check('A11Y-2', 'Screen readers: every slider has a name and announces its value, the film and tool buttons say which one is on, the photo is labelled, and a Pro film says so', async () => {
     lookBtn('S400').click(); await sleep(500);
     const sliders = [...doc.querySelectorAll('input[type=range]')].filter(e => e.id !== 'q'), named = sliders.every(e => (e.getAttribute('aria-label') || (e.labels && e.labels[0] && e.labels[0].textContent) || '').trim());
