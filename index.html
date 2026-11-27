@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-sMSzZAxCBCjJWtWq9NVHZQLAOOn5ENunxYlyYZaTg0I=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client https://www.googletagmanager.com/gtag/js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://accounts.google.com/gsi/ https://filmroom-api.siddharth-simharaju.workers.dev http://localhost:8787 https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; frame-src 'self' https://accounts.google.com/gsi/; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-koMbsuiZF2qDt0WbWCU+l4ZqKrSnr06JqEGS1u/+nQM=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client https://www.googletagmanager.com/gtag/js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://accounts.google.com/gsi/ https://filmroom-api.siddharth-simharaju.workers.dev http://localhost:8787 https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; frame-src 'self' https://accounts.google.com/gsi/; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin">
 <!-- Clickjacking guard: the page stays hidden unless it is the top window or framed by our own origin. -->
 <style id="antiframe">html{display:none!important}</style>
@@ -10,7 +10,7 @@
 <noscript><style>html{display:block!important}body{padding:24px;font:16px system-ui;color:#fff;background:#05052b}</style></noscript>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Filmroom</title>
-<meta name="description" content="Give your photos the look of real film. Pick a Fujifilm-style film roll, add grain, crop and straighten. It all runs in your browser, so your photos never leave your device.">
+<meta name="description" content="Give your photos the look of real film. Pick a classic film roll (Fujifilm, Kodak, Ilford and more), add grain, crop and straighten. It all runs in your browser, so your photos never leave your device.">
 <meta name="theme-color" content="#06061c">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -433,7 +433,7 @@
     .film > img, .film > svg { width:64px; height:70px; } .film.active::after { bottom:-8px; }          /* the cartridge only: the lock badge inside the button keeps its own small size */
     .lockbadge { top:2px; right:8px; width:20px; height:20px; } .lockbadge svg { width:11px; height:11px; }
     /* accessibility on phones: nothing under 12 px on screen (the page renders at 90%) ... */
-    .film { flex:0 0 96px; font-size:12.8px; white-space:nowrap; } .ba button { font-size:14px; padding:7px 14px; } .pact .btn.sm { font-size:13.8px; } .chip { font-size:13.8px; }
+    .film { flex:0 0 auto; min-width:86px; padding:0 6px; font-size:12.8px; white-space:nowrap; }       /* each slot is at least 86px and grows to fit a long name like EKTACHROME 100 */ .ba button { font-size:14px; padding:7px 14px; } .pact .btn.sm { font-size:13.8px; } .chip { font-size:13.8px; }
     .croppanel .btn.sm, .adjpanel .btn { font-size:13.8px; } .adj .ah { font-size:13.8px; } .cthead b { font-size:13.4px; } #controls .ctl, .croppanel .ctl { font-size:14.4px; }
     body.has .caption { display:none; }                                   /* phones: no film name / size label over the photo (the photo's name and look are still read out by screen readers via the preview's label) */
     /* thumbnails on phones: a tap only switches photos. The remove X is a small badge on the top-left corner of the photo that is open (not a button laid over its middle), so a tap on the picture can't open the remove dialog by mistake */
@@ -522,7 +522,7 @@
         <div class="intro">
           <svg class="mark" width="48" height="48" viewBox="0 0 30 30" aria-hidden="true"><rect x="2" y="5" width="26" height="20" rx="6" fill="none" stroke="#fff" stroke-width="2.6"/><circle cx="15" cy="15" r="4.6" fill="#fff"/><rect x="5.5" y="2.5" width="6" height="3.5" rx="1.5" fill="#fff"/></svg>
           <h2>Give your photos the look of real film</h2>
-          <p>Pick a Fujifilm-style film roll, add grain, then crop and straighten. It all runs in your browser, so your photos never leave your device.</p>
+          <p>Pick a classic film roll, from Fujifilm and Kodak to Ilford, add grain, then crop and straighten. It all runs in your browser, so your photos never leave your device.</p>
         </div>
         <b class="droptxt">Drop images here</b>
         <span class="or">or</span>
@@ -634,11 +634,17 @@ if (ANALYTICS_ON) {
   });
 }
 
-// ---------- Films (real Hald CLUTs sampled from actual film / Fujifilm output) ----------
+// ---------- Films (real Hald CLUTs sampled from actual film stocks) ----------
 const FILMS = [
   { id:'ORIG', label:'ORIGINAL',     iso:'--',  body:'#8a8a8a', band:'#ddd',    ink:'#222' },
   { id:'PROV', label:'PROVIA 100F',  iso:'100', body:'#1f5fb4', band:'#f3ead0', ink:'#102a55', lut:'provia-100f' },
   { id:'VELV', label:'VELVIA 50',    iso:'50',  body:'#c8202a', band:'#f6e8c8', ink:'#4a0a0e', lut:'velvia-50' },
+  { id:'P400', label:'PORTRA 400',     iso:'400', body:'#c98a4b', band:'#f6ead6', ink:'#4a2a0c', brand:'KODAK',  lut:'portra-400' },
+  { id:'KODA', label:'KODACHROME 64',  iso:'64',  body:'#c9161c', band:'#f6d23a', ink:'#3d0508', brand:'KODAK',  lut:'kodachrome-64' },
+  { id:'EKTR', label:'EKTAR 100',      iso:'100', body:'#d9401c', band:'#f7e9d2', ink:'#4a1405', brand:'KODAK',  lut:'ektar-100' },
+  { id:'TRIX', label:'TRI-X 400',      iso:'400', body:'#e0b315', band:'#f5ecc8', ink:'#221a00', brand:'KODAK',  lut:'tri-x-400' },
+  { id:'HP5',  label:'HP5 PLUS 400',   iso:'400', body:'#3a3f48', band:'#e9e9ea', ink:'#111',    brand:'ILFORD', lut:'hp5-plus-400' },
+  { id:'EKTA', label:'EKTACHROME 100', iso:'100', body:'#1f6f8e', band:'#efe3b8', ink:'#0b2f3d', brand:'KODAK',  lut:'ektachrome-100' },
   { id:'ASTI', label:'ASTIA 100F',   iso:'100', body:'#e0a21b', band:'#fff2cf', ink:'#4a3200', lut:'astia-100f' },
   { id:'REAL', label:'REALA 100',    iso:'100', body:'#2f9e6a', band:'#f4f0d8', ink:'#0d3322', lut:'reala-100' },
   { id:'SENS', label:'SENSIA 100',   iso:'100', body:'#7a4fb0', band:'#efe6f6', ink:'#2a1745', lut:'sensia-100' },
@@ -723,7 +729,7 @@ function canisterSVG(f, i) {
   const cx = 54, R = 34, ry = 9;
   const band = (y1, y2) => `M${cx-R},${y1} A${R},${ry} 0 0 0 ${cx+R},${y1} L${cx+R},${y2} A${R},${ry} 0 0 1 ${cx-R},${y2} Z`;
   const arc = (y, r) => `M${cx-r},${y} A${r},${ry*r/R} 0 0 0 ${cx+r},${y}`;
-  const brand = f.id === 'POLA' ? 'POLAROID' : f.lut ? 'FUJIFILM' : '';
+  const brand = f.brand || (f.id === 'POLA' ? 'POLAROID' : f.lut ? 'FUJIFILM' : '');
   const name = f.id === 'POLA' ? '690' : f.label.replace(/\s+\d+[A-Z]?$/, '');
   const fit = (txt, size, max) => Math.min(max, txt.length * size * .66);
   // DX-style checker code that wraps around the barrel (columns foreshorten toward the edges)
@@ -879,8 +885,8 @@ function upload(unit, bmp, mip) {
   return t;
 }
 // ---------- Film looks are fetched BEFORE they are clicked, so picking one is instant ----------
-// Each look is a 1728 x 1728 colour table (0.2 to 2 MB, 18 MB for all 14). They are exact: shrinking them visibly changes some looks (measured), so
-// instead of making them smaller we get them early: (1) after the page loads, all 14 download quietly in the background, most likely picks first;
+// Each look is a 1728 x 1728 colour table (0.2 to 2 MB, 25 MB for all 20). They are exact: shrinking them visibly changes some looks (measured), so
+// instead of making them smaller we get them early: (1) after the page loads, all 20 download quietly in the background, most likely picks first;
 // (2) once a photo is open, the first few are also decoded and uploaded to the GPU in idle time; (3) sw.js keeps them for next time, even offline.
 // A look you click before its turn is fetched at once and shares the same download. Skipped on Data Saver and slow connections (on demand only).
 const LUT_VER = '1';                                       // bump (and CACHE in sw.js) when a file in luts/ changes
@@ -899,7 +905,7 @@ function prefetchLuts() {                                  // bytes only (cheap)
   const lane = async () => { while (next < names.length) { try { await fetchLut(names[next++], false); } catch (e) {} } };
   lane(); lane();
 }
-// Decoded, a look is ~12 MB of GPU memory. A desktop-class machine (8 GB or more, not a phone) gets all 14 ready; anything else gets the first 6
+// Decoded, a look is ~12 MB of GPU memory. A desktop-class machine (8 GB or more, not a phone) gets all 20 ready; anything else gets the first 6
 // and the neighbours of whatever look is picked (people flick through the strip in order), so a phone never holds looks nobody chose.
 const roomy = (navigator.deviceMemory || 0) >= 8 && !/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 const lookFiles = () => FILMS.filter(f => f.lut);
@@ -1696,8 +1702,8 @@ const TICK = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-
 function featuresFor(id) {
   const L = LIMITS[id];
   return id === 'free'
-    ? ['5 film looks, preview all 14', `Export up to ${L.exportPx}px`, 'JPEG & PNG', `${L.photos} photos at once, ${L.fileMB} MB each`, `${L.downloadsPerDay} downloads a day`, 'Crop, straighten & adjust']
-    : ['All 14 film looks', 'Full-resolution export', 'JPEG, PNG, WebP, TIFF & BMP', `${L.photos} photos at once, ${L.fileMB} MB each`, 'Unlimited downloads', `Download all as ZIP (up to ${L.zipMax})`];
+    ? ['5 film looks, preview all 20', `Export up to ${L.exportPx}px`, 'JPEG & PNG', `${L.photos} photos at once, ${L.fileMB} MB each`, `${L.downloadsPerDay} downloads a day`, 'Crop, straighten & adjust']
+    : ['All 20 film looks', 'Full-resolution export', 'JPEG, PNG, WebP, TIFF & BMP', `${L.photos} photos at once, ${L.fileMB} MB each`, 'Unlimited downloads', `Download all as ZIP (up to ${L.zipMax})`];
 }
 let lastOpts = {}, checkoutPlan = null;
 const sheet = $('sheet');
@@ -1819,7 +1825,7 @@ async function handleCheckoutReturn() {
 function renderSuccess(id) {
   const p = PLANS[id], first = acct && acct.invoices && acct.invoices[0];
   sheet.innerHTML = XBTN + `<div class="done"><div class="ok">${TICK}</div><h2>You're on ${p.name}</h2>
-    <p>All 14 film looks, full-resolution export and every format are unlocked. Manage billing any time from your account.</p><div class="cact" style="max-width:340px;margin:0 auto"><button class="btn glass" data-acc="plan">View account</button><button class="btn white" data-close="1">Start filming</button></div>
+    <p>All 20 film looks, full-resolution export and every format are unlocked. Manage billing any time from your account.</p><div class="cact" style="max-width:340px;margin:0 auto"><button class="btn glass" data-acc="plan">View account</button><button class="btn white" data-close="1">Start filming</button></div>
     ${first && first.id ? `<p style="margin:16px 0 0"><button class="linkbtn" data-receipt="${esc(first.id)}">Download invoice (PDF)</button></p>` : ''}</div>`;
 }
 // ---------- Accounts: the SERVER owns identity, plan and billing ----------

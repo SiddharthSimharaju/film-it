@@ -58,7 +58,7 @@ async function openAcct(tab = 'general') { $$('#acctbtn').click(); await until((
 async function buy(id) { await devGrant(win.localStorage.getItem('filmroom.token'), { plan: id }); await win.refreshAccount(); await sleep(150); }
 async function download() { const n = win.__dl.length; $$('#dl').click(); await until(() => win.__dl.length > n || modalOpen() || /Couldn|used all/.test(toastText()), 8000); await sleep(150); return win.__dl.length > n; }
 async function blobDims(b) { const bm = await createImageBitmap(b); const r = [bm.width, bm.height]; bm.close(); return r; }
-const IDS = ['ORIG', 'PROV', 'VELV', 'REAL', 'S400', 'ACRS', 'ASTI', 'SENS', 'P4X', 'XTRA', '400H', 'XPRO', 'FP', 'FPN', 'POLA'];
+const IDS = ['ORIG', 'PROV', 'VELV', 'REAL', 'S400', 'ACRS', 'P400', 'KODA', 'EKTR', 'TRIX', 'HP5', 'EKTA', 'ASTI', 'SENS', 'P4X', 'XTRA', '400H', 'XPRO', 'FP', 'FPN', 'POLA'];
 const lookBtn = id => $all('#strip .film')[IDS.indexOf(id)];
 const unzipNames = async b => { const u = new Uint8Array(await b.arrayBuffer()), dv = new DataView(u.buffer), n = []; for (let i = 0; i < u.length - 30;) { if (dv.getUint32(i, true) === 0x04034b50) { const nl = dv.getUint16(i + 26, true), el = dv.getUint16(i + 28, true), cs = dv.getUint32(i + 18, true); n.push(new TextDecoder().decode(u.subarray(i + 30, i + 30 + nl))); i += 30 + nl + el + cs; } else i++; } return n; };
 const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(await crypto.subtle.digest(algo, buf))));
@@ -128,7 +128,7 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
       const batch = []; for (let i = 0; i < sp.photos + 1; i++) batch.push(await png(8, 8, `m${i}.png`)); await upload(batch);
       const t = toastText(); return { pass: nPhotos() === sp.photos && new RegExp(`allows ${sp.photos} photos at once`).test(t) && !modalOpen(), detail: `${nPhotos()} photos; ${t}` };
     });
-    await check(`BR-${id[0].toUpperCase()}2`, `${sp.label}: all 14 looks unlocked and every export format available`, async () => {
+    await check(`BR-${id[0].toUpperCase()}2`, `${sp.label}: all 20 looks unlocked and every export format available`, async () => {
       const locks = $all('.lockbadge').filter(e => getComputedStyle(e).display !== 'none').length; $$('#dlcaret').click(); await sleep(150); const lockedFormats = $all('#dlmenu .mi.locked[data-f]').length; $$('#dlcaret').click(); await sleep(100);
       return { pass: locks === 0 && lockedFormats === 0, detail: `visible locks ${locks}, locked formats ${lockedFormats}` };
     });
@@ -535,9 +535,9 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
 
   /* ===================== SPEED: film looks are ready before they are clicked ===================== */
   await boot();
-  await check('LOOK-1', 'All 14 film looks download in the background without being clicked', async () => {
+  await check('LOOK-1', 'All 20 film looks download in the background without being clicked', async () => {
     const n = () => new Set(win.performance.getEntriesByType('resource').map(r => (r.name.match(/\/luts\/([a-z0-9-]+)\.png/) || [])[1]).filter(Boolean)).size;
-    const ok = await until(() => n() >= 14, 30000, 200); return { pass: !!ok, detail: `${n()} of 14 look files fetched with no click` };
+    const ok = await until(() => n() >= 20, 40000, 200); return { pass: !!ok, detail: `${n()} of 20 look files fetched with no click` };
   });
   await check('LOOK-2', 'A look appears within one frame or two of the click once a photo is open (files already fetched, textures ready)', async () => {
     await upload([await png(320, 213, 'speed.png')]); await sleep(3500);                  // idle time: decode + upload

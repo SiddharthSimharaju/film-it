@@ -1,6 +1,6 @@
 # Filmroom
 
-Give any photo the look of classic Fujifilm and Polaroid film stocks, add grain, crop and straighten, then download it in the format you want. Everything runs in your browser, so your photos never leave your device.
+Give any photo the look of classic Fujifilm, Kodak, Ilford and Polaroid film stocks, add grain, crop and straighten, then download it in the format you want. Everything runs in your browser, so your photos never leave your device.
 
 **[Open the app](https://filmroom.in)**
 
@@ -9,7 +9,7 @@ Give any photo the look of classic Fujifilm and Polaroid film stocks, add grain,
 ## Features
 
 - **Many photos at once:** drop or pick as many as you like. Each photo keeps its own film look, grain, adjustments and crop, **Apply look to all** copies one photo's look to the rest, and **Download all** saves every edited photo in one ZIP.
-- **Film looks:** Provia 100F, Provia 400X, Velvia 50, Astia 100F, Reala 100, Sensia 100, Superia 400, X-Tra 800, Pro 400H, Superia XPRO, FP-100C (and Neg), Acros 100 and Polaroid 690.
+- **Film looks (20):** Fujifilm Provia 100F, Provia 400X, Velvia 50, Astia 100F, Reala 100, Sensia 100, Superia 400, X-Tra 800, Pro 400H, Superia XPRO, FP-100C (and Neg) and Acros 100; Kodak Portra 400, Kodachrome 64, Ektar 100, Ektachrome 100 and Tri-X 400; Ilford HP5 Plus 400; and Polaroid 690.
 - **Filter strength:** blend each look from 0 to 100%.
 - **Film grain:** adjustable, scaled to the photo's resolution.
 - **Adjustments:** exposure, contrast, highlights and shadows sliders (−100 to +100) that sit on top of the film look.
@@ -25,7 +25,7 @@ Payments are handled by [Dodo Payments](https://dodopayments.com) (hosted checko
 | | Free | Pro Monthly | Pro Yearly | Lifetime |
 |---|---|---|---|---|
 | Price (₹, incl. GST) | 0 | 149 / month | 1,499 / year | 3,499 once |
-| Film looks to download | Original + 5 (all 14 can be previewed) | All 14 | All 14 | All 14 |
+| Film looks to download | Original + 5 (all 20 can be previewed) | All 20 | All 20 | All 20 |
 | Photos open at once | 25 | 25 | 25 | 25 |
 | Largest file / resolution | 20 MB / 24 MP | 60 MB / 60 MP | 100 MB / 100 MP | 150 MB / 120 MP |
 | Downloads per day | 10 | unlimited | unlimited | unlimited |
@@ -72,7 +72,7 @@ Then open <http://localhost:8000>.
 
 ## Credits
 
-The film simulation lookup tables are from the [RawTherapee Film Simulation Collection](https://rawpedia.rawtherapee.com/Film_Simulation) by Pat David, Pavlov Dmitry and Michael Ezra, licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). They approximate the look of each film and are not Fujifilm's own processing. Film and brand names are used for identification only, with no affiliation or endorsement.
+The film simulation lookup tables are from the [RawTherapee Film Simulation Collection](https://rawpedia.rawtherapee.com/Film_Simulation) by Pat David, Pavlov Dmitry and Michael Ezra, licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). They approximate the look of each film and are not the manufacturers' own processing. (Kodak Ektar 100 is published as a finer 256-step table; it is resampled to the 144-step size used here.) Film and brand names are used for identification only, with no affiliation or endorsement.
 
 Auto-straighten, HEIC and TIFF decoding use [heic2any](https://github.com/alexcorvi/heic2any) and [UTIF.js](https://github.com/photopea/UTIF.js), loaded on demand.
 

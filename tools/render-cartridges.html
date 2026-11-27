@@ -26,6 +26,12 @@ const FILMS = [
   { id:'FP', label:'FP-100C',        iso:'100', body:'#5a5a5a', band:'#f1e9d6', ink:'#111',    lut:'fp-100c' },
   { id:'FPN', label:'FP-100C NEG',   iso:'100', body:'#3a3a3a', band:'#e8dcc0', ink:'#111',    lut:'fp-100c-neg' },
   { id:'ACRS', label:'ACROS 100',    iso:'100', body:'#161616', band:'#e8e8e8', ink:'#000',    lut:'acros-100' },
+  { id:'P400', label:'PORTRA 400',     iso:'400', body:'#c98a4b', band:'#f6ead6', ink:'#4a2a0c', brand:'KODAK',  lut:'portra-400' },
+  { id:'KODA', label:'KODACHROME 64',  iso:'64',  body:'#c9161c', band:'#f6d23a', ink:'#3d0508', brand:'KODAK',  lut:'kodachrome-64' },
+  { id:'EKTR', label:'EKTAR 100',      iso:'100', body:'#d9401c', band:'#f7e9d2', ink:'#4a1405', brand:'KODAK',  lut:'ektar-100' },
+  { id:'TRIX', label:'TRI-X 400',      iso:'400', body:'#e0b315', band:'#f5ecc8', ink:'#221a00', brand:'KODAK',  lut:'tri-x-400' },
+  { id:'HP5',  label:'HP5 PLUS 400',   iso:'400', body:'#3a3f48', band:'#e9e9ea', ink:'#111',    brand:'ILFORD', lut:'hp5-plus-400' },
+  { id:'EKTA', label:'EKTACHROME 100', iso:'100', body:'#1f6f8e', band:'#efe3b8', ink:'#0b2f3d', brand:'KODAK',  lut:'ektachrome-100' },
   { id:'POLA', label:'POLAROID 690', iso:'600', body:'#e8e4d8', band:'#d8362b', ink:'#111',    lut:'polaroid-690' },
 ];
 </script>
@@ -104,7 +110,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
     function labelTexture(f) {
       const c = document.createElement('canvas'); c.width = LBW; c.height = LBH; const x = c.getContext('2d');
       const name = f.id === 'POLA' ? '690' : f.label.replace(/\s+\d+[A-Z]?$/, '');
-      const brand = f.id === 'POLA' ? 'POLAROID' : f.lut ? 'FUJIFILM' : '';
+      const brand = f.brand || (f.id === 'POLA' ? 'POLAROID' : f.lut ? 'FUJIFILM' : '');
       x.fillStyle = f.body; x.fillRect(0, 0, LBW, LBH);
       const y1 = LBH * .37, y2 = LBH * .71, cx = LBW / 2;
       const top = x.createLinearGradient(0, 0, 0, y1); top.addColorStop(0, 'rgba(255,255,255,.14)'); top.addColorStop(1, 'rgba(0,0,0,.18)'); x.fillStyle = top; x.fillRect(0, 0, LBW, y1);

@@ -1,4 +1,5 @@
 Film simulation Hald CLUTs: RawTherapee Film Simulation Collection (2015-09-20)
 by Pat David, Pavlov Dmitry, Michael Ezra. Licensed CC BY-SA 4.0.
 https://creativecommons.org/licenses/by-sa/4.0/
+Kodak Ektar 100 was resampled from the collection's 256-step table to the 144-step (Hald level 12) size used here; the other files are unchanged.
 Trademarked names are used for informational purposes only; no affiliation with or endorsement by their owners.
