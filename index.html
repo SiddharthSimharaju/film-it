@@ -295,6 +295,7 @@
   .rowl { padding:8px 4px; color:var(--muted); font-size:14px; } .rowl.total { color:#fff; font-weight:600; font-size:16px; border-top:1px solid rgba(255,255,255,.12); margin-top:6px; padding-top:14px; }
   .methods { display:flex; gap:8px; margin:18px 0; }
   .co .pay { width:100%; height:52px; }
+  .co .ctext { max-width:none; margin:4px 0 22px; text-align:left; line-height:1.5; }       /* explanation text lines up with the card and the button, with room before the button */
   .demo { text-align:center; color:var(--muted); font-size:12px; margin:14px 0 0; }
   /* Until a photo is open, the Filter / Grain bar is replaced by Terms and Privacy links (the bar stays in the layout, invisible, so nothing shifts). They are
      real links in the page HTML on purpose: Google's branding check looks for a privacy-policy link on the homepage. */
@@ -443,8 +444,8 @@
     .pt:hover:not(.on) .rm { display:none; }
     /* ... and every small control gets an invisible hit area of at least 44 px on screen, centred on it, so a fingertip does not have to be exact */
     .navbtn, #dl, #dlcaret, #acctbtn, .ba button, #addphotos, #applyall, .ctlx, .legalbar a { position:relative; }
-    .navbtn::after, #dl::after, #dlcaret::after, #acctbtn::after, .ba button::after, #addphotos::after, #applyall::after, .ctlx::after, .legalbar a::after
-      { content:''; position:absolute; left:50%; top:50%; width:max(100%, 49px); height:max(100%, 49px); transform:translate(-50%,-50%); }
+    .navbtn::after, #dl::after, #dlcaret::after, .ba button::after, #addphotos::after, #applyall::after, .ctlx::after, .legalbar a::after, #acctbtn::before
+      { content:''; position:absolute; left:50%; top:50%; width:max(100%, 49px); height:max(100%, 49px); transform:translate(-50%,-50%); }       /* (the account button uses ::before: its ::after is the PRO badge) */
     .h { width:40px; height:40px; margin:-20px 0 0 -20px; } .h::after { inset:13px; }                  /* crop handles: easy to grab */
   }
   /* small phones: the buttons are icons only (download arrow, person for Sign in) so the FILMROOM name still fits next to the logo mark */

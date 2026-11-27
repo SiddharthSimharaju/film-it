@@ -458,7 +458,14 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
   });
 
   /* ===================== SMOOTH SLIDERS ===================== */
-  await boot(); await signIn(); await buy('monthly');
+  const fPro = await boot(); await signIn(); await buy('monthly');
+  fPro.style.width = '390px'; fPro.style.height = '700px'; await sleep(500);
+  await check('MOB-19', 'Phone: a signed-in Pro account button stays avatar-sized (about 40 px) with a small PRO pill under it, not a big blob', async () => {
+    const b = $$('#acctbtn'), r = b.getBoundingClientRect(), a = getComputedStyle(b, '::after'), pill = { w: parseFloat(a.width), h: parseFloat(a.height), text: a.content };
+    const ok = b.classList.contains('pro') && r.width <= 42 && r.height <= 42 && /PRO/.test(pill.text) && pill.w < 40 && pill.h < 20;
+    return { pass: ok, detail: `button ${Math.round(r.width)} x ${Math.round(r.height)} px (Pro ${b.classList.contains('pro')}); PRO pill ${Math.round(pill.w)} x ${Math.round(pill.h)} px, text ${pill.text}` };
+  });
+  fPro.style.width = '1280px'; fPro.style.height = '800px'; await sleep(400);
   await check('SLIDE-1', 'Dragging a slider draws a lighter preview (long side up to 1400 px) and returns to full resolution when it stops; an export straight after a drag is still full resolution', async () => {
     await upload([await png(3000, 2000, 'big.png')]); await sleep(900); const full = $$('#cv').width;
     const g = $$('#grn'); g.value = 70; g.dispatchEvent(new Event('input')); await sleep(90); const during = $$('#cv').width;
