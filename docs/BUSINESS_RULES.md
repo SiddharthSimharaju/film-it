@@ -88,3 +88,15 @@ Plans, billing identity and the signed-in daily count are server-owned. Two thin
 
 - **Guest limits** (no account, so nothing to count against) and the **per-file limits** (size, megapixels, export size, formats, ZIP) are applied by the page that does the editing. A patched page can ignore them: the person only gets their own photos processed on their own machine.
 - **The Pro look files** are public: free users preview all 20 looks, and the files are CC BY-SA community files. What Free cannot do is download a Pro look, which the page enforces.
+
+## Coupons (Dodo Payments)
+
+Coupons live in Dodo Payments, not in this code. The checkout page Dodo hosts has a discount-code box, so a code typed there works through the normal payment link. Test and live mode have separate coupons.
+
+| Code | Mode | What it does |
+|---|---|---|
+| `FREEMONTH` | **test only** (`dsc_0Nsq600F432rrHehKKwGL`) | 100% off, **Filmroom Pro Monthly only** (Yearly and Lifetime refuse it), no cycle limit so renewals are free too, no expiry, no usage cap. For testers. |
+
+- It does not exist in live mode. Create it there only on purpose (Dodo dashboard, Sales, Discounts), ideally with a usage limit and an expiry.
+- Even at ₹0, Dodo asks for a card unless the product's **Card-optional at $0 price** setting is on (`zero_amount_payment_method_optional`). In test mode use the test card `4242 4242 4242 4242`.
+- To stop testers: delete or edit the discount in the Dodo dashboard. Subscriptions already created keep their discount.
