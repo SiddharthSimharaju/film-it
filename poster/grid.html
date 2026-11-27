@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><title>Filmroom poster: film grid</title>
+<!--
+  Square "coming soon" poster: twelve film rolls in a 4 x 3 grid, the Filmroom logo on top, "Edit like film / Coming soon" below.
+  Layout follows the wireframe. Rendered at 2160 x 2160 (open this page at that viewport and screenshot it).
+  Cartridges: poster/grid-art/*.webp (3D renders, see tools/render-cartridges.html).
+-->
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,100..900&family=Google+Sans:wght@400..700&display=swap" rel="stylesheet">
+<style>
+  :root { --navy:#131056; }
+  * { box-sizing:border-box; margin:0; }
+  html, body { background:#000; }
+  body { font-family:"Google Sans", system-ui, sans-serif; color:#fff; -webkit-font-smoothing:antialiased; }
+  .poster { position:relative; width:2160px; height:2160px; overflow:hidden; background:
+      radial-gradient(70% 48% at 50% 38%, rgba(86,74,230,.30), transparent 70%),
+      radial-gradient(60% 40% at 50% 108%, rgba(255,122,61,.16), transparent 70%),
+      var(--navy); }
+  .brand { position:absolute; top:84px; left:0; right:0; display:flex; align-items:center; justify-content:center; gap:20px;
+    font:900 44px/1 Archivo, sans-serif; font-stretch:125%; text-transform:uppercase; letter-spacing:-.01em; }
+  .brand svg { width:60px; height:60px; }
+  .grid { position:absolute; left:130px; right:130px; top:218px; display:grid; grid-template-columns:repeat(4, 1fr); column-gap:126px; row-gap:74px; }
+  .tile { height:424px; border-radius:26px; background:linear-gradient(160deg, rgba(255,255,255,.10), rgba(255,255,255,.035)); border:1.5px solid rgba(255,255,255,.14);
+    box-shadow:0 30px 70px rgba(2,2,40,.45), inset 0 1px 0 rgba(255,255,255,.14); display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding-top:22px; position:relative; overflow:hidden; }
+  .tile::before { content:''; position:absolute; left:10%; right:10%; top:38%; height:44%; background:radial-gradient(closest-side, rgba(255,255,255,.12), transparent); filter:blur(12px); }
+  .tile img { position:relative; width:310px; height:334px; object-fit:contain; filter:drop-shadow(0 22px 18px rgba(0,0,20,.55)); }
+  .tile span { position:absolute; left:0; right:0; bottom:26px; text-align:center; font-weight:600; font-size:25px; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,.86); }
+  .tag { position:absolute; left:0; right:0; text-align:center; }
+  .tag.l1 { top:1790px; font:600 112px/1 "Google Sans", sans-serif; letter-spacing:-.02em; }
+  .tag.l2 { top:1944px; font:500 62px/1 "Google Sans", sans-serif; letter-spacing:.02em; color:rgba(255,255,255,.88); display:flex; align-items:center; justify-content:center; gap:22px; }
+  .tag.l2 i { width:18px; height:18px; border-radius:50%; background:#ff7a3d; box-shadow:0 0 0 9px rgba(255,122,61,.25); }
+</style>
+</head>
+<body>
+<div class="poster" id="poster">
+  <div class="brand"><svg viewBox="0 0 30 30" aria-hidden="true"><rect x="2" y="5" width="26" height="20" rx="6" fill="none" stroke="#fff" stroke-width="2.6"/><circle cx="15" cy="15" r="4.6" fill="#fff"/><rect x="5.5" y="2.5" width="6" height="3.5" rx="1.5" fill="#fff"/></svg>Filmroom</div>
+  <div class="grid">
+    <div class="tile"><img src="grid-art/p400.webp" alt=""><span>Portra 400</span></div>
+    <div class="tile"><img src="grid-art/velv.webp" alt=""><span>Velvia 50</span></div>
+    <div class="tile"><img src="grid-art/trix.webp" alt=""><span>Tri-X 400</span></div>
+    <div class="tile"><img src="grid-art/ektr.webp" alt=""><span>Ektar 100</span></div>
+    <div class="tile"><img src="grid-art/prov.webp" alt=""><span>Provia 100F</span></div>
+    <div class="tile"><img src="grid-art/koda.webp" alt=""><span>Kodachrome 64</span></div>
+    <div class="tile"><img src="grid-art/acrs.webp" alt=""><span>Acros 100</span></div>
+    <div class="tile"><img src="grid-art/s400.webp" alt=""><span>Superia 400</span></div>
+    <div class="tile"><img src="grid-art/hp5.webp" alt=""><span>HP5 Plus 400</span></div>
+    <div class="tile"><img src="grid-art/400h.webp" alt=""><span>Pro 400H</span></div>
+    <div class="tile"><img src="grid-art/pola.webp" alt=""><span>Polaroid 690</span></div>
+    <div class="tile"><img src="grid-art/ekta.webp" alt=""><span>Ektachrome 100</span></div>
+  </div>
+  <div class="tag l1">Edit like film</div>
+  <div class="tag l2"><i></i>Coming soon</div>
+</div>
+</body>
+</html>
