@@ -418,6 +418,35 @@ const hash = async (algo, buf) => btoa(String.fromCharCode(...new Uint8Array(awa
     return { pass: inside && wrapped && wrappedBack && back, detail: `focus moved inside ${inside}; Tab at the end wraps to the start ${wrapped}; Shift+Tab at the start wraps to the end ${wrappedBack}; closed and focus back on the opener ${back}` };
   });
 
+  await check('MOB-16', 'Phone thumbnails: tapping a photo only switches to it (no remove dialog), and the remove X is a small badge on the top-left corner of the open photo, not laid over its middle', async () => {
+    await upload([await png(900, 1200, 'second.png')]); await sleep(900);
+    const pts = $all('#thumbs .pt'); if (pts.length < 2) return { pass: false, detail: 'needs two photos, have ' + pts.length };
+    const open = pts.find(x => x.classList.contains('on')), otherIdx = pts.indexOf(open) === 0 ? 1 : 0, other = pts[otherIdx];
+    const badge = open.querySelector('[data-rm]'), rb = badge.getBoundingClientRect(), ob = open.getBoundingClientRect();
+    const corner = rb.width <= 24 && rb.left + rb.width / 2 <= ob.left + 8 && rb.top + rb.height / 2 <= ob.top + 8;
+    const centre = doc.elementFromPoint(ob.left + ob.width / 2, ob.top + ob.height / 2), centreFree = !!centre && !centre.closest('[data-rm]');
+    const ob2 = other.getBoundingClientRect(); const target = doc.elementFromPoint(ob2.left + ob2.width / 2, ob2.top + ob2.height / 2); target.click(); await sleep(700);
+    const switched = $all('#thumbs .pt')[otherIdx].classList.contains('on') && !doc.getElementById('confirm').classList.contains('open');
+    $all('#thumbs .pt')[0].click(); await sleep(500);
+    return { pass: corner && centreFree && switched, detail: `X badge ${Math.round(rb.width)}px at the corner ${corner}; middle of the photo is the picture, not the X ${centreFree}; tapping the other photo switched to it with no dialog ${switched}` };
+  });
+  await check('MOB-17', 'Phone with several photos open: Download asks "Save which photos?" with a button for all of them and one for just this photo', async () => {
+    const real = win.touchDevice; win.touchDevice = () => true;
+    $$('#dl').click(); await sleep(500);
+    const s = $$('.sheet'), asked = /Save which photos/.test(s.textContent) && !!s.querySelector('[data-dlall]') && !!s.querySelector('[data-dlone]') && s.textContent.includes(`${$all('#thumbs .pt').length} photos open`);
+    $$('.sheet .x').click(); await sleep(300); win.touchDevice = real;
+    return { pass: asked && !modalOpen(), detail: `choice dialog shown with both buttons and the photo count ${asked} (sheet said: "${s.textContent.trim().slice(0, 50)}", ${$all('#thumbs .pt').length} photos); closed ${!modalOpen()}` };
+  });
+  await check('MOB-18', 'Dialog buttons never overflow: when two do not fit side by side they stack, and they stay inside the dialog (checked at 300, 340 and 390 px wide)', async () => {
+    const out = []; let ok = true;
+    for (const w of [300, 340, 390]) {
+      fPhone.style.width = w + 'px'; await sleep(450); win.offerSave([{ blob: new Blob(['x']), name: 'a.png' }], 'Saved at 764 × 1024. Upgrade for full resolution.'); await sleep(400);
+      const sh = $$('#sheet').getBoundingClientRect(), bs = [...doc.querySelectorAll('#sheet .cact .btn')].map(b => b.getBoundingClientRect()), inside = bs.length === 2 && bs.every(b => b.left >= sh.left - 0.5 && b.right <= sh.right + 0.5);
+      ok = ok && inside; out.push(`${w}px: ${inside ? 'inside' : 'OVERFLOW'} (${bs.length} buttons; ${bs.length === 2 && bs[1].top > bs[0].bottom - 1 ? 'stacked' : 'side by side'}; sheet ${Math.round(sh.left)}..${Math.round(sh.right)}, buttons ${bs.map(b => Math.round(b.left) + '..' + Math.round(b.right)).join(' / ')})`); doc.querySelector('#sheet .x').click(); await sleep(300);
+    }
+    fPhone.style.width = '390px'; await sleep(300); return { pass: ok, detail: out.join('; ') };
+  });
+
   /* ===================== UPLOAD BUTTON ===================== */
   await boot();
   await check('UPL-1', 'The Upload button opens the file picker exactly once (a second call made iPhones drop the chosen photo); tapping the empty drop area still opens it once; the "Drop images here / or" lines are hidden on touch screens', async () => {

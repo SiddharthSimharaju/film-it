@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-vZK+VvdaNkXLv3wwkeV3OzvGwy94oUOCqj1hIQiPT6g=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client https://www.googletagmanager.com/gtag/js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://accounts.google.com/gsi/ https://filmroom-api.siddharth-simharaju.workers.dev http://localhost:8787 https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; frame-src 'self' https://accounts.google.com/gsi/; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-sMSzZAxCBCjJWtWq9NVHZQLAOOn5ENunxYlyYZaTg0I=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client https://www.googletagmanager.com/gtag/js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://accounts.google.com/gsi/ https://filmroom-api.siddharth-simharaju.workers.dev http://localhost:8787 https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; frame-src 'self' https://accounts.google.com/gsi/; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin">
 <!-- Clickjacking guard: the page stays hidden unless it is the top window or framed by our own origin. -->
 <style id="antiframe">html{display:none!important}</style>
@@ -164,7 +164,7 @@
   .sheet.small h2 { font-size:24px; }
   .cthumb { display:block; width:76px; height:76px; margin:0 auto 16px; border-radius:18px; object-fit:cover; box-shadow:0 10px 30px rgba(0,0,20,.5), 0 0 0 1px rgba(255,255,255,.18); }
   .ctext { color:var(--muted); margin:10px auto 0; max-width:320px; line-height:1.45; } .ctext b { color:#fff; font-weight:600; word-break:break-all; }
-  .cact { display:flex; gap:10px; margin-top:24px; } .cact .btn { flex:1; }
+  .cact { display:flex; flex-wrap:wrap; gap:10px; margin-top:24px; } .cact .btn { flex:1 1 auto; min-width:0; white-space:nowrap; }      /* side by side when they fit, stacked (first one on top) when they don't */
   .btn.danger { background:#ff4d5e; color:#fff; } .btn.danger:hover:not(:disabled) { filter:brightness(1.1); }
 
   /* multiple photos */
@@ -399,7 +399,7 @@
     .navbtn { padding:9px 4px; font-size:14px; text-align:center; border-radius:12px; }
 
     .stage { padding:2px 8px 4px; } .drop { border-radius:22px; }
-    .photos { padding:0 12px 4px; gap:8px; } .pt { width:36px; height:36px; border-radius:10px; } .thumbs { padding:2px 3px; } .pact .btn.sm { height:30px; font-size:12.5px; padding:0 11px; border-radius:11px; }
+    .photos { padding:0 12px 4px; gap:8px; } .pt { width:38px; height:38px; border-radius:10px; } .thumbs { padding:8px 8px 3px; } .pact .btn.sm { height:30px; font-size:12.5px; padding:0 11px; border-radius:11px; }
 
     .dock { padding:0 8px; }
     body:not(.has) .dock { min-height:46px; }                          /* keeps room for the Terms / Privacy bar before a photo is open */
@@ -436,7 +436,11 @@
     .film { flex:0 0 96px; font-size:12.8px; white-space:nowrap; } .ba button { font-size:14px; padding:7px 14px; } .pact .btn.sm { font-size:13.8px; } .chip { font-size:13.8px; }
     .croppanel .btn.sm, .adjpanel .btn { font-size:13.8px; } .adj .ah { font-size:13.8px; } .cthead b { font-size:13.4px; } #controls .ctl, .croppanel .ctl { font-size:14.4px; }
     body.has .caption { display:none; }                                   /* phones: no film name / size label over the photo (the photo's name and look are still read out by screen readers via the preview's label) */
-    .pt .rm { width:28px; height:28px; font-size:17px; top:1px; right:1px; }
+    /* thumbnails on phones: a tap only switches photos. The remove X is a small badge on the top-left corner of the photo that is open (not a button laid over its middle), so a tap on the picture can't open the remove dialog by mistake */
+    .pt { overflow:visible; } .pt img { border-radius:8px; }
+    .pt .rm { top:-9px; left:-9px; right:auto; width:22px; height:22px; font-size:14px; background:#0a0a1c; border:1.5px solid rgba(255,255,255,.9); box-shadow:0 1px 4px rgba(0,0,0,.5); z-index:3; }
+    .pt .rm::after { content:''; position:absolute; inset:-1px; }                                  /* 24 px tap area, 20 px of it outside the picture's middle */
+    .pt:hover:not(.on) .rm { display:none; }
     /* ... and every small control gets an invisible hit area of at least 44 px on screen, centred on it, so a fingertip does not have to be exact */
     .navbtn, #dl, #dlcaret, #acctbtn, .ba button, #addphotos, #applyall, .ctlx, .legalbar a { position:relative; }
     .navbtn::after, #dl::after, #dlcaret::after, #acctbtn::after, .ba button::after, #addphotos::after, #applyall::after, .ctlx::after, .legalbar a::after
@@ -1624,7 +1628,15 @@ async function exportCurrent() {                         // encode whatever is o
   return { blob, f, capped, out, name:`${safeName(fileName)}-${current.id.toLowerCase()}.${f.ext}` };
 }
 let exporting = false;
-dl.onclick = async () => {
+function askWhichPhotos() {                               // phone with several photos open: Download used to save only the one on screen, with no hint that others exist
+  closeMenu(); $('toast').classList.remove('on');
+  const n = photos.length, pro = !limits().zipMax;
+  sheet.innerHTML = XBTN + `<div class="done"><h2>Save which photos?</h2><p>You have ${n} photos open.</p>
+    <div class="cact" style="max-width:340px;margin:0 auto"><button class="btn white" data-dlall="1">Save all ${n} photos${pro ? ' <span class="prochip">PRO</span>' : ''}</button><button class="btn glass" data-dlone="1">Just this photo</button></div></div>`;
+  openModal();
+}
+dl.onclick = () => { if (!hasImage || busy || exporting) return; if (touchDevice() && photos.length > 1) askWhichPhotos(); else downloadCurrent(); };
+async function downloadCurrent() {
   if (!hasImage || busy || exporting) return;
   closeMenu();
   if (lookLocked(current)) { openPlans({ reason:`${current.label} is a Pro look` }); return; }       // rule: Pro looks
@@ -1645,7 +1657,7 @@ dl.onclick = async () => {
     saveBlob(blob, name);
     toast(capped ? `Saved as ${f.label} at ${out.width} × ${out.height}. Upgrade for full resolution.` : `Saved as ${f.label}`, capped ? 4200 : 1800);
   } finally { exporting = false; }
-};
+}
 async function downloadAll() {
   if (!hasImage || busy || exporting || photos.length < 2) return;
   closeMenu(); if (editing) await exitCrop(true);
@@ -1993,6 +2005,8 @@ $('modal').addEventListener('click', e => {
   if (t.closest('[data-pm]')) return openBilling();
   if (t.closest('[data-back]')) return renderPlans(lastOpts);
   if (t.closest('[data-free]')) { if (!user) return renderSignIn(); const r = rec(); if (plan === 'lifetime') toast('Lifetime plans don\'t expire.'); else if (plan === 'free') return; else if (r.canceled) toast(`Already cancelled. Pro stays until ${fmtDate(r.renewsAt)}.`, 3200); else renderCancel(); return; }
+  if (t.closest('[data-dlall]')) { closeModal(); return downloadAll(); }
+  if (t.closest('[data-dlone]')) { closeModal(); return downloadCurrent(); }
   if (t.closest('[data-savephotos]')) return sharePending();
   if (t.closest('[data-savefile]')) return downloadPending();
   if (t.closest('[data-pay]')) return beginPayment();
