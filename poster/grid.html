@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8"><title>Filmroom poster: film grid</title>
 <!--
-  Square "coming soon" poster: twelve film rolls (just the films, no boxes) in a 4 x 3 grid, the Filmroom logo on top,
-  a heading, a subheading and a "Coming very soon" badge below. Rendered at 2160 x 2160 (open this page at that viewport and screenshot it).
+  Square "coming soon" poster: twelve film rolls (just the films, no boxes) in a compact 4 x 3 group, the Filmroom logo on top,
+  a heading, a subheading and a "Coming very soon" badge below, with generous padding all round.
+  Rendered at 2160 x 2160 (open this page at that viewport and screenshot it).
   Cartridges: poster/grid-art/*.webp (3D renders, see tools/render-cartridges.html).
 -->
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,100..900&family=Google+Sans:wght@400..700&display=swap" rel="stylesheet">
@@ -14,19 +15,19 @@
   html, body { background:#000; }
   body { font-family:"Google Sans", system-ui, sans-serif; color:#fff; -webkit-font-smoothing:antialiased; }
   .poster { position:relative; width:2160px; height:2160px; overflow:hidden; background:
-      radial-gradient(70% 46% at 50% 34%, rgba(86,74,230,.30), transparent 70%),
+      radial-gradient(60% 40% at 50% 34%, rgba(86,74,230,.30), transparent 70%),
       radial-gradient(60% 40% at 50% 108%, rgba(255,122,61,.16), transparent 70%),
       var(--navy); }
-  .brand { position:absolute; top:78px; left:0; right:0; display:flex; align-items:center; justify-content:center; gap:20px;
+  .brand { position:absolute; top:140px; left:0; right:0; display:flex; align-items:center; justify-content:center; gap:20px;
     font:900 44px/1 Archivo, sans-serif; font-stretch:125%; text-transform:uppercase; letter-spacing:-.01em; }
   .brand svg { width:60px; height:60px; }
-  /* just the films: no boxes, no labels (each cartridge already carries its own name) */
-  .grid { position:absolute; left:100px; right:100px; top:176px; display:grid; grid-template-columns:repeat(4, 1fr); row-gap:0; justify-items:center; }
-  .grid img { width:446px; height:480px; object-fit:contain; filter:drop-shadow(0 26px 22px rgba(0,0,20,.5)); }
-  h1 { position:absolute; left:0; right:0; top:1692px; text-align:center; font:600 104px/1.04 "Google Sans", sans-serif; letter-spacing:-.025em; }
-  .sub { position:absolute; left:50%; transform:translateX(-50%); top:1830px; width:1640px; text-align:center; font:400 42px/1.38 "Google Sans", sans-serif; color:rgba(255,255,255,.80); text-wrap:balance; }
+  /* just the films: no boxes, no labels (each cartridge already carries its own name), kept close together */
+  .grid { position:absolute; left:50%; transform:translateX(-50%); top:268px; width:1700px; display:grid; grid-template-columns:repeat(4, 380px); column-gap:60px; row-gap:4px; }
+  .grid img { width:380px; height:409px; object-fit:contain; filter:drop-shadow(0 22px 18px rgba(0,0,20,.5)); }
+  h1 { position:absolute; left:0; right:0; top:1618px; text-align:center; font:600 100px/1.04 "Google Sans", sans-serif; letter-spacing:-.025em; }
+  .sub { position:absolute; left:50%; transform:translateX(-50%); top:1758px; width:1480px; text-align:center; font:400 42px/1.4 "Google Sans", sans-serif; color:rgba(255,255,255,.80); text-wrap:balance; }
   .sub b { color:#fff; font-weight:600; }
-  .badge { position:absolute; left:50%; transform:translateX(-50%); top:2002px; display:inline-flex; align-items:center; gap:18px; padding:20px 42px 20px 32px; border-radius:999px;
+  .badge { position:absolute; left:50%; transform:translateX(-50%); top:1928px; display:inline-flex; align-items:center; gap:18px; padding:20px 42px 20px 32px; border-radius:999px;
     background:#fff; color:var(--ink); font:700 40px/1 "Google Sans", sans-serif; letter-spacing:.01em; white-space:nowrap; box-shadow:0 18px 50px rgba(0,0,30,.45); }
   .badge i { width:20px; height:20px; border-radius:50%; background:var(--orange); box-shadow:0 0 0 8px rgba(255,122,61,.25); }
 </style>
@@ -39,8 +40,8 @@
     <img src="grid-art/prov.webp" alt="Fujifilm Provia 100F"><img src="grid-art/koda.webp" alt="Kodak Kodachrome 64"><img src="grid-art/acrs.webp" alt="Fujifilm Acros 100"><img src="grid-art/s400.webp" alt="Fujifilm Superia 400">
     <img src="grid-art/hp5.webp" alt="Ilford HP5 Plus 400"><img src="grid-art/400h.webp" alt="Fujifilm Pro 400H"><img src="grid-art/pola.webp" alt="Polaroid 690"><img src="grid-art/ekta.webp" alt="Kodak Ektachrome 100">
   </div>
-  <h1>Make any photo look shot on film.</h1>
-  <p class="sub"><b>24 film looks</b> from Kodak, Fujifilm and Ilford, plus grain, crop and adjustments. All in your browser, and your photos never leave your device.</p>
+  <h1>Give any photo the look of real film.</h1>
+  <p class="sub">Pick from <b>24 film looks</b> inspired by Kodak, Fujifilm and Ilford. Add grain, crop and adjust, all in your browser. Your photos never leave your device.</p>
   <div class="badge"><i></i>Coming very soon</div>
 </div>
 </body>
