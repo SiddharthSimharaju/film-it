@@ -12,7 +12,7 @@ What each plan allows, and where each rule lives in the code. Every rule is chec
 | **Account** | A Google sign-in. Needed only to buy a plan; the plan belongs to the account. |
 | **Plan** | `free`, `monthly`, `yearly` or `lifetime`. Decides every limit below. |
 | **Photo** | One opened image, kept only in the browser tab. Photos never leave the device. |
-| **Look** | A film simulation. 20 looks plus "Original". |
+| **Look** | A film simulation. 24 looks plus "Original". |
 | **Upload** | A photo opened into the library. Free for everyone: there is no daily upload limit, because opening a photo costs nothing. |
 | **Download** | One exported file saved to disk. A "Download all" ZIP counts one per photo inside it. |
 
@@ -28,7 +28,7 @@ What each plan allows, and where each rule lives in the code. Every rule is chec
 | "Download all" ZIP | not included | up to 25 photos | up to 25 | up to 25 |
 | Export size | 1024 px (long side) | original size | original size | original size |
 | Export formats | JPEG, PNG | JPEG, PNG, WebP, AVIF*, TIFF, BMP | same | same |
-| Film looks you can download | Original + 5 | all 20 | all 20 | all 20 |
+| Film looks you can download | Original + 5 | all 24 | all 24 | all 24 |
 | Crop, straighten, adjustments, grain, apply-look-to-all | yes | yes | yes | yes |
 
 \* AVIF appears only in browsers that can save it.
@@ -87,7 +87,7 @@ What each plan allows, and where each rule lives in the code. Every rule is chec
 Plans, billing identity and the signed-in daily count are server-owned. Two things remain in the browser, on purpose (details in `SECURITY.md`):
 
 - **Guest limits** (no account, so nothing to count against) and the **per-file limits** (size, megapixels, export size, formats, ZIP) are applied by the page that does the editing. A patched page can ignore them: the person only gets their own photos processed on their own machine.
-- **The Pro look files** are public: free users preview all 20 looks, and the files are CC BY-SA community files. What Free cannot do is download a Pro look, which the page enforces.
+- **The Pro look files** are public: free users preview all 24 looks, and the files are CC BY-SA community files. What Free cannot do is download a Pro look, which the page enforces.
 
 ## Coupons (Dodo Payments)
 

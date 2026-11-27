@@ -12,8 +12,8 @@ const call = async (method, path, body) => {
 };
 const rec = (price, every) => ({ type: 'recurring_price', currency: 'INR', price, tax_inclusive: true, payment_frequency_count: 1, payment_frequency_interval: every, subscription_period_count: 10, subscription_period_interval: 'Year' });
 const WANT = [
-  ['monthly',  'Filmroom Pro Monthly', 'saas', 'All 20 film looks, original-size export, all formats, unlimited downloads.', rec(14900, 'Month')],
-  ['yearly',   'Filmroom Pro Yearly',  'saas', 'All 20 film looks, up to 100 MP, original-size export, all formats.',        rec(149900, 'Year')],
+  ['monthly',  'Filmroom Pro Monthly', 'saas', 'All 24 film looks, original-size export, all formats, unlimited downloads.', rec(14900, 'Month')],
+  ['yearly',   'Filmroom Pro Yearly',  'saas', 'All 24 film looks, up to 100 MP, original-size export, all formats.',        rec(149900, 'Year')],
   ['lifetime', 'Filmroom Lifetime',    'digital_products', 'Pay once, use Filmroom Pro forever. Largest files (150 MB / 120 MP).', { type: 'one_time_price', currency: 'INR', price: 349900, tax_inclusive: true }],
 ];
 const existing = {};

@@ -9,7 +9,7 @@ Give any photo the look of classic Fujifilm, Kodak, Ilford and Polaroid film sto
 ## Features
 
 - **Many photos at once:** drop or pick as many as you like. Each photo keeps its own film look, grain, adjustments and crop, **Apply look to all** copies one photo's look to the rest, and **Download all** saves every edited photo in one ZIP.
-- **Film looks (20):** Fujifilm Provia 100F, Provia 400X, Velvia 50, Astia 100F, Reala 100, Sensia 100, Superia 400, X-Tra 800, Pro 400H, Superia XPRO, FP-100C (and Neg) and Acros 100; Kodak Portra 400, Kodachrome 64, Ektar 100, Ektachrome 100 and Tri-X 400; Ilford HP5 Plus 400; and Polaroid 690.
+- **Film looks (24):** Fujifilm Provia 100F, Provia 400X, Velvia 50, Astia 100F, Reala 100, Sensia 100, Superia 400, X-Tra 800, Pro 400H, Superia XPRO, FP-100C (and Neg) and Acros 100; Kodak Portra 160, 400 and 800, Kodachrome 64, Ektar 100, Ektachrome 100, Tri-X 400 and T-Max 100 and 400; Ilford HP5 Plus 400; and Polaroid 690.
 - **Filter strength:** blend each look from 0 to 100%.
 - **Film grain:** adjustable, scaled to the photo's resolution.
 - **Adjustments:** exposure, contrast, highlights and shadows sliders (−100 to +100) that sit on top of the film look.
@@ -25,7 +25,7 @@ Payments are handled by [Dodo Payments](https://dodopayments.com) (hosted checko
 | | Free | Pro Monthly | Pro Yearly | Lifetime |
 |---|---|---|---|---|
 | Price (₹, incl. GST) | 0 | 149 / month | 1,499 / year | 3,499 once |
-| Film looks to download | Original + 5 (all 20 can be previewed) | All 20 | All 20 | All 20 |
+| Film looks to download | Original + 5 (all 24 can be previewed) | All 24 | All 24 | All 24 |
 | Photos open at once | 25 | 25 | 25 | 25 |
 | Largest file / resolution | 20 MB / 24 MP | 60 MB / 60 MP | 100 MB / 100 MP | 150 MB / 120 MP |
 | Downloads per day | 10 | unlimited | unlimited | unlimited |

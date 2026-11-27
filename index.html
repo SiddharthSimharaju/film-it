@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-koMbsuiZF2qDt0WbWCU+l4ZqKrSnr06JqEGS1u/+nQM=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client https://www.googletagmanager.com/gtag/js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://accounts.google.com/gsi/ https://filmroom-api.siddharth-simharaju.workers.dev http://localhost:8787 https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; frame-src 'self' https://accounts.google.com/gsi/; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-D798hDx3yYFZNJS3rW5dFQ37a31etDC7IRV6Bgrw0iI=' 'sha256-2h2HD9hpddKSGaiVt3DtqFSMY0JzTx2ZiF0m6tQals8=' 'sha256-IoU3BCA0f6q/o+rHs3ayG7dyZAZeNd53Jo9cuBo0gfk=' https://accounts.google.com/gsi/client https://www.googletagmanager.com/gtag/js; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleusercontent.com https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://accounts.google.com/gsi/ https://filmroom-api.siddharth-simharaju.workers.dev http://localhost:8787 https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; frame-src 'self' https://accounts.google.com/gsi/; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin">
 <!-- Clickjacking guard: the page stays hidden unless it is the top window or framed by our own origin. -->
 <style id="antiframe">html{display:none!important}</style>
@@ -639,24 +639,28 @@ const FILMS = [
   { id:'ORIG', label:'ORIGINAL',     iso:'--',  body:'#8a8a8a', band:'#ddd',    ink:'#222' },
   { id:'PROV', label:'PROVIA 100F',  iso:'100', body:'#1f5fb4', band:'#f3ead0', ink:'#102a55', lut:'provia-100f' },
   { id:'VELV', label:'VELVIA 50',    iso:'50',  body:'#c8202a', band:'#f6e8c8', ink:'#4a0a0e', lut:'velvia-50' },
-  { id:'P400', label:'PORTRA 400',     iso:'400', body:'#c98a4b', band:'#f6ead6', ink:'#4a2a0c', brand:'KODAK',  lut:'portra-400' },
-  { id:'KODA', label:'KODACHROME 64',  iso:'64',  body:'#c9161c', band:'#f6d23a', ink:'#3d0508', brand:'KODAK',  lut:'kodachrome-64' },
-  { id:'EKTR', label:'EKTAR 100',      iso:'100', body:'#d9401c', band:'#f7e9d2', ink:'#4a1405', brand:'KODAK',  lut:'ektar-100' },
-  { id:'TRIX', label:'TRI-X 400',      iso:'400', body:'#e0b315', band:'#f5ecc8', ink:'#221a00', brand:'KODAK',  lut:'tri-x-400' },
-  { id:'HP5',  label:'HP5 PLUS 400',   iso:'400', body:'#3a3f48', band:'#e9e9ea', ink:'#111',    brand:'ILFORD', lut:'hp5-plus-400' },
-  { id:'EKTA', label:'EKTACHROME 100', iso:'100', body:'#1f6f8e', band:'#efe3b8', ink:'#0b2f3d', brand:'KODAK',  lut:'ektachrome-100' },
-  { id:'ASTI', label:'ASTIA 100F',   iso:'100', body:'#e0a21b', band:'#fff2cf', ink:'#4a3200', lut:'astia-100f' },
   { id:'REAL', label:'REALA 100',    iso:'100', body:'#2f9e6a', band:'#f4f0d8', ink:'#0d3322', lut:'reala-100' },
-  { id:'SENS', label:'SENSIA 100',   iso:'100', body:'#7a4fb0', band:'#efe6f6', ink:'#2a1745', lut:'sensia-100' },
-  { id:'P4X',  label:'PROVIA 400X',  iso:'400', body:'#14407f', band:'#e8eef7', ink:'#0a1d3a', lut:'provia-400x' },
   { id:'S400', label:'SUPERIA 400',  iso:'400', body:'#3f8a3a', band:'#eef0c8', ink:'#173614', lut:'superia-400' },
-  { id:'XTRA', label:'X-TRA 800',    iso:'800', body:'#2a6b3a', band:'#f4e3b0', ink:'#0f2a16', lut:'xtra-800' },
+  { id:'ACRS', label:'ACROS 100',    iso:'100', body:'#161616', band:'#e8e8e8', ink:'#000',    lut:'acros-100' },
+  { id:'P400', label:'PORTRA 400',     iso:'400', body:'#c98a4b', band:'#f6ead6', ink:'#4a2a0c', brand:'KODAK',  lut:'portra-400' },
+  { id:'TRIX', label:'TRI-X 400',      iso:'400', body:'#e0b315', band:'#f5ecc8', ink:'#221a00', brand:'KODAK',  lut:'tri-x-400' },
+  { id:'EKTR', label:'EKTAR 100',      iso:'100', body:'#d9401c', band:'#f7e9d2', ink:'#4a1405', brand:'KODAK',  lut:'ektar-100' },
+  { id:'P160', label:'PORTRA 160',     iso:'160', body:'#dcb27c', band:'#f8f0e0', ink:'#4a2f10', brand:'KODAK',  lut:'portra-160' },
+  { id:'P800', label:'PORTRA 800',     iso:'800', body:'#b0602f', band:'#f6e6d4', ink:'#3d1c08', brand:'KODAK',  lut:'portra-800' },
+  { id:'KODA', label:'KODACHROME 64',  iso:'64',  body:'#c9161c', band:'#f6d23a', ink:'#3d0508', brand:'KODAK',  lut:'kodachrome-64' },
+  { id:'HP5',  label:'HP5 PLUS 400',   iso:'400', body:'#3a3f48', band:'#e9e9ea', ink:'#111',    brand:'ILFORD', lut:'hp5-plus-400' },
   { id:'400H', label:'PRO 400H',     iso:'400', body:'#2d8c8c', band:'#eef3ee', ink:'#0f3838', lut:'pro-400h' },
+  { id:'EKTA', label:'EKTACHROME 100', iso:'100', body:'#1f6f8e', band:'#efe3b8', ink:'#0b2f3d', brand:'KODAK',  lut:'ektachrome-100' },
+  { id:'TM4',  label:'T-MAX 400',      iso:'400', body:'#232327', band:'#f0d54a', ink:'#1c1700', brand:'KODAK',  lut:'t-max-400' },
+  { id:'POLA', label:'POLAROID 690', iso:'600', body:'#e8e4d8', band:'#d8362b', ink:'#111',    lut:'polaroid-690' },
+  { id:'ASTI', label:'ASTIA 100F',   iso:'100', body:'#e0a21b', band:'#fff2cf', ink:'#4a3200', lut:'astia-100f' },
+  { id:'P4X',  label:'PROVIA 400X',  iso:'400', body:'#14407f', band:'#e8eef7', ink:'#0a1d3a', lut:'provia-400x' },
   { id:'XPRO', label:'SUPERIA XPRO', iso:'200', body:'#b9632b', band:'#f7e6c2', ink:'#4a2208', lut:'superia-xpro' },
+  { id:'XTRA', label:'X-TRA 800',    iso:'800', body:'#2a6b3a', band:'#f4e3b0', ink:'#0f2a16', lut:'xtra-800' },
+  { id:'TM1',  label:'T-MAX 100',      iso:'100', body:'#34506e', band:'#f1e2a0', ink:'#102030', brand:'KODAK',  lut:'t-max-100' },
+  { id:'SENS', label:'SENSIA 100',   iso:'100', body:'#7a4fb0', band:'#efe6f6', ink:'#2a1745', lut:'sensia-100' },
   { id:'FP', label:'FP-100C',        iso:'100', body:'#5a5a5a', band:'#f1e9d6', ink:'#111',    lut:'fp-100c' },
   { id:'FPN', label:'FP-100C NEG',   iso:'100', body:'#3a3a3a', band:'#e8dcc0', ink:'#111',    lut:'fp-100c-neg' },
-  { id:'ACRS', label:'ACROS 100',    iso:'100', body:'#161616', band:'#e8e8e8', ink:'#000',    lut:'acros-100' },
-  { id:'POLA', label:'POLAROID 690', iso:'600', body:'#e8e4d8', band:'#d8362b', ink:'#111',    lut:'polaroid-690' },
 ];
 
 // ---------- Plans (prices shown here; what is actually charged is decided by the server, see server/src/plans.js and Dodo Payments) ----------
@@ -885,8 +889,8 @@ function upload(unit, bmp, mip) {
   return t;
 }
 // ---------- Film looks are fetched BEFORE they are clicked, so picking one is instant ----------
-// Each look is a 1728 x 1728 colour table (0.2 to 2 MB, 25 MB for all 20). They are exact: shrinking them visibly changes some looks (measured), so
-// instead of making them smaller we get them early: (1) after the page loads, all 20 download quietly in the background, most likely picks first;
+// Each look is a 1728 x 1728 colour table (0.2 to 2 MB, 33 MB for all 24). They are exact: shrinking them visibly changes some looks (measured), so
+// instead of making them smaller we get them early: (1) after the page loads, all 24 download quietly in the background, most likely picks first;
 // (2) once a photo is open, the first few are also decoded and uploaded to the GPU in idle time; (3) sw.js keeps them for next time, even offline.
 // A look you click before its turn is fetched at once and shares the same download. Skipped on Data Saver and slow connections (on demand only).
 const LUT_VER = '1';                                       // bump (and CACHE in sw.js) when a file in luts/ changes
@@ -905,7 +909,7 @@ function prefetchLuts() {                                  // bytes only (cheap)
   const lane = async () => { while (next < names.length) { try { await fetchLut(names[next++], false); } catch (e) {} } };
   lane(); lane();
 }
-// Decoded, a look is ~12 MB of GPU memory. A desktop-class machine (8 GB or more, not a phone) gets all 20 ready; anything else gets the first 6
+// Decoded, a look is ~12 MB of GPU memory. A desktop-class machine (8 GB or more, not a phone) gets all 24 ready; anything else gets the first 6
 // and the neighbours of whatever look is picked (people flick through the strip in order), so a phone never holds looks nobody chose.
 const roomy = (navigator.deviceMemory || 0) >= 8 && !/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 const lookFiles = () => FILMS.filter(f => f.lut);
@@ -1702,8 +1706,8 @@ const TICK = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-
 function featuresFor(id) {
   const L = LIMITS[id];
   return id === 'free'
-    ? ['5 film looks, preview all 20', `Export up to ${L.exportPx}px`, 'JPEG & PNG', `${L.photos} photos at once, ${L.fileMB} MB each`, `${L.downloadsPerDay} downloads a day`, 'Crop, straighten & adjust']
-    : ['All 20 film looks', 'Full-resolution export', 'JPEG, PNG, WebP, TIFF & BMP', `${L.photos} photos at once, ${L.fileMB} MB each`, 'Unlimited downloads', `Download all as ZIP (up to ${L.zipMax})`];
+    ? ['5 film looks, preview all 24', `Export up to ${L.exportPx}px`, 'JPEG & PNG', `${L.photos} photos at once, ${L.fileMB} MB each`, `${L.downloadsPerDay} downloads a day`, 'Crop, straighten & adjust']
+    : ['All 24 film looks', 'Full-resolution export', 'JPEG, PNG, WebP, TIFF & BMP', `${L.photos} photos at once, ${L.fileMB} MB each`, 'Unlimited downloads', `Download all as ZIP (up to ${L.zipMax})`];
 }
 let lastOpts = {}, checkoutPlan = null;
 const sheet = $('sheet');
@@ -1825,7 +1829,7 @@ async function handleCheckoutReturn() {
 function renderSuccess(id) {
   const p = PLANS[id], first = acct && acct.invoices && acct.invoices[0];
   sheet.innerHTML = XBTN + `<div class="done"><div class="ok">${TICK}</div><h2>You're on ${p.name}</h2>
-    <p>All 20 film looks, full-resolution export and every format are unlocked. Manage billing any time from your account.</p><div class="cact" style="max-width:340px;margin:0 auto"><button class="btn glass" data-acc="plan">View account</button><button class="btn white" data-close="1">Start filming</button></div>
+    <p>All 24 film looks, full-resolution export and every format are unlocked. Manage billing any time from your account.</p><div class="cact" style="max-width:340px;margin:0 auto"><button class="btn glass" data-acc="plan">View account</button><button class="btn white" data-close="1">Start filming</button></div>
     ${first && first.id ? `<p style="margin:16px 0 0"><button class="linkbtn" data-receipt="${esc(first.id)}">Download invoice (PDF)</button></p>` : ''}</div>`;
 }
 // ---------- Accounts: the SERVER owns identity, plan and billing ----------
